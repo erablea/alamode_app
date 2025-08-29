@@ -1,0 +1,36 @@
+import 'package:flutter/material.dart';
+
+class Header extends StatelessWidget implements PreferredSizeWidget {
+  const Header({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Column(
+          children: [
+            Text(
+              'ア・ラ・モード',
+              style: TextStyle(
+                fontFamily: 'ZenMaruGothic',
+                fontSize: 10,
+              ),
+            ),
+            Text(
+              'a la mode',
+              style: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                fontStyle: FontStyle.italic,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+      ),
+    );
+  }
+}
