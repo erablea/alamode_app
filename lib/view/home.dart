@@ -125,8 +125,25 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildTabBarWithArrow(BuildContext context) {
-    return SizedBox(
+    return Container(
       height: 32.0,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.greyMedium,
+            width: 1.0,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.greyMedium,
+            spreadRadius: 0,
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
       child: Stack(
         children: [
           SingleChildScrollView(
@@ -155,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen>
         _updateArrowState();
       },
       child: Container(
-        height: 29.0,
+        height: 32.0,
         padding: EdgeInsets.symmetric(horizontal: isAllTab ? 15.0 : 10.0),
         decoration: BoxDecoration(
           border: Border(
@@ -168,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen>
         child: Padding(
           padding: EdgeInsets.only(
             top: isAllTab ? 0.0 : 2.0,
-            bottom: 3.0, // 下の余白を統一
+            bottom: 0.0, // 下の余白を統一
           ),
           child: Text(
             name,
