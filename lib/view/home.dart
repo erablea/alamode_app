@@ -49,7 +49,26 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging) setState(() {});
+      if (_tabController.indexIsChanging) {
+        setState(() {});
+        // タブが変更されたときにスクロール位置を調整
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            final tabWidth = 80.0; // おおよそのタブ幅
+            final targetOffset = _tabController.index * tabWidth -
+                (MediaQuery.of(context).size.width / 2 - tabWidth / 2);
+            final clampedOffset = targetOffset.clamp(
+                0.0, _scrollController.position.maxScrollExtent);
+            if ((clampedOffset - _scrollController.offset).abs() > 10) {
+              _scrollController.animateTo(
+                clampedOffset,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          }
+        });
+      }
     });
     _scrollController = ScrollController();
     _initScrollController();
@@ -90,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 45.0,
+        toolbarHeight: 35.0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(0.0),
           child: _buildTabBarWithArrow(context),
@@ -107,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildTabBarWithArrow(BuildContext context) {
     return SizedBox(
-      height: 37.0, // 全体の高さを固定
+      height: 32.0,
       child: Stack(
         children: [
           SingleChildScrollView(
@@ -136,9 +155,8 @@ class _HomeScreenState extends State<HomeScreen>
         _updateArrowState();
       },
       child: Container(
-        height: 34.0,
-        padding: EdgeInsets.symmetric(
-            horizontal: isAllTab ? 20.0 : 10.0), // 'all'だけ左右を広げる
+        height: 29.0,
+        padding: EdgeInsets.symmetric(horizontal: isAllTab ? 15.0 : 10.0),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -149,13 +167,13 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         child: Padding(
           padding: EdgeInsets.only(
-            top: isAllTab ? 0.0 : 6.0,
-            bottom: 7.0, // 下の余白を統一
+            top: isAllTab ? 0.0 : 2.0,
+            bottom: 3.0, // 下の余白を統一
           ),
           child: Text(
             name,
             style: TextStyle(
-              fontSize: isAllTab ? 20.0 : 14.0, // 'all'のみ大きく
+              fontSize: isAllTab ? 16.0 : 14.0, // 'all'のみ大きく
               fontWeight: FontWeight.normal,
               color: isSelected
                   ? AppColors.primaryColor
@@ -375,7 +393,7 @@ class _ItemListState extends State<ItemList>
 
   Widget _buildFilterAndSortRow() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           // アクティブフィルターの横スクロール表示
@@ -384,45 +402,54 @@ class _ItemListState extends State<ItemList>
           else
             const Expanded(child: SizedBox()),
           // フィルター・ソートボタン行
-          IconButton(
-            icon: const Icon(
-              Icons.filter_list_alt,
-              color: AppColors.blackLight,
-            ),
-            tooltip: 'フィルタリング',
-            onPressed: _openFilterDialog,
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.sort,
-              color: AppColors.blackLight,
-            ),
-            tooltip: '並び替え',
-            onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-                _cachedDocs = null;
-              });
-            },
-            itemBuilder: (context) => _sortOptions.map((option) {
-              return PopupMenuItem<String>(
-                value: option['value'],
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check,
-                      size: 16,
-                      color: _sortBy == option['value']
-                          ? AppColors.secondryColor
-                          : Colors.transparent,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(option['label']!,
-                        style: const TextStyle(fontSize: 12)),
-                  ],
+          Row(
+            // 新しくRowでラップして間隔調整
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.filter_list_alt,
+                  color: AppColors.blackLight,
                 ),
-              );
-            }).toList(),
+                tooltip: 'フィルタリング',
+                onPressed: _openFilterDialog,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.sort,
+                  color: AppColors.blackLight,
+                ),
+                tooltip: '並び替え',
+                padding: EdgeInsets.zero,
+                onSelected: (value) {
+                  setState(() {
+                    _sortBy = value;
+                    _cachedDocs = null;
+                  });
+                },
+                itemBuilder: (context) => _sortOptions.map((option) {
+                  return PopupMenuItem<String>(
+                    value: option['value'],
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          size: 16,
+                          color: _sortBy == option['value']
+                              ? AppColors.secondryColor
+                              : Colors.transparent,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(option['label']!,
+                            style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
         ],
       ),
@@ -1274,6 +1301,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           elevation: 0,
           shadowColor: AppColors.shadowColor,
           surfaceTintColor: Colors.transparent,
+          titleSpacing: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: AppColors.primaryColor),
             onPressed: () => Navigator.of(context).pop(true),
