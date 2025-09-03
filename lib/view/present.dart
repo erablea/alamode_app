@@ -1093,6 +1093,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                   ),
                   const SizedBox(width: 12),
                   Material(
+                    color: AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -1115,8 +1116,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                         child: const Text(
                           '適用',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ),
                     ),
@@ -2017,9 +2017,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       child: const Text(
                         '保存',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
                       ),
                     ),
                   ),

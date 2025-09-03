@@ -9,8 +9,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 class AppColors {
-  static const Color primaryColor = Color(0xFFEDEE9E);
-  static const Color secondryColor = Color(0xFFDA70D6);
+  static const Color primaryColor = Color(0xFF1C6ECD);
+  static const Color secondryColor = Color(0xFFEDEE9E);
   static const Color blackDark = Color(0xFF1A1A1A);
   static const Color blackLight = Color(0xFF808080);
   static const Color greyDark = Color(0xFFCCCCCC);
@@ -40,8 +40,7 @@ class MyApp extends StatelessWidget {
   final ThemeData appTheme = ThemeData(
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.primaryColor,
-      foregroundColor: AppColors.blackDark,
+      backgroundColor: Colors.white,
       elevation: 0,
       iconTheme: IconThemeData(color: AppColors.blackDark),
       titleTextStyle: TextStyle(

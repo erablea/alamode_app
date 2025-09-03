@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen>
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? Colors.white : Colors.transparent,
+              color: isSelected ? AppColors.primaryColor : Colors.transparent,
               width: 3.0,
             ),
           ),
@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen>
               fontSize: isAllTab ? 20.0 : 14.0, // 'all'のみ大きく
               fontWeight: FontWeight.normal,
               color: isSelected
-                  ? Colors.white
+                  ? AppColors.primaryColor
                   : Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
@@ -181,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen>
           alignment: Alignment.center,
           child: Icon(
             isLeft ? Icons.arrow_circle_left : Icons.arrow_circle_right,
-            color: Colors.white.withOpacity(0.9),
+            color: AppColors.blackLight.withOpacity(0.7),
             size: 24,
           ),
         ),
@@ -660,8 +660,10 @@ class _ItemListState extends State<ItemList>
             children: [
               Text(
                 item['item_name'] as String? ?? '',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryColor),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -948,8 +950,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                         child: const Text(
                           '適用',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ),
                     ),
@@ -1274,7 +1275,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           shadowColor: AppColors.shadowColor,
           surfaceTintColor: Colors.transparent,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.blackDark),
+            icon: const Icon(Icons.arrow_back, color: AppColors.primaryColor),
             onPressed: () => Navigator.of(context).pop(true),
           ),
           title: StreamBuilder<DocumentSnapshot>(
@@ -1288,7 +1289,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               return Text(
                 item?['item_name'] as String? ?? '',
                 style: const TextStyle(
-                  color: AppColors.blackDark,
+                  color: AppColors.primaryColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
