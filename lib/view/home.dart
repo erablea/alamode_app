@@ -125,40 +125,56 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildTabBarWithArrow(BuildContext context) {
-    return Container(
-      height: 32.0,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.greyMedium,
-            width: 1.0,
+    return Stack(
+      children: [
+        Container(
+          height: 32.0,
+          width: double.infinity,
+          color: Colors.white,
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _tabs.asMap().entries.map((entry) {
+                    return _buildTab(entry.key, entry.value);
+                  }).toList(),
+                ),
+              ),
+              if (_showLeftArrow) _buildArrowButton(true),
+              if (_showRightArrow) _buildArrowButton(false),
+            ],
           ),
         ),
-        boxShadow: [
-          BoxShadow(
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 1.0,
             color: AppColors.greyMedium,
-            spreadRadius: 0,
-            blurRadius: 2,
-            offset: Offset(0, 1),
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _tabs.asMap().entries.map((entry) {
-                return _buildTab(entry.key, entry.value);
-              }).toList(),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 2.0,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.greyMedium.withOpacity(0.3),
+                  spreadRadius: 0,
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
-          if (_showLeftArrow) _buildArrowButton(true),
-          if (_showRightArrow) _buildArrowButton(false),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
