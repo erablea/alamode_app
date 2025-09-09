@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen>
     'その他'
   ];
   late TabController _tabController;
+  late PageController _pageViewController;
   late ScrollController _scrollController;
   bool _showLeftArrow = false;
   bool _showRightArrow = true; // 初期状態では右矢印を表示
@@ -48,13 +49,20 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
+    _pageViewController = PageController();
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {});
+        // タブ変更時にPageViewも連動
+        _pageViewController.animateToPage(
+          _tabController.index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
         // タブが変更されたときにスクロール位置を調整
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
-            final tabWidth = 80.0; // おおよそのタブ幅
+            final tabWidth = 80.0;
             final targetOffset = _tabController.index * tabWidth -
                 (MediaQuery.of(context).size.width / 2 - tabWidth / 2);
             final clampedOffset = targetOffset.clamp(
@@ -101,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _pageViewController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -115,11 +124,17 @@ class _HomeScreenState extends State<HomeScreen>
           child: _buildTabBarWithArrow(context),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _tabs
-            .map((String name) => ItemList(key: ValueKey(name), genre: name))
-            .toList(),
+      body: PageView.builder(
+        controller: _pageViewController,
+        onPageChanged: (index) {
+          if (!_tabController.indexIsChanging) {
+            _tabController.animateTo(index);
+          }
+        },
+        itemCount: _tabs.length,
+        itemBuilder: (context, index) {
+          return ItemList(key: ValueKey(_tabs[index]), genre: _tabs[index]);
+        },
       ),
     );
   }
@@ -436,51 +451,59 @@ class _ItemListState extends State<ItemList>
             const Expanded(child: SizedBox()),
           // フィルター・ソートボタン行
           Row(
-            // 新しくRowでラップして間隔調整
             children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.filter_list_alt,
-                  color: AppColors.blackLight,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.filter_list_alt,
+                    color: AppColors.blackLight,
+                    size: 20,
+                  ),
+                  tooltip: 'フィルタリング',
+                  onPressed: _openFilterDialog,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                tooltip: 'フィルタリング',
-                onPressed: _openFilterDialog,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
-              const SizedBox(width: 4),
-              PopupMenuButton<String>(
-                icon: const Icon(
-                  Icons.sort,
-                  color: AppColors.blackLight,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.sort,
+                    color: AppColors.blackLight,
+                    size: 20,
+                  ),
+                  tooltip: '並び替え',
+                  padding: EdgeInsets.zero,
+                  onSelected: (value) {
+                    setState(() {
+                      _sortBy = value;
+                      _cachedDocs = null;
+                    });
+                  },
+                  itemBuilder: (context) => _sortOptions.map((option) {
+                    return PopupMenuItem<String>(
+                      value: option['value'],
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: _sortBy == option['value']
+                                ? AppColors.secondryColor
+                                : Colors.transparent,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(option['label']!,
+                              style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
-                tooltip: '並び替え',
-                padding: EdgeInsets.zero,
-                onSelected: (value) {
-                  setState(() {
-                    _sortBy = value;
-                    _cachedDocs = null;
-                  });
-                },
-                itemBuilder: (context) => _sortOptions.map((option) {
-                  return PopupMenuItem<String>(
-                    value: option['value'],
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check,
-                          size: 16,
-                          color: _sortBy == option['value']
-                              ? AppColors.secondryColor
-                              : Colors.transparent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(option['label']!,
-                            style: const TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                  );
-                }).toList(),
               ),
             ],
           ),
@@ -1419,134 +1442,168 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       color: Colors.white,
       child: Stack(
         children: [
-          // メイン画像
-          SizedBox(
-            height: 300,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                // PageView
-                PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentImageIndex = index;
-                    });
-                  },
-                  itemCount: 3,
-                  itemBuilder: (context, index) {
-                    return CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: AppColors.greyLight,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primaryColor,
+          // メイン画像にGestureDetectorを追加
+          GestureDetector(
+            onTap: () {}, // タップ処理は無効
+            onPanUpdate: (details) {
+              // 水平方向のスワイプ検出
+              if (details.delta.dx > 10) {
+                // 右スワイプ（前の画像へ）
+                if (_currentImageIndex > 0) {
+                  final newIndex = _currentImageIndex - 1;
+                  setState(() {
+                    _currentImageIndex = newIndex;
+                  });
+                  _pageController.animateToPage(
+                    newIndex,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              } else if (details.delta.dx < -10) {
+                // 左スワイプ（次の画像へ）
+                if (_currentImageIndex < 2) {
+                  final newIndex = _currentImageIndex + 1;
+                  setState(() {
+                    _currentImageIndex = newIndex;
+                  });
+                  _pageController.animateToPage(
+                    newIndex,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              }
+            },
+            child: SizedBox(
+              height: 300,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  // PageView
+                  PageView.builder(
+                    controller: _pageController,
+                    physics: const BouncingScrollPhysics(), // スワイプ物理効果を明示的に有効化
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentImageIndex = index;
+                      });
+                    },
+                    itemCount: 3,
+                    itemBuilder: (context, index) {
+                      return CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: AppColors.greyLight,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryColor,
+                            ),
                           ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.greyLight,
-                        child: const Center(
-                          child: Icon(
-                            Icons.error_outline,
-                            size: 60,
-                            color: AppColors.errorColor,
+                        errorWidget: (context, url, error) => Container(
+                          color: AppColors.greyLight,
+                          child: const Center(
+                            child: Icon(
+                              Icons.error_outline,
+                              size: 60,
+                              color: AppColors.errorColor,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
 
-                // 左矢印ボタン
-                if (_currentImageIndex > 0)
-                  Positioned(
-                    left: 12,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          final newIndex = _currentImageIndex - 1;
-                          setState(() {
-                            _currentImageIndex = newIndex;
-                          });
-                          _pageController.animateToPage(
-                            newIndex,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.blackLight.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.blackLight.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.chevron_left,
-                            color: Colors.white,
-                            size: 24,
+                  // 左矢印ボタン
+                  if (_currentImageIndex > 0)
+                    Positioned(
+                      left: 12,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            final newIndex = _currentImageIndex - 1;
+                            setState(() {
+                              _currentImageIndex = newIndex;
+                            });
+                            _pageController.animateToPage(
+                              newIndex,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.blackLight.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.blackLight.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.chevron_left,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                // 右矢印ボタン
-                if (_currentImageIndex < 2)
-                  Positioned(
-                    right: 12,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          final newIndex = _currentImageIndex + 1;
-                          setState(() {
-                            _currentImageIndex = newIndex;
-                          });
-                          _pageController.animateToPage(
-                            newIndex,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.blackLight.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.blackLight.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.chevron_right,
-                            color: Colors.white,
-                            size: 24,
+                  // 右矢印ボタン
+                  if (_currentImageIndex < 2)
+                    Positioned(
+                      right: 12,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            final newIndex = _currentImageIndex + 1;
+                            setState(() {
+                              _currentImageIndex = newIndex;
+                            });
+                            _pageController.animateToPage(
+                              newIndex,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.blackLight.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.blackLight.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
 
