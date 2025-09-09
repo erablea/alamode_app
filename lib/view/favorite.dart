@@ -29,7 +29,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   // 並び替えオプション（homeと同じ）
   static const List<Map<String, String>> _sortOptions = [
-    {'value': 'item_rating', 'label': '評価が高い順'},
+    //   {'value': 'item_rating', 'label': '評価が高い順'},
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
     {'value': 'item_brand', 'label': 'ブランド名順'},
@@ -76,12 +76,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         return false;
       }
 
-      // 評価フィルター
+/*     // 評価フィルター
       final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
       if (rating < _filterRatingMin || rating > _filterRatingMax) {
         return false;
       }
-
+*/
       // ジャンルフィルター
       if (_filterGenre.isNotEmpty) {
         final selectedGenres = _filterGenre.entries
@@ -102,8 +102,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     // ソート
     _filteredList.sort((a, b) {
       switch (_sortBy) {
-        case 'item_rating':
-          return (b['item_rating'] ?? 0).compareTo(a['item_rating'] ?? 0);
+/*        case 'item_rating':
+          return (b['item_rating'] ?? 0).compareTo(a['item_rating'] ?? 0);*/
         case 'item_price_low':
           return (a['item_price'] ?? 0).compareTo(b['item_price'] ?? 0);
         case 'item_price_high':
@@ -136,8 +136,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         _filterGenre = result['filterGenre'];
         _filterPriceMin = result['filterPriceMin'];
         _filterPriceMax = result['filterPriceMax'];
-        _filterRatingMin = result['filterRatingMin'];
-        _filterRatingMax = result['filterRatingMax'];
+/*        _filterRatingMin = result['filterRatingMin'];
+        _filterRatingMax = result['filterRatingMax'];*/
       });
       _applyFiltersAndSort();
     }
@@ -147,8 +147,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _hasActiveFilters() {
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
-    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
-    return hasGenreFilter || hasPriceFilter || hasRatingFilter;
+//    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
+    return hasGenreFilter || hasPriceFilter /*|| hasRatingFilter*/;
   }
 
   // homeからアクティブフィルターチップを借用
@@ -196,7 +196,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       ));
     }
 
-    // 評価フィルター
+/*    // 評価フィルター
     if (_filterRatingMin > 1 || _filterRatingMax < 5) {
       String ratingLabel = '';
       if (_filterRatingMin > 1 && _filterRatingMax < 5) {
@@ -219,7 +219,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         },
       ));
     }
-
+*/
     return SizedBox(
       height: 32,
       child: ListView(
@@ -303,57 +303,60 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         child: Column(
           children: [
             // フィルター・ソート行（homeから借用）
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  // アクティブフィルターの横スクロール表示
-                  if (_hasActiveFilters())
-                    Expanded(child: _buildActiveFilters())
-                  else
-                    const Expanded(child: SizedBox()),
-                  // フィルター・ソートボタン行
-                  IconButton(
-                    icon: const Icon(
-                      Icons.filter_list_alt,
-                      color: AppColors.blackLight,
+            if (_itemList.isNotEmpty) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    // アクティブフィルターの横スクロール表示
+                    if (_hasActiveFilters())
+                      Expanded(child: _buildActiveFilters())
+                    else
+                      const Expanded(child: SizedBox()),
+                    // フィルター・ソートボタン行
+                    IconButton(
+                      icon: const Icon(
+                        Icons.filter_list_alt,
+                        color: AppColors.blackLight,
+                      ),
+                      tooltip: 'フィルタリング',
+                      onPressed: _openFilterDialog,
                     ),
-                    tooltip: 'フィルタリング',
-                    onPressed: _openFilterDialog,
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(
-                      Icons.sort,
-                      color: AppColors.blackLight,
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.sort,
+                        color: AppColors.blackLight,
+                      ),
+                      tooltip: '並び替え',
+                      onSelected: (value) {
+                        setState(() => _sortBy = value);
+                        _applyFiltersAndSort();
+                      },
+                      itemBuilder: (context) => _sortOptions.map((option) {
+                        return PopupMenuItem<String>(
+                          value: option['value'],
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check,
+                                size: 16,
+                                color: _sortBy == option['value']
+                                    ? AppColors.primaryColor
+                                    : Colors.transparent,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(option['label']!,
+                                  style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    tooltip: '並び替え',
-                    onSelected: (value) {
-                      setState(() => _sortBy = value);
-                      _applyFiltersAndSort();
-                    },
-                    itemBuilder: (context) => _sortOptions.map((option) {
-                      return PopupMenuItem<String>(
-                        value: option['value'],
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check,
-                              size: 16,
-                              color: _sortBy == option['value']
-                                  ? AppColors.secondryColor
-                                  : Colors.transparent,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(option['label']!,
-                                style: const TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
             Expanded(
               child: _filteredList.isEmpty
                   ? const Center(

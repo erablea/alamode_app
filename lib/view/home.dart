@@ -29,37 +29,67 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  final List<String> _tabs = [
-    'all',
-    'クッキー',
-    'ショコラ',
-    '和菓子',
-    '焼き菓子',
-    'ゼリー・プリン',
-    '抹茶・ほうじ茶',
-    'その他'
-  ];
+  List<String> _tabs = ['all'];
   late TabController _tabController;
   late PageController _pageViewController;
   late ScrollController _scrollController;
   bool _showLeftArrow = false;
   bool _showRightArrow = true; // 初期状態では右矢印を表示
+  bool _isLoadingGenres = true;
 
   @override
   void initState() {
     super.initState();
+    _loadGenresFromFirestore();
+  }
+
+  Future<void> _loadGenresFromFirestore() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('item').get();
+      Set<String> genres = {};
+
+      for (var doc in snapshot.docs) {
+        final item = doc.data();
+        final genreString = item['item_genre'] as String?;
+        if (genreString != null && genreString.isNotEmpty) {
+          // カンマで分割してそれぞれのジャンルを追加
+          final genreList =
+              genreString.split(',').map((e) => e.trim()).toList();
+          genres.addAll(genreList);
+        }
+      }
+
+      final sortedGenres = genres.toList()..sort();
+
+      setState(() {
+        _tabs = ['all', ...sortedGenres];
+        _isLoadingGenres = false;
+        // ジャンル読み込み完了後にコントローラーを初期化
+        _initializeControllers();
+      });
+    } catch (e) {
+      print('Error loading genres: $e');
+      setState(() {
+        _isLoadingGenres = false;
+        _initializeControllers();
+      });
+    }
+  }
+
+  void _initializeControllers() {
     _tabController = TabController(length: _tabs.length, vsync: this);
     _pageViewController = PageController();
+    _scrollController = ScrollController();
+
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {});
-        // タブ変更時にPageViewも連動
         _pageViewController.animateToPage(
           _tabController.index,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        // タブが変更されたときにスクロール位置を調整
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
             final tabWidth = 80.0;
@@ -78,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen>
         });
       }
     });
-    _scrollController = ScrollController();
+
     _initScrollController();
     _checkInitialArrowState();
   }
@@ -116,6 +146,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingGenres) {
+      return Scaffold(
+        appBar: AppBar(toolbarHeight: 35.0),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 35.0,
@@ -423,6 +460,36 @@ class _ItemListState extends State<ItemList>
       final item = doc.data() as Map<String, dynamic>?;
       if (item == null) return false;
 
+// ジャンルフィルタリング（特定のジャンルタブの場合）
+      if (widget.genre != 'all') {
+        final genreString = item['item_genre'] as String? ?? '';
+        final genreList = genreString.split(',').map((e) => e.trim()).toList();
+        if (!genreList.contains(widget.genre)) {
+          return false;
+        }
+      }
+
+      // 追加のジャンルフィルタリング（allタブでフィルタが適用されている場合）
+      if (widget.genre == 'all' && _filterGenre.isNotEmpty) {
+        final selectedGenres = _filterGenre.entries
+            .where((entry) => entry.value)
+            .map((entry) => entry.key)
+            .toList();
+        if (selectedGenres.isNotEmpty) {
+          final genreString = item['item_genre'] as String? ?? '';
+          final genreList =
+              genreString.split(',').map((e) => e.trim()).toList();
+          bool hasMatchingGenre = false;
+          for (String selectedGenre in selectedGenres) {
+            if (genreList.contains(selectedGenre)) {
+              hasMatchingGenre = true;
+              break;
+            }
+          }
+          if (!hasMatchingGenre) return false;
+        }
+      }
+
       // 価格フィルター
       final price = (item['item_price'] as num?)?.toDouble() ?? 0;
       if (price < _filterPriceMin || price > _filterPriceMax) {
@@ -459,7 +526,6 @@ class _ItemListState extends State<ItemList>
                   icon: const Icon(
                     Icons.filter_list_alt,
                     color: AppColors.blackLight,
-                    size: 20,
                   ),
                   tooltip: 'フィルタリング',
                   onPressed: _openFilterDialog,
@@ -474,7 +540,6 @@ class _ItemListState extends State<ItemList>
                   icon: const Icon(
                     Icons.sort,
                     color: AppColors.blackLight,
-                    size: 20,
                   ),
                   tooltip: '並び替え',
                   padding: EdgeInsets.zero,
@@ -493,7 +558,7 @@ class _ItemListState extends State<ItemList>
                             Icons.check,
                             size: 16,
                             color: _sortBy == option['value']
-                                ? AppColors.secondryColor
+                                ? AppColors.primaryColor
                                 : Colors.transparent,
                           ),
                           const SizedBox(width: 8),
@@ -641,23 +706,7 @@ class _ItemListState extends State<ItemList>
   }
 
   Query _getFilteredQuery() {
-    Query baseQuery = widget.genre == 'all'
-        ? FirebaseFirestore.instance.collection('item')
-        : FirebaseFirestore.instance
-            .collection('item')
-            .where('item_genre', isEqualTo: widget.genre);
-
-    // ジャンルフィルタリング（allタブでのみ適用）
-    if (_filterGenre.isNotEmpty && widget.genre == 'all') {
-      final selectedGenres = _filterGenre.entries
-          .where((entry) => entry.value)
-          .map((entry) => entry.key)
-          .toList();
-      if (selectedGenres.isNotEmpty) {
-        baseQuery = baseQuery.where('item_genre', whereIn: selectedGenres);
-      }
-    }
-
+    Query baseQuery = FirebaseFirestore.instance.collection('item');
     return baseQuery.orderBy(_sortField, descending: _sortDescending);
   }
 
@@ -939,6 +988,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                   const Text(
                     'フィルタリング',
                     style: TextStyle(
+                      color: AppColors.primaryColor,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1048,63 +1098,95 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   }
 
   Widget _buildGenreFilter() {
-    const genres = ['クッキー', 'ショコラ', '和菓子', '焼き菓子', 'ゼリー・プリン', '抹茶・ほうじ茶', 'その他'];
+    return FutureBuilder<List<String>>(
+      future: _getAvailableGenres(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'ジャンル',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: genres.map((genre) {
-            final isSelected = _tempFilterGenre[genre] ?? false;
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () =>
-                    setState(() => _tempFilterGenre[genre] = !isSelected),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryColor
-                        : AppColors.greyLight,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primaryColor
-                          : AppColors.greyLight,
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    genre,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppColors.blackDark
-                          : AppColors.blackLight,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
+        final genres = snapshot.data ?? [];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'ジャンル',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.blackLight,
               ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: genres.map((genre) {
+                final isSelected = _tempFilterGenre[genre] ?? false;
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () =>
+                        setState(() => _tempFilterGenre[genre] = !isSelected),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white : AppColors.greyLight,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : AppColors.greyLight,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        genre,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : AppColors.blackLight,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  Future<List<String>> _getAvailableGenres() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('item').get();
+      Set<String> genres = {};
+
+      for (var doc in snapshot.docs) {
+        final item = doc.data();
+        final genreString = item['item_genre'] as String?;
+        if (genreString != null && genreString.isNotEmpty) {
+          // カンマで分割してそれぞれのジャンルを追加
+          final genreList =
+              genreString.split(',').map((e) => e.trim()).toList();
+          genres.addAll(genreList);
+        }
+      }
+
+      return genres.toList()..sort();
+    } catch (e) {
+      print('Error getting available genres: $e');
+      return [];
+    }
   }
 
   Widget _buildPriceFilter() {
@@ -1114,8 +1196,9 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
         const Text(
           '金額範囲',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
           ),
         ),
         const SizedBox(height: 12),
@@ -1137,21 +1220,22 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.greyLight),
+                      border: Border.all(color: AppColors.greyMedium),
                     ),
                     child: Text(
                       _tempFilterPriceRange.start == 0
                           ? '指定しない'
                           : '¥${NumberFormat('#,###').format(_tempFilterPriceRange.start.toInt())}',
                       style: const TextStyle(
-                        color: AppColors.blackDark,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
+                        color: AppColors.blackLight,
                       ),
                     ),
                   ),
                   const Text(
                     '〜',
-                    style: TextStyle(color: AppColors.blackDark, fontSize: 16),
+                    style: TextStyle(color: AppColors.blackLight, fontSize: 16),
                   ),
                   Container(
                     padding:
@@ -1166,8 +1250,9 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                           ? '指定しない'
                           : '¥${NumberFormat('#,###').format(_tempFilterPriceRange.end.toInt())}',
                       style: const TextStyle(
-                        color: AppColors.blackDark,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
+                        color: AppColors.blackLight,
                       ),
                     ),
                   ),

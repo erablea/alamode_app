@@ -23,7 +23,6 @@ class Constants {
   static const int targetImageWidth = 1024;
   static const int memoMaxLength = 200;
   static const double maxPriceFilter = 20000;
-  static const List<String> genres = ['クッキー', 'ショコラ', '和菓子', 'その他'];
 }
 
 class Utils {
@@ -92,7 +91,7 @@ class CommonWidgets {
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
   }) {
-    const genres = ['クッキー', 'ショコラ', '和菓子', '焼き菓子', 'ゼリー・プリン', '抹茶・ほうじ茶', 'その他'];
+    const genres = ['クッキー', 'ショコラ', '和菓子', '焼き菓子', 'ゼリー・プリン', 'その他'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,9 +130,7 @@ class CommonWidgets {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryColor
-                        : AppColors.greyLight,
+                    color: isSelected ? Colors.white : AppColors.greyLight,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -145,7 +142,9 @@ class CommonWidgets {
                   child: Text(
                     genre,
                     style: TextStyle(
-                      color: isSelected ? Colors.black87 : Colors.black54,
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.blackLight,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
                       fontSize: 13,
@@ -496,6 +495,9 @@ class _PresentListState extends State<PresentList> {
   }
 
   Widget _buildFilterAndSortRow() {
+    if (_presentList.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -549,7 +551,7 @@ class _PresentListState extends State<PresentList> {
             Icons.check,
             size: 16,
             color: _currentSortOrder == value
-                ? AppColors.secondryColor
+                ? AppColors.primaryColor
                 : Colors.transparent,
           ),
           const SizedBox(width: 8),
@@ -1025,7 +1027,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppColors.primaryColor,
                     ),
                   ),
                   Material(
@@ -1085,6 +1087,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                         child: const Text(
                           'キャンセル',
                           style: TextStyle(
+                            color: AppColors.blackLight,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1160,8 +1163,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
         const Text(
           '相手',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
           ),
         ),
         const SizedBox(height: 12),
@@ -1180,9 +1184,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryColor
-                        : AppColors.greyLight,
+                    color: isSelected ? Colors.white : AppColors.greyLight,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -1194,7 +1196,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                   child: Text(
                     who.toString(),
                     style: TextStyle(
-                      color: isSelected ? Colors.black87 : Colors.black54,
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.blackLight,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
                       fontSize: 14,
@@ -1218,8 +1222,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
             Text(
               '反応',
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.blackLight,
               ),
             ),
           ],
@@ -1280,9 +1285,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
         const Text(
           '金額範囲',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: Colors.black87,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
           ),
         ),
         const SizedBox(height: 12),
@@ -1304,21 +1309,22 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.greyLight),
+                      border: Border.all(color: AppColors.greyMedium),
                     ),
                     child: Text(
                       _tempFilterPriceRange.start == 0
                           ? '指定しない'
                           : '¥${_tempFilterPriceRange.start.toStringAsFixed(0)}',
                       style: const TextStyle(
-                        color: Colors.black87,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
+                        color: AppColors.blackLight,
                       ),
                     ),
                   ),
                   const Text(
                     '〜',
-                    style: TextStyle(color: Colors.black54, fontSize: 16),
+                    style: TextStyle(color: AppColors.blackLight, fontSize: 16),
                   ),
                   Container(
                     padding:
@@ -1326,15 +1332,16 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.greyLight),
+                      border: Border.all(color: AppColors.greyMedium),
                     ),
                     child: Text(
                       _tempFilterPriceRange.end >= 20000
                           ? '指定しない'
                           : '¥${_tempFilterPriceRange.end.toStringAsFixed(0)}',
                       style: const TextStyle(
-                        color: Colors.black87,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
+                        color: AppColors.blackLight,
                       ),
                     ),
                   ),
@@ -1799,7 +1806,16 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.initialPresent == null ? '新しいお菓子を登録' : '編集'),
+        title: Text(
+          widget.initialPresent == null ? '新しいお菓子を登録' : '編集',
+          style: const TextStyle(
+            color: AppColors.primaryColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
         actions: [
           if (widget.initialPresent != null)
             IconButton(

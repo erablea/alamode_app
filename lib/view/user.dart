@@ -413,7 +413,7 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                   child: const Icon(
                     Icons.people_outline,
-                    color: AppColors.blackDark,
+                    color: Colors.white,
                     size: 20,
                   ),
                 ),
@@ -428,13 +428,6 @@ class _UserScreenState extends State<UserScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppColors.blackDark,
-                        ),
-                      ),
-                      Text(
-                        '贈り物の履歴を確認できます',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.blackLight,
                         ),
                       ),
                     ],
@@ -456,31 +449,33 @@ class _UserScreenState extends State<UserScreen> {
               : _personList.isEmpty
                   ? Container(
                       padding: const EdgeInsets.all(32),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.person_add_outlined,
-                            size: 48,
-                            color: AppColors.blackLight.withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'まだプレゼントした人がいません',
-                            style: TextStyle(
-                              color: AppColors.blackLight.withOpacity(0.7),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'プレゼントを記録すると、ここに表示されます',
-                            style: TextStyle(
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.person_add_outlined,
+                              size: 48,
                               color: AppColors.blackLight.withOpacity(0.5),
-                              fontSize: 12,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            Text(
+                              'まだプレゼントした人がいません',
+                              style: TextStyle(
+                                color: AppColors.blackLight.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'プレゼントを記録すると、ここに表示されます',
+                              style: TextStyle(
+                                color: AppColors.blackLight.withOpacity(0.5),
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : Column(
@@ -581,19 +576,16 @@ class _UserScreenState extends State<UserScreen> {
   Widget _buildSettingsSection() {
     final settingsItems = [
       {
-        'title': 'このアプリについて',
+        'title': 'アプリについて',
         'icon': Icons.info_outline,
-        'description': 'アプリの概要と機能説明',
       },
       {
         'title': 'お問い合わせ',
         'icon': Icons.contact_support_outlined,
-        'description': 'ご要望・お問い合わせ先',
       },
       {
         'title': '運営会社・利用規約',
         'icon': Icons.business_outlined,
-        'description': '運営者情報と利用規約',
       },
     ];
 
@@ -670,14 +662,6 @@ class _UserScreenState extends State<UserScreen> {
                                 color: AppColors.blackDark,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              item['description'] as String,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.blackLight,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -708,7 +692,7 @@ class _UserScreenState extends State<UserScreen> {
     Widget screen;
 
     switch (title) {
-      case 'このアプリについて':
+      case 'アプリについて':
         screen = _buildAboutScreen();
         break;
       case 'お問い合わせ':
@@ -737,11 +721,11 @@ class _UserScreenState extends State<UserScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppColors.blackDark,
+            color: AppColors.primaryColor,
           ),
         ),
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.blackDark),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -771,10 +755,10 @@ class _UserScreenState extends State<UserScreen> {
 
   Widget _buildAboutScreen() {
     return _buildInfoScreen(
-      title: 'このアプリについて',
+      title: 'アプリについて',
       content: [
         const Text(
-          'アプリの概要',
+          '「ア・ラ・モード」',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -834,7 +818,7 @@ class _UserScreenState extends State<UserScreen> {
                 ),
                 child: const Icon(
                   Icons.contact_support,
-                  color: AppColors.blackDark,
+                  color: Colors.white,
                   size: 24,
                 ),
               ),
@@ -849,13 +833,6 @@ class _UserScreenState extends State<UserScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.blackDark,
-                      ),
-                    ),
-                    Text(
-                      'ご質問・ご要望はこちらまで',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.blackLight,
                       ),
                     ),
                   ],
@@ -1675,6 +1652,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
@@ -1901,7 +1879,10 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: AppColors.blackDark,
                 ),
-                child: const Text('送信'),
+                child: const Text(
+                  '送信',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -1979,11 +1960,11 @@ Widget _buildTermsScreen() {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.blackDark,
+          color: AppColors.primaryColor,
         ),
       ),
       elevation: 0,
-      iconTheme: const IconThemeData(color: AppColors.blackDark),
+      iconTheme: const IconThemeData(color: AppColors.primaryColor),
     ),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -2017,7 +1998,7 @@ Widget _buildTermsScreen() {
                         ),
                         child: const Icon(
                           Icons.business,
-                          color: AppColors.blackDark,
+                          color: Colors.white,
                           size: 20,
                         ),
                       ),
@@ -2069,7 +2050,7 @@ Widget _buildTermsScreen() {
                         ),
                         child: const Icon(
                           Icons.description_outlined,
-                          color: AppColors.blackDark,
+                          color: Colors.white,
                           size: 20,
                         ),
                       ),
@@ -2199,7 +2180,7 @@ Widget _buildFeatureItem(IconData icon, String title, String description) {
             color: AppColors.primaryColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: AppColors.blackDark, size: 20),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
