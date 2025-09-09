@@ -377,7 +377,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                           return const SizedBox.shrink();
                         }
                         final item = _filteredList[itemIndex];
-                        return GestureDetector(
+                        return ItemCard(
+                          item: item,
+                          itemId: item['id'],
+                          index: itemIndex,
+                          onFavoriteChanged: () {
+                            _loadFavoriteItems();
+                          },
                           onTap: () {
                             Navigator.push(
                               context,
@@ -387,187 +393,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                               ),
                             );
                           },
-                          child: Container(
-                            margin: EdgeInsets.only(
-                                top: index == 0 ? 0 : 2, bottom: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: const Border(
-                                top: BorderSide(
-                                    color: AppColors.greyMedium, width: 0.5),
-                                bottom: BorderSide(
-                                    color: AppColors.greyMedium, width: 1),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.greyMedium.withOpacity(0.8),
-                                  spreadRadius: 0,
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // ヘッダー部分（homeから借用）
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                                  child: Stack(
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item['item_name'] as String? ?? '',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.storefront,
-                                                  size: 16),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                item['item_brand'] as String? ??
-                                                    '',
-                                                style: const TextStyle(
-                                                    fontSize: 14),
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                              const SizedBox(width: 25),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                      color: AppColors.greyDark,
-                                                      width: 1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Text(
-                                                  item['item_genre']
-                                                          as String? ??
-                                                      '',
-                                                  style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color:
-                                                          AppColors.blackLight),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                        ],
-                                      ),
-                                      Positioned(
-                                        right: 0,
-                                        top: 10,
-                                        child: Transform.scale(
-                                          scale: 1.2,
-                                          child: FavoriteButton(
-                                            itemId: item['id'],
-                                            onFavoriteChanged: () {
-                                              _loadFavoriteItems(); // リロード
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // 画像部分（homeから借用）
-                                Row(
-                                  children: [
-                                    for (int i = 0; i < 3; i++)
-                                      Expanded(
-                                        child: Container(
-                                          margin: EdgeInsets.only(
-                                              right: i < 2 ? 1 : 0),
-                                          height: 110,
-                                          child: CachedNetworkImage(
-                                            imageUrl: item['item_imageurl']
-                                                    as String? ??
-                                                '',
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) =>
-                                                const Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.primaryColor,
-                                              ),
-                                            ),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(
-                                              Icons.error_outline,
-                                              size: 40,
-                                              color: AppColors.errorColor,
-                                            ),
-                                            memCacheWidth: 240,
-                                            memCacheHeight: 240,
-                                            maxWidthDiskCache: 240,
-                                            maxHeightDiskCache: 240,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                // フッター部分（homeから借用）
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                  child: Row(
-                                    children: [
-/*                                      buildStarRating(context,
-                                          item['item_rating'] as num? ?? 0),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        (item['item_rating'] as num?)
-                                                ?.toStringAsFixed(1) ??
-                                            'new',
-                                        style: const TextStyle(fontSize: 14),
-                                      ), */
-                                      const Spacer(),
-                                      const Icon(Icons.currency_yen, size: 18),
-                                      const SizedBox(width: 4),
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            currencyFormat.format(
-                                                item['item_price'] as num? ??
-                                                    0),
-                                            style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const SizedBox(width: 2),
-                                          const Text(
-                                            '（税込）',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                color: AppColors.blackLight),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         );
                       },
                     ),

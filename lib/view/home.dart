@@ -450,7 +450,21 @@ class _ItemListState extends State<ItemList>
         if (item == null) {
           return const SizedBox.shrink();
         }
-        return _buildItemCard(context, document, item, itemIndex);
+        return ItemCard(
+          item: item,
+          itemId: document.id,
+          index: itemIndex,
+          onFavoriteChanged: () {},
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailScreen(itemId: document.id),
+              ),
+            );
+            if (result == true) setState(() {});
+          },
+        );
       },
     );
   }
@@ -740,19 +754,54 @@ class _ItemListState extends State<ItemList>
       });
     }
   }
+}
 
-  Widget _buildItemCard(BuildContext context, DocumentSnapshot document,
-      Map<String, dynamic> item, int index) {
+class ItemCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final String itemId;
+  final int index;
+  final VoidCallback? onFavoriteChanged;
+  final VoidCallback? onTap;
+
+  const ItemCard({
+    super.key,
+    required this.item,
+    required this.itemId,
+    required this.index,
+    this.onFavoriteChanged,
+    this.onTap,
+  });
+
+  List<String> _getImageUrls(Map<String, dynamic> item) {
+    List<String> imageUrls = [];
+
+    final url1 = item['item_imageurl1'] as String?;
+    final url2 = item['item_imageurl2'] as String?;
+    final url3 = item['item_imageurl3'] as String?;
+
+    if (url1 != null && url1.isNotEmpty) {
+      imageUrls.add(url1);
+    }
+    if (url2 != null && url2.isNotEmpty) {
+      imageUrls.add(url2);
+    }
+    if (url3 != null && url3.isNotEmpty) {
+      imageUrls.add(url3);
+    }
+
+    if (imageUrls.isEmpty) {
+      imageUrls.add('item_notimage.png');
+    }
+
+    return imageUrls;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormat = NumberFormat('#,###');
+
     return GestureDetector(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ItemDetailScreen(itemId: document.id),
-          ),
-        );
-        if (result == true) setState(() {});
-      },
+      onTap: onTap,
       child: Container(
         margin: EdgeInsets.only(top: index == 0 ? 0 : 2, bottom: 4),
         decoration: BoxDecoration(
@@ -773,16 +822,16 @@ class _ItemListState extends State<ItemList>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildItemHeader(item, document.id),
-            _buildItemImages(item['item_imageurl'] as String? ?? ''),
-            _buildItemFooter(item),
+            _buildItemHeader(),
+            _buildItemImages(),
+            _buildItemFooter(currencyFormat),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildItemHeader(Map<String, dynamic> item, String itemId) {
+  Widget _buildItemHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Stack(
@@ -836,7 +885,7 @@ class _ItemListState extends State<ItemList>
               scale: 1.2,
               child: FavoriteButton(
                 itemId: itemId,
-                onFavoriteChanged: () {},
+                onFavoriteChanged: onFavoriteChanged ?? () {},
               ),
             ),
           ),
@@ -845,16 +894,18 @@ class _ItemListState extends State<ItemList>
     );
   }
 
-  Widget _buildItemImages(String imageUrl) {
+  Widget _buildItemImages() {
+    final imageUrls = _getImageUrls(item);
+
     return Row(
       children: [
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < imageUrls.length; i++)
           Expanded(
             child: Container(
-              margin: EdgeInsets.only(right: i < 2 ? 1 : 0),
+              margin: EdgeInsets.only(right: i < imageUrls.length - 1 ? 1 : 0),
               height: 110,
               child: CachedNetworkImage(
-                imageUrl: imageUrl,
+                imageUrl: imageUrls[i],
                 fit: BoxFit.cover,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(
@@ -878,12 +929,12 @@ class _ItemListState extends State<ItemList>
     );
   }
 
-  Widget _buildItemFooter(Map<String, dynamic> item) {
+  Widget _buildItemFooter(NumberFormat currencyFormat) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
-/*          buildStarRating(context, item['item_rating'] as num? ?? 0),
+          /*          buildStarRating(context, item['item_rating'] as num? ?? 0),
           const SizedBox(width: 4),
           Text(
             (item['item_rating'] as num?)?.toStringAsFixed(1) ?? 'new',
@@ -1423,9 +1474,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   int _currentImageIndex = 0;
 
   @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _currentImageIndex = 0;
   }
 
   @override
@@ -1520,8 +1571,34 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
+  List<String> _getImageUrls(Map<String, dynamic> item) {
+    List<String> imageUrls = [];
+
+    final url1 = item['item_imageurl1'] as String?;
+    final url2 = item['item_imageurl2'] as String?;
+    final url3 = item['item_imageurl3'] as String?;
+
+    if (url1 != null && url1.isNotEmpty) {
+      imageUrls.add(url1);
+    }
+    if (url2 != null && url2.isNotEmpty) {
+      imageUrls.add(url2);
+    }
+    if (url3 != null && url3.isNotEmpty) {
+      imageUrls.add(url3);
+    }
+
+    // 画像が1枚もない場合のデフォルト画像
+    if (imageUrls.isEmpty) {
+      imageUrls.add('item_notimage.png');
+    }
+
+    return imageUrls;
+  }
+
   Widget _buildImageSection(Map<String, dynamic> item) {
-    final imageUrl = item['item_imageurl'] as String? ?? '';
+    final imageUrls = _getImageUrls(item);
+    final imageCount = imageUrls.length;
 
     return Container(
       color: Colors.white,
@@ -1547,7 +1624,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 }
               } else if (details.delta.dx < -10) {
                 // 左スワイプ（次の画像へ）
-                if (_currentImageIndex < 2) {
+                if (_currentImageIndex < imageCount - 1) {
                   final newIndex = _currentImageIndex + 1;
                   setState(() {
                     _currentImageIndex = newIndex;
@@ -1568,16 +1645,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // PageView
                   PageView.builder(
                     controller: _pageController,
-                    physics: const BouncingScrollPhysics(), // スワイプ物理効果を明示的に有効化
+                    physics: const BouncingScrollPhysics(),
                     onPageChanged: (index) {
                       setState(() {
                         _currentImageIndex = index;
                       });
                     },
-                    itemCount: 3,
+                    itemCount: imageCount,
                     itemBuilder: (context, index) {
                       return CachedNetworkImage(
-                        imageUrl: imageUrl,
+                        imageUrl: imageUrls[index],
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           color: AppColors.greyLight,
@@ -1602,8 +1679,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     },
                   ),
 
-                  // 左矢印ボタン
-                  if (_currentImageIndex > 0)
+                  // 左矢印ボタン（複数画像がある場合のみ）
+                  if (imageCount > 1 && _currentImageIndex > 0)
                     Positioned(
                       left: 12,
                       top: 0,
@@ -1645,8 +1722,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                     ),
 
-                  // 右矢印ボタン
-                  if (_currentImageIndex < 2)
+                  // 右矢印ボタン（複数画像がある場合のみ）
+                  if (imageCount > 1 && _currentImageIndex < imageCount - 1)
                     Positioned(
                       right: 12,
                       top: 0,
@@ -1692,111 +1769,114 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
           ),
 
-          // オーバーレイサムネイル画像（下部に重ねて表示）
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blackDark.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (int i = 0; i < 3; i++)
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentImageIndex = i;
-                        });
-                        _pageController.animateToPage(
-                          i,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: _currentImageIndex == i
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.5),
-                            width: _currentImageIndex == i ? 2.5 : 2,
+          // オーバーレイサムネイル画像（複数画像がある場合のみ表示）
+          if (imageCount > 1)
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.blackDark.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (int i = 0; i < imageCount; i++)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentImageIndex = i;
+                          });
+                          _pageController.animateToPage(
+                            i,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          margin: EdgeInsets.only(
+                              right: i < imageCount - 1 ? 4 : 0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: _currentImageIndex == i
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.5),
+                              width: _currentImageIndex == i ? 2.5 : 2,
+                            ),
+                            boxShadow: _currentImageIndex == i
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null,
                           ),
-                          boxShadow: _currentImageIndex == i
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.white.withOpacity(0.3),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrls[i],
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: AppColors.greyLight.withOpacity(0.8),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1,
+                                    color: AppColors.primaryColor,
                                   ),
-                                ]
-                              : null,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: AppColors.greyLight.withOpacity(0.8),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1,
-                                  color: AppColors.primaryColor,
                                 ),
                               ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: AppColors.greyLight.withOpacity(0.8),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.error_outline,
-                                  size: 12,
-                                  color: AppColors.errorColor,
+                              errorWidget: (context, url, error) => Container(
+                                color: AppColors.greyLight.withOpacity(0.8),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    size: 12,
+                                    color: AppColors.errorColor,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-          // 画像インジケーター（右上）
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.blackDark.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_currentImageIndex + 1} / 3',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
               ),
             ),
-          ),
+
+          // 画像インジケーター（複数画像がある場合のみ表示）
+          if (imageCount > 1)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.blackDark.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_currentImageIndex + 1} / $imageCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

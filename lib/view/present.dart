@@ -1608,7 +1608,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         ),
         const SizedBox(height: 8),
         const Text(
-          '画像は3枚まで登録できます。',
+          '画像は最大3枚まで登録できます。',
           style: TextStyle(
             fontSize: 12,
             color: AppColors.blackLight,
