@@ -50,7 +50,7 @@ dependencies:
   flutter_datetime_picker_plus: ^2.1.0
   intl: ^0.18.1
   http: ^0.13.5
-  cached_network_image: ^3.2.0
+  cached_network_image: ^3.3.1
   url_launcher: ^6.2.2
 
   # The following adds the Cupertino Icons font to your application.
