@@ -46607,7 +46607,7 @@ A.ZF.prototype={
 K(a){var s=this,r=null
 return A.jH(B.Kw,r,s.afF(s.d),A.a4(r,A.br(A.b([s.uP(B.ii,"Search",0),s.uP(B.pW,"Fav",1),s.uP(B.KK,"Present",2),s.uP(B.KS,"Treat",3),s.uP(B.KX,"Setting",4)],t.p),B.o,B.lD,B.l),B.f,B.i,r,r,r,r,r,B.JJ,r,r,r),r)},
 uP(a,b,c){var s=null,r=this.d===c,q=A.ft(a,r?B.H:A.x(204,128,128,128),s,s)
-return A.dt(s,A.b6(A.b([q,A.av(b,s,s,s,s,A.bS(s,s,r?B.H:A.x(204,128,128,128),s,s,s,s,s,"Corinthia",s,s,12,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s)],t.p),B.o,B.k,B.av),B.L,!1,s,s,s,s,s,s,s,s,s,s,s,s,s,s,new A.aAH(this,c),s,s,s,s,s,s)},
+return A.dt(s,A.b6(A.b([q,A.av(b,s,s,s,s,A.bS(s,s,r?B.H:A.x(204,128,128,128),s,s,s,s,s,"Corinthia",s,s,20,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s)],t.p),B.o,B.k,B.av),B.L,!1,s,s,s,s,s,s,s,s,s,s,s,s,s,s,new A.aAH(this,c),s,s,s,s,s,s)},
 afF(a){var s=null
 switch(a){case 0:return B.KA
 case 1:return B.Kf
@@ -114263,7 +114263,7 @@ B.Ik=new A.q(687865855)
 B.k=new A.oN(0,"start")
 B.a0H=new A.o(!0,B.H,null,"ZenMaruGothic",null,null,10,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a5K=new A.aH("\u30a2\u30fb\u30e9\u30fb\u30e2\u30fc\u30c9",null,B.a0H,null,null,null,null,null,null,null)
-B.a2m=new A.o(!0,B.H,null,"Corinthia",null,null,20,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
+B.a2m=new A.o(!0,B.H,null,"Corinthia",null,null,30,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a6p=new A.aH("a la mode",null,B.a2m,null,null,null,null,null,null,null)
 B.Rh=A.b(s([B.a5K,B.a6p]),t.p)
 B.In=new A.mk(B.Z,B.k,B.l,B.o,null,B.bu,null,B.Rh,null)
