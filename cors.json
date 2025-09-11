@@ -1,8 +1,16 @@
 ﻿[
-  {
-    "origin": ["https://erablea.github.io", "http://localhost:*", "https://localhost:*"],
-    "method": ["GET", "HEAD"],
-    "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"]
-  }
+	{
+		"origin": [
+			"*"
+		],
+		"method": [
+			"GET",
+			"HEAD",
+			"OPTIONS"
+		],
+		"maxAgeSeconds": 3600,
+		"responseHeader": [
+			"*"
+		]
+	}
 ]

@@ -25,7 +25,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               'a la mode',
               style: TextStyle(
                 fontFamily: 'Corinthia',
-                fontSize: 20,
+                fontSize: 30,
                 color: AppColors.primaryColor,
               ),
             ),
