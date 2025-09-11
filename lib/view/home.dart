@@ -1,10 +1,33 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:alamode_app/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+String _convertFirebaseStorageUrl(String originalUrl) {
+  if (kIsWeb && originalUrl.contains('firebasestorage.googleapis.com')) {
+    try {
+      final uri = Uri.parse(originalUrl);
+      final pathSegments = uri.pathSegments;
+
+      if (pathSegments.length >= 4 &&
+          pathSegments[0] == 'v0' &&
+          pathSegments[1] == 'b') {
+        final bucket = pathSegments[2];
+        final encodedPath = pathSegments[4];
+        final decodedPath = Uri.decodeComponent(encodedPath);
+
+        return 'https://storage.googleapis.com/$bucket/$decodedPath';
+      }
+    } catch (e) {
+      print('URL conversion error: $e');
+    }
+  }
+  return originalUrl;
+}
 
 Widget buildStarRating(BuildContext context, num rating) {
   return Row(
