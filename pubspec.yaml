@@ -99,3 +99,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/ZenMaruGothic/ZenMaruGothic-Bold.ttf
           weight: 800
+    - family: Corinthia
+      fonts:
+        - asset: assets/fonts/Corinthia/Corinthia-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Corinthia/Corinthia-Bold.ttf
+          weight: 800

@@ -144,8 +144,7 @@ class _MainAppState extends State<MainApp> {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'PlayfairDisplay',
-              fontStyle: FontStyle.italic,
+              fontFamily: 'Corinthia',
               fontSize: 12,
               color: _selectedIndex == index
                   ? AppColors.primaryColor
