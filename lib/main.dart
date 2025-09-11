@@ -141,10 +141,11 @@ class _MainAppState extends State<MainApp> {
                 ? AppColors.primaryColor
                 : AppColors.blackLight.withOpacity(0.8),
           ),
-          const SizedBox(height: 1),
           Text(
             label,
             style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontStyle: FontStyle.italic,
               fontSize: 12,
               color: _selectedIndex == index
                   ? AppColors.primaryColor

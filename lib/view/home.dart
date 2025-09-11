@@ -1665,16 +1665,29 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.greyLight,
-                          child: const Center(
-                            child: Icon(
-                              Icons.error_outline,
-                              size: 60,
-                              color: AppColors.errorColor,
+                        errorWidget: (context, url, error) {
+                          print('Image loading error for URL: $url');
+                          print('Error details: $error');
+                          return Container(
+                            color: AppColors.greyLight,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 40,
+                                  color: AppColors.errorColor,
+                                ),
+                                Text(
+                                  'Error: $error',
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.red),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       );
                     },
                   ),

@@ -1,3 +1,4 @@
+import 'package:alamode_app/main.dart';
 import 'package:flutter/material.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
@@ -17,6 +18,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               style: TextStyle(
                 fontFamily: 'ZenMaruGothic',
                 fontSize: 10,
+                color: AppColors.primaryColor,
               ),
             ),
             Text(
@@ -25,6 +27,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                 fontFamily: 'PlayfairDisplay',
                 fontStyle: FontStyle.italic,
                 fontSize: 20,
+                color: AppColors.primaryColor,
               ),
             ),
           ],
