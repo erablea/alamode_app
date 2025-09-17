@@ -159,6 +159,79 @@ class CommonWidgets {
     );
   }
 
+  static Widget buildOtherConditionSelector({
+    required Set<String> selectedConditions,
+    required Function(Set<String>) onSelectionChanged,
+    bool multiSelect = false,
+  }) {
+    const conditions = ['個包装', '常温', 'オンライン購入'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'その他',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: conditions.map((condition) {
+            final isSelected = selectedConditions.contains(condition);
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  Set<String> newSelection = Set.from(selectedConditions);
+                  if (isSelected) {
+                    newSelection.remove(condition);
+                  } else {
+                    if (!multiSelect) {
+                      newSelection.clear(); // 単一選択の場合
+                    }
+                    newSelection.add(condition);
+                  }
+                  onSelectionChanged(newSelection);
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : AppColors.greyLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.greyLight,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    condition,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.blackLight,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   static Widget buildInfoRow(IconData icon, String? text) {
     return Row(
       children: [
@@ -371,6 +444,7 @@ class _PresentListState extends State<PresentList> {
   double _filterPriceMax = Constants.maxPriceFilter;
   bool _isLoading = false;
   final currencyFormat = NumberFormat('#,###');
+  Map<String, bool> _filterOtherCondition = {};
 
   @override
   void initState() {
@@ -414,6 +488,7 @@ class _PresentListState extends State<PresentList> {
         currentFilterGenre: _filterGenre,
         currentFilterWho: _filterWho,
         currentFilterReaction: _filterReaction,
+        currentFilterOtherCondition: _filterOtherCondition,
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
       ),
@@ -423,6 +498,7 @@ class _PresentListState extends State<PresentList> {
         _filterGenre = result['filterGenre'];
         _filterWho = result['filterWho'];
         _filterReaction = result['filterReaction'];
+        _filterOtherCondition = result['filterOtherCondition'];
         _filterPriceMin = result['filterPriceMin'];
         _filterPriceMax = result['filterPriceMax'];
       });
@@ -481,6 +557,20 @@ class _PresentListState extends State<PresentList> {
     if (_filterReaction.isNotEmpty &&
         !(_filterReaction[present['present_reaction'].toString()] ?? false)) {
       return false;
+    }
+
+// その他条件フィルタリング
+    if (_filterOtherCondition.isNotEmpty) {
+      String presentOtherConditions = present['present_other_conditions'] ?? '';
+      bool matchesOtherCondition = false;
+      _filterOtherCondition.forEach((condition, isSelected) {
+        if (isSelected && presentOtherConditions.contains(condition)) {
+          matchesOtherCondition = true;
+        }
+      });
+      if (!matchesOtherCondition) {
+        return false;
+      }
     }
 
     // 価格フィルタリング
@@ -566,11 +656,14 @@ class _PresentListState extends State<PresentList> {
     final hasWhoFilter = _filterWho.values.any((selected) => selected);
     final hasReactionFilter =
         _filterReaction.values.any((selected) => selected);
+    final hasOtherConditionFilter =
+        _filterOtherCondition.values.any((selected) => selected);
     final hasPriceFilter =
         _filterPriceMin > 0 || _filterPriceMax < Constants.maxPriceFilter;
     return hasGenreFilter ||
         hasWhoFilter ||
         hasReactionFilter ||
+        hasOtherConditionFilter ||
         hasPriceFilter;
   }
 
@@ -615,6 +708,21 @@ class _PresentListState extends State<PresentList> {
           onRemove: () {
             setState(() {
               _filterReaction[reaction] = false;
+            });
+            _applyFiltersAndSort();
+          },
+        ));
+      }
+    });
+
+// その他条件フィルター
+    _filterOtherCondition.forEach((condition, isSelected) {
+      if (isSelected) {
+        filterChips.add(_buildFilterChip(
+          label: condition,
+          onRemove: () {
+            setState(() {
+              _filterOtherCondition[condition] = false;
             });
             _applyFiltersAndSort();
           },
@@ -954,6 +1062,7 @@ class PresentFilterDialog extends StatefulWidget {
   final Map<String, bool> currentFilterGenre;
   final Map<String, bool> currentFilterWho;
   final Map<String, bool> currentFilterReaction;
+  final Map<String, bool> currentFilterOtherCondition;
   final double currentPriceMin;
   final double currentPriceMax;
 
@@ -963,6 +1072,7 @@ class PresentFilterDialog extends StatefulWidget {
     required this.currentFilterGenre,
     required this.currentFilterWho,
     required this.currentFilterReaction,
+    required this.currentFilterOtherCondition,
     required this.currentPriceMin,
     required this.currentPriceMax,
   });
@@ -975,8 +1085,10 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
   late Map<String, bool> _tempFilterGenre;
   late Map<String, bool> _tempFilterWho;
   late Map<String, bool> _tempFilterReaction;
+  late Map<String, bool> _tempFilterOtherCondition;
   late RangeValues _tempFilterPriceRange;
   Set<String> _selectedGenres = {};
+  Set<String> _selectedOtherConditions = {};
 
   @override
   void initState() {
@@ -984,10 +1096,13 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
     _tempFilterGenre = Map.from(widget.currentFilterGenre);
     _tempFilterWho = Map.from(widget.currentFilterWho);
     _tempFilterReaction = Map.from(widget.currentFilterReaction);
+    _tempFilterOtherCondition = Map.from(widget.currentFilterOtherCondition);
     _tempFilterPriceRange =
         RangeValues(widget.currentPriceMin, widget.currentPriceMax);
     _selectedGenres = Set.from(
         _tempFilterGenre.keys.where((key) => _tempFilterGenre[key] == true));
+    _selectedOtherConditions = Set.from(_tempFilterOtherCondition.keys
+        .where((key) => _tempFilterOtherCondition[key] == true));
   }
 
   @override
@@ -1058,6 +1173,8 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                   children: [
                     _buildGenreSelector(),
                     const SizedBox(height: 16),
+                    _buildOtherConditionSelector(),
+                    const SizedBox(height: 16),
                     _buildPriceFilter(),
                     const SizedBox(height: 16),
                     _buildWhoFilter(),
@@ -1105,6 +1222,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                           'filterGenre': _tempFilterGenre,
                           'filterWho': _tempFilterWho,
                           'filterReaction': _tempFilterReaction,
+                          'filterOtherCondition': _tempFilterOtherCondition,
                           'filterPriceMin': _tempFilterPriceRange.start
                               .clamp(0, Constants.maxPriceFilter),
                           'filterPriceMax': _tempFilterPriceRange.end
@@ -1143,6 +1261,23 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
           _tempFilterGenre.clear();
           for (String genre in newSelection) {
             _tempFilterGenre[genre] = true;
+          }
+        });
+      },
+      multiSelect: true, // 複数選択可能
+    );
+  }
+
+  Widget _buildOtherConditionSelector() {
+    return CommonWidgets.buildOtherConditionSelector(
+      selectedConditions: _selectedOtherConditions,
+      onSelectionChanged: (newSelection) {
+        setState(() {
+          _selectedOtherConditions = newSelection;
+          // フィルター用の Map も更新
+          _tempFilterOtherCondition.clear();
+          for (String condition in newSelection) {
+            _tempFilterOtherCondition[condition] = true;
           }
         });
       },
@@ -1397,6 +1532,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   final _controllers = <String, TextEditingController>{};
   late DateTime _selectedDate;
   Set<String> _selectedGenres = {};
+  Set<String> _selectedOtherConditions = {};
   int _presentReaction = 0;
   List<XFile> _pickedFiles = [];
   List<Uint8List> _webImages = [];
@@ -1429,6 +1565,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     String? initialGenre = widget.initialPresent?['present_genre'];
     if (initialGenre != null && initialGenre.isNotEmpty) {
       _selectedGenres = {initialGenre};
+    }
+    String? initialOtherConditions =
+        widget.initialPresent?['present_other_conditions'];
+    if (initialOtherConditions != null && initialOtherConditions.isNotEmpty) {
+      _selectedOtherConditions = Set.from(initialOtherConditions.split(', '));
     }
     _selectedDate = widget.initialPresent?['present_date'] != null
         ? DateTime.parse(widget.initialPresent!['present_date'])
@@ -1647,6 +1788,18 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     );
   }
 
+  Widget _buildOtherConditionSelector() {
+    return CommonWidgets.buildOtherConditionSelector(
+      selectedConditions: _selectedOtherConditions,
+      onSelectionChanged: (newSelection) {
+        setState(() {
+          _selectedOtherConditions = newSelection;
+        });
+      },
+      multiSelect: true, // 複数選択可能
+    );
+  }
+
   Future<void> _savePresent() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1682,6 +1835,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_who': _controllers['present_who']!.text,
         'present_reaction': _presentReaction,
         'present_genre': _selectedGenres.join(', '),
+        'present_other_conditions': _selectedOtherConditions.join(', '),
         'present_memo': _controllers['present_memo']!.text,
       };
 
@@ -1867,6 +2021,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             const SizedBox(height: 24),
             _buildGenreSelector(),
             const SizedBox(height: 24),
+            _buildOtherConditionSelector(),
+            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -2039,6 +2195,30 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.greyMedium,
+                        foregroundColor: AppColors.blackLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 2,
+                        shadowColor: AppColors.shadowColor,
+                      ),
+                      child: const Text(
+                        'キャンセル',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
                   if (widget.initialPresent != null) ...[
                     const SizedBox(height: 16),
                     SizedBox(
@@ -2179,7 +2359,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
       title: Text(
         widget.searchType == SearchType.name ? 'お菓子名で検索' : 'メーカー名で検索',
         style: const TextStyle(
-          color: AppColors.blackDark,
+          color: AppColors.blackLight,
           fontWeight: FontWeight.w600,
           fontSize: 18,
         ),

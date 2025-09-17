@@ -77,6 +77,10 @@ flutter:
   assets:
     - lib/widgets/lace.png
   fonts:
+    - family: PinyonScript
+      fonts:
+        - asset: assets/fonts/Pinyon_Script/PinyonScript-Regular.ttf
+          weight: 400
     - family: PlayfairDisplay
       fonts:
         - asset: assets/fonts/PlayfairDisplay/PlayfairDisplay-Regular.ttf

@@ -144,7 +144,7 @@ class _MainAppState extends State<MainApp> {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Corinthia',
+              fontFamily: 'PinyonScript',
               fontSize: 20,
               color: _selectedIndex == index
                   ? AppColors.primaryColor

@@ -24,8 +24,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   Map<String, bool> _filterGenre = {};
   double _filterPriceMin = 0;
   double _filterPriceMax = 20000;
-  double _filterRatingMin = 1;
-  double _filterRatingMax = 5;
+  bool _filterIndividualWrapping = false;
+  bool _filterRoomTemperature = false;
+  bool _filterOnline = false;
+  //double _filterRatingMin = 1;
+  //double _filterRatingMax = 5;
 
   // 並び替えオプション（homeと同じ）
   static const List<Map<String, String>> _sortOptions = [
@@ -76,12 +79,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         return false;
       }
 
-/*     // 評価フィルター
-      final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
-      if (rating < _filterRatingMin || rating > _filterRatingMax) {
-        return false;
-      }
-*/
       // ジャンルフィルター
       if (_filterGenre.isNotEmpty) {
         final selectedGenres = _filterGenre.entries
@@ -96,6 +93,27 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
       }
 
+      if (_filterIndividualWrapping) {
+        final value = item['item_individualwrapping'];
+        if (value != "1" && value != 1) return false;
+      }
+
+      if (_filterRoomTemperature) {
+        final value = item['item_roomtemperature'];
+        if (value != "1" && value != 1) return false;
+      }
+
+      if (_filterOnline) {
+        final value = item['item_online'];
+        if (value != "1" && value != 1) return false;
+      }
+
+/*     // 評価フィルター
+      final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
+      if (rating < _filterRatingMin || rating > _filterRatingMax) {
+        return false;
+      }
+*/
       return true;
     }).toList();
 
@@ -126,6 +144,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         currentFilterGenre: _filterGenre,
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
+        currentIndividualWrapping: _filterIndividualWrapping,
+        currentRoomTemperature: _filterRoomTemperature,
+        currentOnline: _filterOnline,
 /*        currentFilterRatingMin: _filterRatingMin,
         currentFilterRatingMax: _filterRatingMax, */
         isAllTab: true, // お気に入りではジャンルフィルターを表示
@@ -136,6 +157,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         _filterGenre = result['filterGenre'];
         _filterPriceMin = result['filterPriceMin'];
         _filterPriceMax = result['filterPriceMax'];
+        _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
+        _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
+        _filterOnline = result['filterOnline'] ?? false;
 /*        _filterRatingMin = result['filterRatingMin'];
         _filterRatingMax = result['filterRatingMax'];*/
       });
@@ -147,8 +171,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _hasActiveFilters() {
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
+    final hasOtherFilter =
+        _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
-    return hasGenreFilter || hasPriceFilter /*|| hasRatingFilter*/;
+    return hasGenreFilter ||
+        hasPriceFilter ||
+        hasOtherFilter /*|| hasRatingFilter*/;
   }
 
   // homeからアクティブフィルターチップを借用
@@ -190,6 +218,42 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           setState(() {
             _filterPriceMin = 0;
             _filterPriceMax = 20000;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterIndividualWrapping) {
+      filterChips.add(_buildFilterChip(
+        label: '個包装',
+        onRemove: () {
+          setState(() {
+            _filterIndividualWrapping = false;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterRoomTemperature) {
+      filterChips.add(_buildFilterChip(
+        label: '常温',
+        onRemove: () {
+          setState(() {
+            _filterRoomTemperature = false;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterOnline) {
+      filterChips.add(_buildFilterChip(
+        label: 'オンライン購入',
+        onRemove: () {
+          setState(() {
+            _filterOnline = false;
           });
           _applyFiltersAndSort();
         },

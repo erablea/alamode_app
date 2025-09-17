@@ -69,14 +69,13 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _loadGenresFromFirestore() async {
     try {
       final snapshot =
-          await FirebaseFirestore.instance.collection('item').get();
+          await FirebaseFirestore.instance.collection('brand').get();
       Set<String> genres = {};
 
       for (var doc in snapshot.docs) {
         final item = doc.data();
-        final genreString = item['item_genre'] as String?;
+        final genreString = item['brand_genre'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
-          // カンマで分割してそれぞれのジャンルを追加
           final genreList =
               genreString.split(',').map((e) => e.trim()).toList();
           genres.addAll(genreList);
@@ -361,6 +360,9 @@ class _ItemListState extends State<ItemList>
   static Map<String, bool> _globalFilterGenre = {};
   static double _globalFilterPriceMin = 0;
   static double _globalFilterPriceMax = 20000;
+  static bool _globalFilterIndividualWrapping = false;
+  static bool _globalFilterRoomTemperature = false;
+  static bool _globalFilterOnline = false;
 /*  static double _globalFilterRatingMin = 1;
   static double _globalFilterRatingMax = 5;
 */
@@ -377,6 +379,17 @@ class _ItemListState extends State<ItemList>
   double get _filterPriceMax => _globalFilterPriceMax;
   set _filterPriceMax(double value) => _globalFilterPriceMax = value;
 
+  bool get _filterIndividualWrapping => _globalFilterIndividualWrapping;
+  set _filterIndividualWrapping(bool value) =>
+      _globalFilterIndividualWrapping = value;
+
+  bool get _filterRoomTemperature => _globalFilterRoomTemperature;
+  set _filterRoomTemperature(bool value) =>
+      _globalFilterRoomTemperature = value;
+
+  bool get _filterOnline => _globalFilterOnline;
+  set _filterOnline(bool value) => _globalFilterOnline = value;
+
 /*  double get _filterRatingMin => _globalFilterRatingMin;
   set _filterRatingMin(double value) => _globalFilterRatingMin = value;
 
@@ -389,7 +402,7 @@ class _ItemListState extends State<ItemList>
 /*    {'value': 'item_rating', 'label': '評価が高い順'},*/
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
-    {'value': 'item_brand', 'label': 'ブランド名順'},
+    {'value': 'brand_name', 'label': 'ブランド名順'},
   ];
 
 // ソートフィールドを取得
@@ -401,7 +414,7 @@ class _ItemListState extends State<ItemList>
 /*      case 'item_rating': */
       case 'item_price_high':
         return true; // 降順
-      case 'item_brand':
+      case 'brand_name':
       case 'item_price_low':
         return false; // 昇順
       default:
@@ -452,57 +465,92 @@ class _ItemListState extends State<ItemList>
   }
 
   Widget _buildItemList(List<DocumentSnapshot> docs) {
-    List<DocumentSnapshot> filteredDocs = _applyClientSideFilters(docs);
+    return FutureBuilder<List<DocumentSnapshot>>(
+      future: _applyClientSideFilters(docs),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (filteredDocs.isEmpty) {
-      return const Center(child: Text('条件に合う商品が見つかりません'));
-    }
+        if (snapshot.hasError) {
+          return const Center(child: Text('エラーが発生しました'));
+        }
 
-    return ListView.builder(
-      itemCount: AdUtils.calculateListItemCount(filteredDocs.length),
-      itemBuilder: (context, index) {
-        if (AdUtils.shouldShowAdAt(index)) {
-          return AdUtils.buildAdBanner();
+        final filteredDocs = snapshot.data ?? [];
+
+        if (filteredDocs.isEmpty) {
+          return const Center(child: Text('条件に合う商品が見つかりません'));
         }
-        final itemIndex = AdUtils.getActualItemIndex(index);
-        if (itemIndex >= filteredDocs.length) {
-          return const SizedBox.shrink();
-        }
-        final document = filteredDocs[itemIndex];
-        final item = document.data() as Map<String, dynamic>?;
-        if (item == null) {
-          return const SizedBox.shrink();
-        }
-        return ItemCard(
-          item: item,
-          itemId: document.id,
-          index: itemIndex,
-          onFavoriteChanged: () {},
-          onTap: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ItemDetailScreen(itemId: document.id),
-              ),
+
+        return ListView.builder(
+          itemCount: AdUtils.calculateListItemCount(filteredDocs.length),
+          itemBuilder: (context, index) {
+            if (AdUtils.shouldShowAdAt(index)) {
+              return AdUtils.buildAdBanner();
+            }
+            final itemIndex = AdUtils.getActualItemIndex(index);
+            if (itemIndex >= filteredDocs.length) {
+              return const SizedBox.shrink();
+            }
+            final document = filteredDocs[itemIndex];
+            final item = document.data() as Map<String, dynamic>?;
+            if (item == null) {
+              return const SizedBox.shrink();
+            }
+            return ItemCard(
+              item: item,
+              itemId: document.id,
+              index: itemIndex,
+              onFavoriteChanged: () {},
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ItemDetailScreen(itemId: document.id),
+                  ),
+                );
+                if (result == true) setState(() {});
+              },
             );
-            if (result == true) setState(() {});
           },
         );
       },
     );
   }
 
-  List<DocumentSnapshot> _applyClientSideFilters(List<DocumentSnapshot> docs) {
-    return docs.where((doc) {
+  Future<List<DocumentSnapshot>> _applyClientSideFilters(
+      List<DocumentSnapshot> docs) async {
+    List<DocumentSnapshot> filteredDocs = [];
+
+    for (var doc in docs) {
       final item = doc.data() as Map<String, dynamic>?;
-      if (item == null) return false;
+      if (item == null) continue;
 
 // ジャンルフィルタリング（特定のジャンルタブの場合）
       if (widget.genre != 'all') {
-        final genreString = item['item_genre'] as String? ?? '';
-        final genreList = genreString.split(',').map((e) => e.trim()).toList();
-        if (!genreList.contains(widget.genre)) {
-          return false;
+        final brandId = item['item_brandid'] as String?;
+        if (brandId != null) {
+          try {
+            final brandDoc = await FirebaseFirestore.instance
+                .collection('brand')
+                .doc(brandId)
+                .get();
+            if (brandDoc.exists) {
+              final brandData = brandDoc.data() as Map<String, dynamic>?;
+              final genreString = brandData?['brand_genre'] as String? ?? '';
+              final genreList =
+                  genreString.split(',').map((e) => e.trim()).toList();
+              if (!genreList.contains(widget.genre)) {
+                continue;
+              }
+            } else {
+              continue;
+            }
+          } catch (e) {
+            continue;
+          }
+        } else {
+          continue;
         }
       }
 
@@ -513,25 +561,64 @@ class _ItemListState extends State<ItemList>
             .map((entry) => entry.key)
             .toList();
         if (selectedGenres.isNotEmpty) {
-          final genreString = item['item_genre'] as String? ?? '';
-          final genreList =
-              genreString.split(',').map((e) => e.trim()).toList();
-          bool hasMatchingGenre = false;
-          for (String selectedGenre in selectedGenres) {
-            if (genreList.contains(selectedGenre)) {
-              hasMatchingGenre = true;
-              break;
+          final brandId = item['item_brandid'] as String?;
+          if (brandId != null) {
+            try {
+              final brandDoc = await FirebaseFirestore.instance
+                  .collection('brand')
+                  .doc(brandId)
+                  .get();
+              if (brandDoc.exists) {
+                final brandData = brandDoc.data() as Map<String, dynamic>?;
+                final genreString = brandData?['brand_genre'] as String? ?? '';
+                final genreList =
+                    genreString.split(',').map((e) => e.trim()).toList();
+                bool hasMatchingGenre = false;
+                for (String selectedGenre in selectedGenres) {
+                  if (genreList.contains(selectedGenre)) {
+                    hasMatchingGenre = true;
+                    break;
+                  }
+                }
+                if (!hasMatchingGenre) continue;
+              } else {
+                continue;
+              }
+            } catch (e) {
+              continue;
             }
+          } else {
+            continue;
           }
-          if (!hasMatchingGenre) return false;
         }
       }
 
       // 価格フィルター
       final price = (item['item_price'] as num?)?.toDouble() ?? 0;
       if (price < _filterPriceMin || price > _filterPriceMax) {
-        return false;
+        continue;
       }
+
+      if (_filterIndividualWrapping) {
+        final value = item['item_individualwrapping'];
+        if (value != "1" && value != 1) continue;
+      }
+
+      if (_filterRoomTemperature) {
+        final value = item['item_roomtemperature'];
+        if (value != "1" && value != 1) continue;
+      }
+
+      if (_filterOnline) {
+        final value = item['item_online'];
+        if (value != "1" && value != 1) continue;
+      }
+
+      filteredDocs.add(doc);
+    }
+
+    return filteredDocs;
+  }
 
 /*      // 評価フィルター
       final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
@@ -539,9 +626,6 @@ class _ItemListState extends State<ItemList>
         return false;
       }
 */
-      return true;
-    }).toList();
-  }
 
   Widget _buildFilterAndSortRow() {
     return Container(
@@ -618,7 +702,10 @@ class _ItemListState extends State<ItemList>
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
 /*    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5; */
-    return hasGenreFilter || hasPriceFilter /*|| hasRatingFilter */;
+    final hasOtherFilter =
+        _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
+    return hasGenreFilter || hasPriceFilter || hasOtherFilter;
+    /*|| hasRatingFilter; */
   }
 
   Widget _buildActiveFilters() {
@@ -660,6 +747,39 @@ class _ItemListState extends State<ItemList>
           setState(() {
             _filterPriceMin = 0;
             _filterPriceMax = 20000;
+          });
+        },
+      ));
+    }
+
+    if (_filterIndividualWrapping) {
+      filterChips.add(_buildFilterChip(
+        label: '個包装',
+        onRemove: () {
+          setState(() {
+            _filterIndividualWrapping = false;
+          });
+        },
+      ));
+    }
+
+    if (_filterRoomTemperature) {
+      filterChips.add(_buildFilterChip(
+        label: '常温',
+        onRemove: () {
+          setState(() {
+            _filterRoomTemperature = false;
+          });
+        },
+      ));
+    }
+
+    if (_filterOnline) {
+      filterChips.add(_buildFilterChip(
+        label: 'オンライン購入',
+        onRemove: () {
+          setState(() {
+            _filterOnline = false;
           });
         },
       ));
@@ -759,6 +879,9 @@ class _ItemListState extends State<ItemList>
         currentFilterGenre: _filterGenre, // 常に現在のフィルター状態を渡す
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
+        currentIndividualWrapping: _filterIndividualWrapping,
+        currentRoomTemperature: _filterRoomTemperature,
+        currentOnline: _filterOnline,
 /*        currentFilterRatingMin: _filterRatingMin,
         currentFilterRatingMax: _filterRatingMax, */
         isAllTab: widget.genre == 'all', // allタブかどうかを新しいパラメータで渡す
@@ -771,6 +894,9 @@ class _ItemListState extends State<ItemList>
         }
         _filterPriceMin = result['filterPriceMin'];
         _filterPriceMax = result['filterPriceMax'];
+        _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
+        _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
+        _filterOnline = result['filterOnline'] ?? false;
 /*        _filterRatingMin = result['filterRatingMin'];
         _filterRatingMax = result['filterRatingMax']; */
         _cachedDocs = null;
@@ -846,8 +972,8 @@ class ItemCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildItemHeader(),
-            _buildItemImages(),
-            _buildItemFooter(currencyFormat),
+            _buildItemImages(item),
+            _buildItemFooter(currencyFormat, item),
           ],
         ),
       ),
@@ -855,6 +981,8 @@ class ItemCard extends StatelessWidget {
   }
 
   Widget _buildItemHeader() {
+    final brandId = item['item_brandid'] as String?;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Stack(
@@ -876,26 +1004,62 @@ class ItemCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.storefront, size: 16),
                   const SizedBox(width: 4),
-                  Text(
-                    item['item_brand'] as String? ?? '',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(width: 25),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.greyDark, width: 1),
-                      borderRadius: BorderRadius.circular(16),
+                  if (brandId != null)
+                    Expanded(
+                      child: StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('brand')
+                            .doc(brandId)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data!.exists) {
+                            final brandData =
+                                snapshot.data!.data() as Map<String, dynamic>;
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    brandData['brand_name'] as String? ?? '',
+                                    style: const TextStyle(fontSize: 14),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                const SizedBox(width: 25),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: AppColors.greyDark, width: 1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    brandData['brand_genre'] as String? ?? '',
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.blackLight),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return Text(
+                            item['brand_name'] as String? ?? '',
+                            style: const TextStyle(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    Text(
+                      item['brand_name'] as String? ?? '',
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    child: Text(
-                      item['item_genre'] as String? ?? '',
-                      style: const TextStyle(
-                          fontSize: 10, color: AppColors.blackLight),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -917,7 +1081,7 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildItemImages() {
+  Widget _buildItemImages(Map<String, dynamic> item) {
     final imageUrls = _getImageUrls(item);
 
     return Row(
@@ -952,7 +1116,8 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildItemFooter(NumberFormat currencyFormat) {
+  Widget _buildItemFooter(
+      NumberFormat currencyFormat, Map<String, dynamic> item) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
@@ -993,6 +1158,9 @@ class HomeFilterDialog extends StatefulWidget {
   final Map<String, bool> currentFilterGenre;
   final double currentPriceMin;
   final double currentPriceMax;
+  final bool currentIndividualWrapping;
+  final bool currentRoomTemperature;
+  final bool currentOnline;
 /*  final double currentFilterRatingMin;
   final double currentFilterRatingMax; */
   final bool isAllTab;
@@ -1003,6 +1171,9 @@ class HomeFilterDialog extends StatefulWidget {
     required this.currentFilterGenre,
     required this.currentPriceMin,
     required this.currentPriceMax,
+    required this.currentIndividualWrapping,
+    required this.currentRoomTemperature,
+    required this.currentOnline,
 /*    required this.currentFilterRatingMin,
     required this.currentFilterRatingMax, */
     required this.isAllTab,
@@ -1015,6 +1186,9 @@ class HomeFilterDialog extends StatefulWidget {
 class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late Map<String, bool> _tempFilterGenre;
   late RangeValues _tempFilterPriceRange;
+  late bool _tempIndividualWrapping;
+  late bool _tempRoomTemperature;
+  late bool _tempOnline;
 /*  late RangeValues _tempFilterRatingRange; */
 
   @override
@@ -1023,6 +1197,9 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempFilterGenre = Map.from(widget.currentFilterGenre);
     _tempFilterPriceRange =
         RangeValues(widget.currentPriceMin, widget.currentPriceMax);
+    _tempIndividualWrapping = widget.currentIndividualWrapping;
+    _tempRoomTemperature = widget.currentRoomTemperature;
+    _tempOnline = widget.currentOnline;
 /*    _tempFilterRatingRange = RangeValues(
         widget.currentFilterRatingMin, widget.currentFilterRatingMax); */
   }
@@ -1099,6 +1276,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                       const SizedBox(height: 24),
                     ],
                     _buildPriceFilter(),
+                    const SizedBox(height: 24),
+                    _buildOtherConditionsFilter(),
 /*                    const SizedBox(height: 24),
                     _buildRatingFilter(), */
                   ],
@@ -1145,6 +1324,9 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                               _tempFilterPriceRange.start.clamp(0, 20000),
                           'filterPriceMax':
                               _tempFilterPriceRange.end.clamp(0, 20000),
+                          'filterIndividualWrapping': _tempIndividualWrapping,
+                          'filterRoomTemperature': _tempRoomTemperature,
+                          'filterOnline': _tempOnline,
 /*                          'filterRatingMin': _tempFilterRatingRange.start,
                           'filterRatingMax': _tempFilterRatingRange.end, */
                         });
@@ -1242,14 +1424,13 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   Future<List<String>> _getAvailableGenres() async {
     try {
       final snapshot =
-          await FirebaseFirestore.instance.collection('item').get();
+          await FirebaseFirestore.instance.collection('brand').get();
       Set<String> genres = {};
 
       for (var doc in snapshot.docs) {
         final item = doc.data();
-        final genreString = item['item_genre'] as String?;
+        final genreString = item['brand_genre'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
-          // カンマで分割してそれぞれのジャンルを追加
           final genreList =
               genreString.split(',').map((e) => e.trim()).toList();
           genres.addAll(genreList);
@@ -1359,6 +1540,76 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildOtherConditionsFilter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'その他条件',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: [
+            _buildConditionChip(
+              '個包装',
+              _tempIndividualWrapping,
+              (isSelected) =>
+                  setState(() => _tempIndividualWrapping = !isSelected),
+            ),
+            _buildConditionChip(
+              '常温',
+              _tempRoomTemperature,
+              (isSelected) =>
+                  setState(() => _tempRoomTemperature = !isSelected),
+            ),
+            _buildConditionChip(
+              'オンライン購入',
+              _tempOnline,
+              (isSelected) => setState(() => _tempOnline = !isSelected),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConditionChip(
+      String label, bool isSelected, Function(bool) onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => onTap(isSelected),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : AppColors.greyLight,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryColor : AppColors.greyLight,
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1958,26 +2209,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(
-                  Icons.storefront,
-                  size: 18,
-                  color: AppColors.blackLight,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  item['item_brand'] as String? ?? '',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: AppColors.blackLight,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildGenreSection(item),
+            _buildBrandSection(item),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
@@ -2067,39 +2299,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             const SizedBox(height: 20),
             _buildProductDetails(item),
             _buildExternalLinkButton(item),
+            _buildSameBrandProducts(item),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildGenreSection(Map<String, dynamic> item) {
-    final genreString = item['item_genre'] as String? ?? '';
-    if (genreString.isEmpty) return const SizedBox.shrink();
-
-    final genres = genreString.split(',').map((e) => e.trim()).toList();
-
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: genres.map((genre) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.greyLight,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.greyMedium),
-          ),
-          child: Text(
-            genre,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.blackLight,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 
@@ -2139,8 +2342,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
       );
     }
-    if (item['item_description'] != null &&
-        (item['item_description'] as String).isNotEmpty) {
+    if (item['brand_description'] != null &&
+        (item['brand_description'] as String).isNotEmpty) {
       if (details.isNotEmpty) {
         details.add(const SizedBox(height: 16));
       }
@@ -2158,7 +2361,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              item['item_description'] as String? ?? '',
+              item['brand_description'] as String? ?? '',
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.blackDark,
@@ -2352,6 +2555,265 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         );
       }
     }
+  }
+
+  Widget _buildBrandSection(Map<String, dynamic> item) {
+    final brandId = item['item_brandid'] as String?;
+
+    if (brandId == null) {
+      return Row(
+        children: [
+          const Icon(
+            Icons.storefront,
+            size: 18,
+            color: AppColors.blackLight,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            item['brand_name'] as String? ?? '',
+            style: const TextStyle(
+              fontSize: 16,
+              color: AppColors.blackLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('brand')
+          .doc(brandId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final brandData = snapshot.data!.data() as Map<String, dynamic>;
+          final genreString = brandData['brand_genre'] as String? ?? '';
+          final genres = genreString.split(',').map((e) => e.trim()).toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.storefront,
+                    size: 18,
+                    color: AppColors.blackLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    brandData['brand_name'] as String? ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.blackLight,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (genres.isNotEmpty && genres.first.isNotEmpty)
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: genres.map((genre) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.greyLight,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.greyMedium),
+                      ),
+                      child: Text(
+                        genre,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.blackLight,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            const Icon(
+              Icons.storefront,
+              size: 18,
+              color: AppColors.blackLight,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              item['brand_name'] as String? ?? '',
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.blackLight,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSameBrandProducts(Map<String, dynamic> item) {
+    final brandId = item['item_brandid'] as String?;
+
+    if (brandId == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        const Text(
+          '同じブランドの商品',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.blackDark,
+          ),
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('item')
+              .where('item_brandid', isEqualTo: brandId)
+              .limit(10)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final sameBrandItems = snapshot.data!.docs
+                .where((doc) => doc.id != widget.itemId)
+                .toList();
+
+            if (sameBrandItems.isEmpty) {
+              return const Text(
+                'ありません',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.blackLight,
+                ),
+              );
+            }
+
+            return SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: sameBrandItems.length,
+                itemBuilder: (context, index) {
+                  final doc = sameBrandItems[index];
+                  final itemData = doc.data() as Map<String, dynamic>;
+                  final imageUrl = itemData['item_imageurl1'] as String? ?? '';
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ItemDetailScreen(itemId: doc.id),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 80,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.greyMedium),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.greyMedium.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(8),
+                                topRight: Radius.circular(8),
+                              ),
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                placeholder: (context, url) => Container(
+                                  color: AppColors.greyLight,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: AppColors.greyLight,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.error_outline,
+                                      size: 20,
+                                      color: AppColors.errorColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  itemData['item_name'] as String? ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.blackDark,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '¥${NumberFormat('#,###').format(itemData['item_price'] as num? ?? 0)}',
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppColors.blackLight,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }
 

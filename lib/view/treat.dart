@@ -16,37 +16,6 @@ class _TreatScreenState extends State<TreatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMemoList();
-    _checkSavedData(); // データの読み込み後に保存されたデータを確認
-  }
-
-  // メモ一覧を読み込む関数
-  void _loadMemoList() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String memoListString = prefs.getString('memoList') ?? '[]';
-    setState(() {
-      _memoList =
-          (json.decode(memoListString) as List).cast<Map<String, dynamic>>();
-    });
-  }
-
-  // 新しいメモを保存する関数
-  void _saveMemo(Map<String, dynamic> memo) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String memoListString = prefs.getString('memoList') ?? '[]';
-    List<dynamic> updatedMemoList = json.decode(memoListString);
-    updatedMemoList.insert(0, memo);
-    await prefs.setString('memoList', jsonEncode(updatedMemoList));
-
-    // データの保存後に前の画面に戻る
-    Navigator.pop(context);
-  }
-
-  void _checkSavedData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String memoListString = prefs.getString('memoList') ?? '[]';
-    List<dynamic> decodedList = json.decode(memoListString);
-    print(decodedList); // 保存されたデータをコンソールに出力
   }
 
   // メインビルドメソッド
