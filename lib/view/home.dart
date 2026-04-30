@@ -1,33 +1,11 @@
+import 'dart:async' as async;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:alamode_app/main.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
-String _convertFirebaseStorageUrl(String originalUrl) {
-  if (kIsWeb && originalUrl.contains('firebasestorage.googleapis.com')) {
-    try {
-      final uri = Uri.parse(originalUrl);
-      final pathSegments = uri.pathSegments;
-
-      if (pathSegments.length >= 4 &&
-          pathSegments[0] == 'v0' &&
-          pathSegments[1] == 'b') {
-        final bucket = pathSegments[2];
-        final encodedPath = pathSegments[4];
-        final decodedPath = Uri.decodeComponent(encodedPath);
-
-        return 'https://storage.googleapis.com/$bucket/$decodedPath';
-      }
-    } catch (e) {
-      print('URL conversion error: $e');
-    }
-  }
-  return originalUrl;
-}
 
 Widget buildStarRating(BuildContext context, num rating) {
   return Row(
@@ -63,17 +41,15 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _loadGenresFromFirestore();
+    _loadGenresFromSupabase();
   }
 
-  Future<void> _loadGenresFromFirestore() async {
+  Future<void> _loadGenresFromSupabase() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('brand').get();
+      final data = await supabase.from('brand').select();
       Set<String> genres = {};
 
-      for (var doc in snapshot.docs) {
-        final item = doc.data();
+      for (var item in data) {
         final genreString = item['brand_genre'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
           final genreList =
@@ -354,7 +330,7 @@ class ItemList extends StatefulWidget {
 
 class _ItemListState extends State<ItemList>
     with AutomaticKeepAliveClientMixin {
-  List<DocumentSnapshot>? _cachedDocs;
+  List<Map<String, dynamic>>? _cachedDocs;
   final currencyFormat = NumberFormat('#,###');
   String _sortBy = 'item_rating';
   static Map<String, bool> _globalFilterGenre = {};
@@ -432,8 +408,8 @@ class _ItemListState extends State<ItemList>
           child: RefreshIndicator(
             onRefresh: _handleRefresh,
             child: _cachedDocs == null
-                ? StreamBuilder<QuerySnapshot>(
-                    stream: _getFilteredQuery().snapshots(),
+                ? FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _getFilteredQuery(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -441,11 +417,11 @@ class _ItemListState extends State<ItemList>
                       if (snapshot.hasError) {
                         return const Center(child: Text('エラーが発生しました'));
                       }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(child: Text('coming soon'));
                       }
 
-                      _cachedDocs = snapshot.data!.docs;
+                      _cachedDocs = snapshot.data!;
                       return _buildItemList(_cachedDocs!);
                     },
                   )
@@ -456,16 +432,16 @@ class _ItemListState extends State<ItemList>
     );
   }
 
-  Future<void> _handleRefresh() async {
+  async.Future<void> _handleRefresh() async {
     setState(() {
       _cachedDocs = null; // キャッシュをクリア
     });
 
-    await Future.delayed(const Duration(milliseconds: 500)); // ローディング表示
+    await async.Future.delayed(const Duration(milliseconds: 500)); // ローディング表示
   }
 
-  Widget _buildItemList(List<DocumentSnapshot> docs) {
-    return FutureBuilder<List<DocumentSnapshot>>(
+  Widget _buildItemList(List<Map<String, dynamic>> docs) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
       future: _applyClientSideFilters(docs),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -492,21 +468,17 @@ class _ItemListState extends State<ItemList>
             if (itemIndex >= filteredDocs.length) {
               return const SizedBox.shrink();
             }
-            final document = filteredDocs[itemIndex];
-            final item = document.data() as Map<String, dynamic>?;
-            if (item == null) {
-              return const SizedBox.shrink();
-            }
+            final item = filteredDocs[itemIndex];
             return ItemCard(
               item: item,
-              itemId: document.id,
+              itemId: item['id'] ?? '',
               index: itemIndex,
               onFavoriteChanged: () {},
               onTap: () async {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ItemDetailScreen(itemId: document.id),
+                    builder: (context) => ItemDetailScreen(itemId: item['id']),
                   ),
                 );
                 if (result == true) setState(() {});
@@ -518,32 +490,24 @@ class _ItemListState extends State<ItemList>
     );
   }
 
-  Future<List<DocumentSnapshot>> _applyClientSideFilters(
-      List<DocumentSnapshot> docs) async {
-    List<DocumentSnapshot> filteredDocs = [];
-
-    for (var doc in docs) {
-      final item = doc.data() as Map<String, dynamic>?;
-      if (item == null) continue;
-
+  async.Future<List<Map<String, dynamic>>> _applyClientSideFilters(
+      List<Map<String, dynamic>> docs) async {
+    List<Map<String, dynamic>> filteredDocs = [];
+    for (var item in docs) {
 // ジャンルフィルタリング（特定のジャンルタブの場合）
       if (widget.genre != 'all') {
         final brandId = item['item_brandid'] as String?;
         if (brandId != null) {
           try {
-            final brandDoc = await FirebaseFirestore.instance
-                .collection('brand')
-                .doc(brandId)
-                .get();
-            if (brandDoc.exists) {
-              final brandData = brandDoc.data() as Map<String, dynamic>?;
-              final genreString = brandData?['brand_genre'] as String? ?? '';
-              final genreList =
-                  genreString.split(',').map((e) => e.trim()).toList();
-              if (!genreList.contains(widget.genre)) {
-                continue;
-              }
-            } else {
+            final brandData = await supabase
+                .from('brand')
+                .select()
+                .eq('id', brandId)
+                .single();
+            final genreString = brandData['brand_genre'] as String? ?? '';
+            final genreList =
+                genreString.split(',').map((e) => e.trim()).toList();
+            if (!genreList.contains(widget.genre)) {
               continue;
             }
           } catch (e) {
@@ -564,25 +528,20 @@ class _ItemListState extends State<ItemList>
           final brandId = item['item_brandid'] as String?;
           if (brandId != null) {
             try {
-              final brandDoc = await FirebaseFirestore.instance
-                  .collection('brand')
-                  .doc(brandId)
-                  .get();
-              if (brandDoc.exists) {
-                final brandData = brandDoc.data() as Map<String, dynamic>?;
-                final genreString = brandData?['brand_genre'] as String? ?? '';
-                final genreList =
-                    genreString.split(',').map((e) => e.trim()).toList();
-                bool hasMatchingGenre = false;
-                for (String selectedGenre in selectedGenres) {
-                  if (genreList.contains(selectedGenre)) {
-                    hasMatchingGenre = true;
-                    break;
-                  }
+              final brandData = await supabase
+                  .from('brand')
+                  .select()
+                  .eq('id', brandId)
+                  .single();
+              final genreString = brandData['brand_genre'] as String? ?? '';
+              final genreList =
+                  genreString.split(',').map((e) => e.trim()).toList();
+              bool hasMatchingGenre = false;
+              for (String selectedGenre in selectedGenres) {
+                if (genreList.contains(selectedGenre)) {
+                  hasMatchingGenre = true;
+                  break;
                 }
-                if (!hasMatchingGenre) continue;
-              } else {
-                continue;
               }
             } catch (e) {
               continue;
@@ -614,7 +573,7 @@ class _ItemListState extends State<ItemList>
         if (value != "1" && value != 1) continue;
       }
 
-      filteredDocs.add(doc);
+      filteredDocs.add(item);
     }
 
     return filteredDocs;
@@ -862,20 +821,22 @@ class _ItemListState extends State<ItemList>
     );
   }
 
-  Query _getFilteredQuery() {
-    Query baseQuery = FirebaseFirestore.instance.collection('item');
-    return baseQuery.orderBy(_sortField, descending: _sortDescending);
+  async.Future<List<Map<String, dynamic>>> _getFilteredQuery() async {
+    final data = await supabase
+        .from('item')
+        .select()
+        .order(_sortField, ascending: !_sortDescending);
+    return data;
   }
 
-  Future<void> _openFilterDialog() async {
-    // Firestoreからアイテムデータを取得してフィルタダイアログに渡す
-    final snapshot = await FirebaseFirestore.instance.collection('item').get();
-    final itemList = snapshot.docs.map((doc) => doc.data()).toList();
+  async.Future<void> _openFilterDialog() async {
+    // Supabaseからデータ取得
+    final data = await supabase.from('item').select();
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => HomeFilterDialog(
-        itemList: itemList,
+        itemList: data,
         currentFilterGenre: _filterGenre, // 常に現在のフィルター状態を渡す
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
@@ -1006,15 +967,13 @@ class ItemCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   if (brandId != null)
                     Expanded(
-                      child: StreamBuilder<DocumentSnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('brand')
-                            .doc(brandId)
-                            .snapshots(),
+                      child: StreamBuilder<List<Map<String, dynamic>>>(
+                        stream: supabase
+                            .from('brand')
+                            .stream(primaryKey: ['id']).eq('id', brandId),
                         builder: (context, snapshot) {
-                          if (snapshot.hasData && snapshot.data!.exists) {
-                            final brandData =
-                                snapshot.data!.data() as Map<String, dynamic>;
+                          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                            final brandData = snapshot.data!.first;
                             return Row(
                               children: [
                                 Expanded(
@@ -1423,12 +1382,10 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
 
   Future<List<String>> _getAvailableGenres() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('brand').get();
+      final data = await supabase.from('brand').select();
       Set<String> genres = {};
 
-      for (var doc in snapshot.docs) {
-        final item = doc.data();
+      for (var item in data) {
         final genreString = item['brand_genre'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
           final genreList =
@@ -1757,80 +1714,65 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        Navigator.of(context).pop(true);
+      onPopInvoked: (bool didPop) {
+        if (!didPop) {
+          Navigator.of(context).pop(true);
+        }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.greyLight,
-        appBar: AppBar(
-          elevation: 0,
-          shadowColor: AppColors.shadowColor,
-          surfaceTintColor: Colors.transparent,
-          titleSpacing: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.primaryColor),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-          title: StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('item')
-                .doc(widget.itemId)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Text('');
-              final item = snapshot.data!.data() as Map<String, dynamic>?;
-              return Text(
-                item?['item_name'] as String? ?? '',
+      child: FutureBuilder<Map<String, dynamic>>(
+        future: supabase.from('item').select().eq('id', widget.itemId).single(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              backgroundColor: AppColors.greyLight,
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Scaffold(
+              backgroundColor: AppColors.greyLight,
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ),
+              body: const Center(child: Text('商品が見つかりません')),
+            );
+          }
+
+          final item = snapshot.data!;
+
+          return Scaffold(
+            backgroundColor: AppColors.greyLight,
+            appBar: AppBar(
+              elevation: 0,
+              shadowColor: AppColors.shadowColor,
+              surfaceTintColor: Colors.transparent,
+              titleSpacing: 0,
+              leading: IconButton(
+                icon:
+                    const Icon(Icons.arrow_back, color: AppColors.primaryColor),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+              title: Text(
+                item['item_name'] as String? ?? '',
                 style: const TextStyle(
                   color: AppColors.primaryColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
                 overflow: TextOverflow.ellipsis,
-              );
-            },
-          ),
-        ),
-        body: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('item')
-              .doc(widget.itemId)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryColor,
-                ),
-              );
-            }
-            if (snapshot.hasError) {
-              return const Center(
-                child: Text(
-                  'エラーが発生しました',
-                  style: TextStyle(color: AppColors.errorColor),
-                ),
-              );
-            }
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Center(
-                child: Text(
-                  '商品が見つかりません',
-                  style: TextStyle(color: AppColors.blackLight),
-                ),
-              );
-            }
-            final item = snapshot.data!.data() as Map<String, dynamic>?;
-            if (item == null) {
-              return const Center(
-                child: Text(
-                  '商品データが見つかりません',
-                  style: TextStyle(color: AppColors.blackLight),
-                ),
-              );
-            }
-            return SingleChildScrollView(
+              ),
+            ),
+            body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1838,9 +1780,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   _buildContentSection(item),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -2581,14 +2523,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     }
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('brand')
-          .doc(brandId)
-          .snapshots(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream:
+          supabase.from('brand').stream(primaryKey: ['id']).eq('id', brandId),
       builder: (context, snapshot) {
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final brandData = snapshot.data!.data() as Map<String, dynamic>;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          final brandData = snapshot.data!.first;
           final genreString = brandData['brand_genre'] as String? ?? '';
           final genres = genreString.split(',').map((e) => e.trim()).toList();
 
@@ -2681,19 +2621,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('item')
-              .where('item_brandid', isEqualTo: brandId)
-              .limit(10)
-              .snapshots(),
+        StreamBuilder<List<Map<String, dynamic>>>(
+          stream: supabase
+              .from('item')
+              .stream(primaryKey: ['id'])
+              .eq('item_brandid', brandId)
+              .limit(10),
           builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const SizedBox.shrink();
             }
 
-            final sameBrandItems = snapshot.data!.docs
-                .where((doc) => doc.id != widget.itemId)
+            final sameBrandItems = snapshot.data!
+                .where((doc) => doc['id'] != widget.itemId)
                 .toList();
 
             if (sameBrandItems.isEmpty) {
@@ -2713,7 +2653,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 itemCount: sameBrandItems.length,
                 itemBuilder: (context, index) {
                   final doc = sameBrandItems[index];
-                  final itemData = doc.data() as Map<String, dynamic>;
+                  final itemData = doc;
                   final imageUrl = itemData['item_imageurl1'] as String? ?? '';
 
                   return GestureDetector(
@@ -2722,7 +2662,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ItemDetailScreen(itemId: doc.id),
+                              ItemDetailScreen(itemId: itemData['id']),
                         ),
                       );
                     },

@@ -1,6 +1,5 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/main.dart';
@@ -51,15 +50,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     for (String itemId in favoriteIds) {
       try {
-        final doc = await FirebaseFirestore.instance
-            .collection('item')
-            .doc(itemId)
-            .get();
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          data['id'] = doc.id;
-          items.add(data);
-        }
+        final data =
+            await supabase.from('item').select().eq('id', itemId).single();
+        items.add(data);
       } catch (e) {
         // エラーハンドリング
       }

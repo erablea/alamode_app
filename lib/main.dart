@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
 import 'package:alamode_app/view/present.dart';
-import 'package:alamode_app/view/treat.dart';
 import 'package:alamode_app/view/user.dart';
 import 'package:alamode_app/widgets/header.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
@@ -28,11 +26,15 @@ class AppColors {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Supabase.initialize(
+    url: 'https://bdmtimgiqtcximckagle.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbXRpbWdpcXRjeGltY2thZ2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NTkwNDAsImV4cCI6MjA4NTUzNTA0MH0.rolHffP2nRWabyhuJxN4Vsx7uuxaYRpaDXpcpGQ0xUw',
   );
   runApp(MyApp());
 }
+
+final supabase = Supabase.instance.client;
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
@@ -117,8 +119,7 @@ class _MainAppState extends State<MainApp> {
             _buildFooterIconWithText(Icons.search, "Search", 0),
             _buildFooterIconWithText(Icons.favorite, "Fav", 1),
             _buildFooterIconWithText(Icons.edit, "Present", 2),
-            _buildFooterIconWithText(Icons.local_cafe, "Treat", 3),
-            _buildFooterIconWithText(Icons.settings, "Setting", 4),
+            _buildFooterIconWithText(Icons.settings, "Setting", 3),
           ],
         ),
       ),
@@ -167,8 +168,6 @@ class _MainAppState extends State<MainApp> {
           presentService: widget.presentService,
         );
       case 3:
-        return const TreatScreen();
-      case 4:
         return const UserScreen();
       default:
         return Container();

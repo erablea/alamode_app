@@ -9,7 +9,6 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:alamode_app/main.dart';
@@ -512,9 +511,10 @@ class _PresentListState extends State<PresentList> {
   }
 
   void _applyFiltersAndSort() {
-    _filteredList = _presentList.where(_meetsFilterCriteria).toList();
-    _filteredList.sort(_comparePresents);
-    setState(() {});
+    setState(() {
+      _filteredList = _presentList.where(_meetsFilterCriteria).toList();
+      _filteredList.sort(_comparePresents);
+    });
   }
 
   int _comparePresents(Map<String, dynamic> a, Map<String, dynamic> b) {
@@ -1625,16 +1625,18 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   void _removeImage(int index) {
     setState(() {
-      int totalImages = _existingImageUrls.length + _pickedFiles.length;
       if (index < _existingImageUrls.length) {
         // 既存画像の削除
         _existingImageUrls.removeAt(index);
       } else {
         // 新規画像の削除
         int newImageIndex = index - _existingImageUrls.length;
-        _pickedFiles.removeAt(newImageIndex);
-        if (kIsWeb && newImageIndex < _webImages.length) {
-          _webImages.removeAt(newImageIndex);
+        if (newImageIndex < _pickedFiles.length) {
+          // ← 範囲チェック追加
+          _pickedFiles.removeAt(newImageIndex);
+          if (kIsWeb && newImageIndex < _webImages.length) {
+            _webImages.removeAt(newImageIndex);
+          }
         }
       }
     });
@@ -2309,22 +2311,17 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
     try {
       String searchField =
           widget.searchType == SearchType.name ? 'item_name' : 'item_brand';
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('item').limit(1000).get();
+      final List<Map<String, dynamic>> queryResults =
+          await supabase.from('item').select().limit(1000);
       final normalizedQuery = Utils.normalizeString(query);
 
-      final filteredResults = querySnapshot.docs
-          .where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final targetField = data[searchField];
-            if (targetField == null) return false;
+      final filteredResults = queryResults.where((data) {
+        final targetField = data[searchField];
+        if (targetField == null) return false;
 
-            final normalizedTarget =
-                Utils.normalizeString(targetField.toString());
-            return normalizedTarget.contains(normalizedQuery);
-          })
-          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-          .toList();
+        final normalizedTarget = Utils.normalizeString(targetField.toString());
+        return normalizedTarget.contains(normalizedQuery);
+      }).toList();
 
       presentLogger.info('検索結果件数: ${filteredResults.length}');
 
