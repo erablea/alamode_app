@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
   MyApp({super.key});
 
   final ThemeData appTheme = ThemeData(
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: const Color(0xFFFAF9F7),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -62,16 +62,31 @@ class MyApp extends StatelessWidget {
         color: AppColors.blackDark,
       ),
       titleLarge: TextStyle(
-        fontFamily: 'ZenMaruGothic',
+        fontFamily: 'PlayfairDisplay',
         color: AppColors.blackDark,
         fontWeight: FontWeight.w500,
       ),
     ),
+    cardTheme: CardTheme(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: AppColors.shadowColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryColor,
-        foregroundColor: AppColors.blackDark,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.primaryColor,
+      foregroundColor: Colors.white,
+      elevation: 2,
     ),
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primaryColor,
@@ -111,15 +126,28 @@ class _MainAppState extends State<MainApp> {
       appBar: const Header(),
       body: _getSelectedScreen(_selectedIndex),
       bottomNavigationBar: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(
+                color: AppColors.greyMedium.withOpacity(0.6), width: 0.5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildFooterIconWithText(Icons.search, "Search", 0),
-            _buildFooterIconWithText(Icons.favorite, "Fav", 1),
-            _buildFooterIconWithText(Icons.edit, "Present", 2),
-            _buildFooterIconWithText(Icons.settings, "Setting", 3),
+            _buildFooterIconWithText(Icons.search_rounded, "Search", 0),
+            _buildFooterIconWithText(Icons.favorite_rounded, "Fav", 1),
+            _buildFooterIconWithText(Icons.edit_rounded, "Present", 2),
+            _buildFooterIconWithText(Icons.settings_rounded, "Setting", 3),
           ],
         ),
       ),
@@ -127,32 +155,45 @@ class _MainAppState extends State<MainApp> {
   }
 
   Widget _buildFooterIconWithText(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
         setState(() {
           _selectedIndex = index;
         });
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: _selectedIndex == index
-                ? AppColors.primaryColor
-                : AppColors.blackLight.withOpacity(0.8),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'PinyonScript',
-              fontSize: 20,
-              color: _selectedIndex == index
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryColor.withOpacity(0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected
                   ? AppColors.primaryColor
-                  : AppColors.blackLight.withOpacity(0.8),
+                  : AppColors.blackLight.withOpacity(0.7),
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'PinyonScript',
+                fontSize: 18,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.blackLight.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

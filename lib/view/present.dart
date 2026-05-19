@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:alamode_app/main.dart';
@@ -444,6 +445,7 @@ class _PresentListState extends State<PresentList> {
   bool _isLoading = false;
   final currencyFormat = NumberFormat('#,###');
   Map<String, bool> _filterOtherCondition = {};
+  bool _showSentPresents = true;
 
   @override
   void initState() {
@@ -511,10 +513,9 @@ class _PresentListState extends State<PresentList> {
   }
 
   void _applyFiltersAndSort() {
-    setState(() {
-      _filteredList = _presentList.where(_meetsFilterCriteria).toList();
-      _filteredList.sort(_comparePresents);
-    });
+    _filteredList = _presentList.where(_meetsFilterCriteria).toList();
+    _filteredList.sort(_comparePresents);
+    setState(() {});
   }
 
   int _comparePresents(Map<String, dynamic> a, Map<String, dynamic> b) {
@@ -541,6 +542,11 @@ class _PresentListState extends State<PresentList> {
   }
 
   bool _meetsFilterCriteria(Map<String, dynamic> present) {
+    // 送った/貰ったフィルタリング
+    final presentType = present['present_type'] ?? 'sent';
+    if (_showSentPresents && presentType != 'sent') return false;
+    if (!_showSentPresents && presentType != 'received') return false;
+
     // ジャンルフィルタリング
     if (_filterGenre.isNotEmpty &&
         !(_filterGenre[present['present_genre']] ?? false)) {
@@ -582,6 +588,92 @@ class _PresentListState extends State<PresentList> {
       return false;
     }
     return true;
+  }
+
+  Widget _buildTypeToggle() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          _buildToggleOption(
+            label: '贈った',
+            icon: Icons.card_giftcard,
+            isSelected: _showSentPresents,
+            onTap: () {
+              if (!_showSentPresents) {
+                setState(() => _showSentPresents = true);
+                _applyFiltersAndSort();
+              }
+            },
+          ),
+          _buildToggleOption(
+            label: '貰った',
+            icon: Icons.favorite,
+            isSelected: !_showSentPresents,
+            onTap: () {
+              if (_showSentPresents) {
+                setState(() => _showSentPresents = false);
+                _applyFiltersAndSort();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleOption({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(17),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildFilterAndSortRow() {
@@ -813,18 +905,15 @@ class _PresentListState extends State<PresentList> {
     return GestureDetector(
       onTap: () => _navigateToEdit(present),
       child: Container(
-        margin: const EdgeInsets.only(top: 2, bottom: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: const Border(
-            top: BorderSide(color: AppColors.greyMedium, width: 0.5),
-            bottom: BorderSide(color: AppColors.greyMedium, width: 1),
-          ),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.greyMedium.withOpacity(0.8),
+              color: Colors.black.withOpacity(0.06),
               spreadRadius: 0,
-              blurRadius: 4,
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -842,39 +931,34 @@ class _PresentListState extends State<PresentList> {
   }
 
   Widget _buildPresentImages(String? imageUrl) {
-    return Row(
-      children: [
-        for (int i = 0; i < 3; i++)
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.only(right: i < 2 ? 1 : 0),
-              height: 110,
-              child: imageUrl != null
-                  ? CommonWidgets.buildImage(imageUrl, widget.presentService)
-                  : Container(
-                      color: AppColors.greyLight,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-      ],
+    if (imageUrl == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: 120,
+          width: double.infinity,
+          child: CommonWidgets.buildImage(imageUrl, widget.presentService),
+        ),
+      ),
     );
   }
 
   Widget _buildPresentHeader(Map<String, dynamic> present) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             present['present_name'] ?? '',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
@@ -986,7 +1070,10 @@ class _PresentListState extends State<PresentList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('贈ったお菓子', style: TextStyle(fontSize: 18)),
+        title: Text(
+          _showSentPresents ? '贈ったお菓子' : '貰ったお菓子',
+          style: const TextStyle(fontSize: 18),
+        ),
         toolbarHeight: 40.0,
         flexibleSpace: Stack(
           children: [
@@ -1010,6 +1097,7 @@ class _PresentListState extends State<PresentList> {
       ),
       body: Column(
         children: [
+          _buildTypeToggle(),
           _buildFilterAndSortRow(),
           Expanded(
             child: _isLoading
@@ -1045,8 +1133,10 @@ class _PresentListState extends State<PresentList> {
           final result = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  PresentFormWidget(presentService: widget.presentService),
+              builder: (context) => PresentFormWidget(
+                presentService: widget.presentService,
+                initialType: _showSentPresents ? 'sent' : 'received',
+              ),
             ),
           );
           if (result == true) await _loadPresentList();
@@ -1516,11 +1606,13 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
 class PresentFormWidget extends StatefulWidget {
   final Map<String, dynamic>? initialPresent;
   final PresentManagementService presentService;
+  final String initialType;
 
   const PresentFormWidget({
     super.key,
     this.initialPresent,
     required this.presentService,
+    this.initialType = 'sent',
   });
 
   @override
@@ -1538,6 +1630,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   List<Uint8List> _webImages = [];
   List<String> _existingImageUrls = [];
   int _remainingChars = Constants.memoMaxLength;
+  late String _presentType;
 
   @override
   void initState() {
@@ -1546,6 +1639,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   }
 
   void _initializeForm() {
+    _presentType = widget.initialPresent?['present_type'] ?? widget.initialType;
+
     final fields = [
       'present_name',
       'present_brand',
@@ -1625,18 +1720,16 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   void _removeImage(int index) {
     setState(() {
+      int totalImages = _existingImageUrls.length + _pickedFiles.length;
       if (index < _existingImageUrls.length) {
         // 既存画像の削除
         _existingImageUrls.removeAt(index);
       } else {
         // 新規画像の削除
         int newImageIndex = index - _existingImageUrls.length;
-        if (newImageIndex < _pickedFiles.length) {
-          // ← 範囲チェック追加
-          _pickedFiles.removeAt(newImageIndex);
-          if (kIsWeb && newImageIndex < _webImages.length) {
-            _webImages.removeAt(newImageIndex);
-          }
+        _pickedFiles.removeAt(newImageIndex);
+        if (kIsWeb && newImageIndex < _webImages.length) {
+          _webImages.removeAt(newImageIndex);
         }
       }
     });
@@ -1824,6 +1917,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             DateTime.now().millisecondsSinceEpoch.toString(),
         'present_createdate': widget.initialPresent?['present_createdate'] ??
             DateTime.now().toIso8601String(),
+        'present_type': _presentType,
         'present_name': _controllers['present_name']!.text,
         'present_brand': _controllers['present_brand']!.text,
         'present_company': _controllers['present_company']!.text,
@@ -1960,10 +2054,20 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isNewRecord = widget.initialPresent == null;
+    String title;
+    if (!isNewRecord) {
+      title = '編集';
+    } else if (_presentType == 'sent') {
+      title = '贈ったお菓子を記録';
+    } else {
+      title = '貰ったお菓子を記録';
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.initialPresent == null ? '新しいお菓子を登録' : '編集',
+          title,
           style: const TextStyle(
             color: AppColors.primaryColor,
             fontSize: 16,
@@ -1984,7 +2088,87 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     );
   }
 
+  Widget _buildFormTypeToggle() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          _buildFormToggleOption(
+            label: '贈った',
+            icon: Icons.card_giftcard,
+            isSelected: _presentType == 'sent',
+            onTap: () => setState(() => _presentType = 'sent'),
+          ),
+          _buildFormToggleOption(
+            label: '貰った',
+            icon: Icons.favorite,
+            isSelected: _presentType == 'received',
+            onTap: () => setState(() => _presentType = 'received'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormToggleOption({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(19),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildForm() {
+    final whoLabel = _presentType == 'sent' ? '贈った相手 *' : '贈ってくれた人 *';
+    final nameLabel = _presentType == 'sent' ? '贈ったお菓子の名称 *' : '貰ったお菓子の名称 *';
+    final reactionLabel = _presentType == 'sent' ? '相手の反応' : '評価';
+
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -1992,10 +2176,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildFormTypeToggle(),
             TextFormField(
               controller: _controllers['present_name']!,
               decoration: CommonWidgets.buildInputDecoration(
-                '贈ったお菓子の名称 *',
+                nameLabel,
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: () => _showSearchDialog(SearchType.name),
@@ -2067,7 +2252,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _controllers['present_who']!,
-              decoration: CommonWidgets.buildInputDecoration('プレゼントの相手 *'),
+              decoration: CommonWidgets.buildInputDecoration(whoLabel),
               validator: (value) => value!.isEmpty ? '必須項目です' : null,
             ),
             const SizedBox(height: 24),
@@ -2117,9 +2302,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  '反応',
-                  style: TextStyle(
+                Text(
+                  reactionLabel,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.blackLight,
@@ -2311,17 +2496,22 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
     try {
       String searchField =
           widget.searchType == SearchType.name ? 'item_name' : 'item_brand';
-      final List<Map<String, dynamic>> queryResults =
-          await supabase.from('item').select().limit(1000);
+      final allItems = await Supabase.instance.client
+          .from('item')
+          .select()
+          .limit(1000);
       final normalizedQuery = Utils.normalizeString(query);
 
-      final filteredResults = queryResults.where((data) {
-        final targetField = data[searchField];
-        if (targetField == null) return false;
+      final filteredResults = List<Map<String, dynamic>>.from(allItems)
+          .where((data) {
+            final targetField = data[searchField];
+            if (targetField == null) return false;
 
-        final normalizedTarget = Utils.normalizeString(targetField.toString());
-        return normalizedTarget.contains(normalizedQuery);
-      }).toList();
+            final normalizedTarget =
+                Utils.normalizeString(targetField.toString());
+            return normalizedTarget.contains(normalizedQuery);
+          })
+          .toList();
 
       presentLogger.info('検索結果件数: ${filteredResults.length}');
 
