@@ -1654,6 +1654,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     super.initState();
     _initializeForm();
     _loadAllWhoNames();
+    _whoFocusNode.addListener(() => setState(() {}));
   }
 
   Future<void> _loadAllWhoNames() async {
@@ -1902,6 +1903,51 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             fit: BoxFit.cover);
       }
     }
+  }
+
+  Widget _buildWhoField(String label) {
+    final suggestions = _allWhoNames.where((name) {
+      final query = _whoFieldController.text;
+      return query.isEmpty || name.contains(query);
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _whoFieldController,
+          focusNode: _whoFocusNode,
+          decoration: CommonWidgets.buildInputDecoration(label),
+          validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
+          onChanged: (_) => setState(() {}),
+        ),
+        if (_whoFocusNode.hasFocus && suggestions.isNotEmpty)
+          Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: suggestions.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    dense: true,
+                    title: Text(suggestions[index],
+                        style: const TextStyle(fontSize: 14)),
+                    onTap: () {
+                      _whoFieldController.text = suggestions[index];
+                      _whoFocusNode.unfocus();
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildGenreSelector() {
@@ -2276,53 +2322,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
               ],
             ),
             const SizedBox(height: 24),
-            RawAutocomplete<String>(
-              textEditingController: _whoFieldController,
-              focusNode: _whoFocusNode,
-              optionsBuilder: (TextEditingValue value) {
-                if (value.text.isEmpty) return _allWhoNames;
-                return _allWhoNames
-                    .where((name) => name.contains(value.text));
-              },
-              onSelected: (String selection) {
-                _whoFieldController.text = selection;
-              },
-              fieldViewBuilder:
-                  (context, controller, focusNode, onFieldSubmitted) {
-                return TextFormField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: CommonWidgets.buildInputDecoration(whoLabel),
-                  validator: (value) => value!.isEmpty ? '必須項目です' : null,
-                );
-              },
-              optionsViewBuilder: (context, onSelected, options) {
-                return Align(
-                  alignment: Alignment.topLeft,
-                  child: Material(
-                    elevation: 4,
-                    borderRadius: BorderRadius.circular(8),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final option = options.elementAt(index);
-                          return ListTile(
-                            dense: true,
-                            title: Text(option,
-                                style: const TextStyle(fontSize: 14)),
-                            onTap: () => onSelected(option),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            _buildWhoField(whoLabel),
             const SizedBox(height: 24),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
