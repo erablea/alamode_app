@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
-import 'package:alamode_app/view/present.dart';
+import 'package:alamode_app/view/memo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserScreen extends StatefulWidget {
@@ -423,7 +423,7 @@ class _UserScreenState extends State<UserScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'プレゼントした人一覧',
+                        'お菓子を贈った人・貰った人一覧',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -459,7 +459,7 @@ class _UserScreenState extends State<UserScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'まだプレゼントした人がいません',
+                              'まだ記録がありません',
                               style: TextStyle(
                                 color: AppColors.blackLight.withOpacity(0.7),
                                 fontSize: 14,
@@ -467,7 +467,7 @@ class _UserScreenState extends State<UserScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'プレゼントを記録すると、ここに表示されます',
+                              'Memoタブからお菓子を記録すると、ここに表示されます',
                               style: TextStyle(
                                 color: AppColors.blackLight.withOpacity(0.5),
                                 fontSize: 12,
@@ -790,10 +790,10 @@ class _UserScreenState extends State<UserScreen> {
         const SizedBox(height: 16),
         _buildFeatureItem(Icons.search, '商品検索',
             'おすすめ商品を編集部が随時更新しています。お気に入りをして贈り物やご褒美の参考にしよう'),
-        _buildFeatureItem(
-            Icons.star_outline, '反応や評価を記録', '贈った時の反応や自己評価を5段階で記録できます'),
-        _buildFeatureItem(
-            Icons.people_outline, '人別管理', '贈った人ごとに履歴を管理できます。次の贈り物の機会に読み返そう'),
+        _buildFeatureItem(Icons.star_outline, '反応や評価を記録',
+            'Memoタブから贈った時の反応や自己評価を5段階で記録できます'),
+        _buildFeatureItem(Icons.people_outline, '人別管理',
+            'Memoタブで記録すると、贈った人・貰った人ごとに履歴を管理できます'),
       ],
     );
   }

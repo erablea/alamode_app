@@ -164,7 +164,7 @@ class CommonWidgets {
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
   }) {
-    const conditions = ['個包装', '常温', 'オンライン購入'];
+    const conditions = ['個包装可', '常温可', 'オンライン購入可'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,8 +454,20 @@ class _PresentListState extends State<PresentList> {
   }
 
   Future<void> _loadInitialData() async {
+    await _loadTabState();
     await _loadPresentList();
     await _loadSortOrder();
+  }
+
+  Future<void> _loadTabState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final showSent = prefs.getBool('memo_show_sent') ?? true;
+    setState(() => _showSentPresents = showSent);
+  }
+
+  Future<void> _saveTabState(bool showSent) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('memo_show_sent', showSent);
   }
 
   Future<void> _loadSortOrder() async {
@@ -607,17 +619,19 @@ class _PresentListState extends State<PresentList> {
             onTap: () {
               if (!_showSentPresents) {
                 setState(() => _showSentPresents = true);
+                _saveTabState(true);
                 _applyFiltersAndSort();
               }
             },
           ),
           _buildToggleOption(
             label: '貰った',
-            icon: Icons.favorite,
+            icon: Icons.restaurant,
             isSelected: !_showSentPresents,
             onTap: () {
               if (_showSentPresents) {
                 setState(() => _showSentPresents = false);
+                _saveTabState(false);
                 _applyFiltersAndSort();
               }
             },
@@ -716,7 +730,7 @@ class _PresentListState extends State<PresentList> {
               _buildSortMenuItem(SortOrder.reactionHigh, '反応が高い順'),
               _buildSortMenuItem(SortOrder.priceLow, '価格の安い順'),
               _buildSortMenuItem(SortOrder.priceHigh, '価格の高い順'),
-              _buildSortMenuItem(SortOrder.brand, 'メーカー名順'),
+              _buildSortMenuItem(SortOrder.brand, 'ブランド名順'),
             ],
           ),
         ],
@@ -1631,11 +1645,27 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   List<String> _existingImageUrls = [];
   int _remainingChars = Constants.memoMaxLength;
   late String _presentType;
+  List<String> _allWhoNames = [];
+  final _whoFieldController = TextEditingController();
+  final _whoFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _initializeForm();
+    _loadAllWhoNames();
+  }
+
+  Future<void> _loadAllWhoNames() async {
+    final prefs = await SharedPreferences.getInstance();
+    final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
+    final names = <String>{};
+    for (final item in presentList) {
+      final data = Map<String, dynamic>.from(jsonDecode(item));
+      final who = data['present_who'] as String?;
+      if (who != null && who.isNotEmpty) names.add(who);
+    }
+    if (mounted) setState(() => _allWhoNames = names.toList()..sort());
   }
 
   void _initializeForm() {
@@ -1644,9 +1674,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     final fields = [
       'present_name',
       'present_brand',
-      'present_who',
       'present_price',
-      'present_company',
       'present_memo'
     ];
 
@@ -1657,6 +1685,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       }
       _controllers[field] = TextEditingController(text: value);
     }
+
+    final initialWho = widget.initialPresent?['present_who']?.toString() ?? '';
+    _whoFieldController.text = initialWho;
     String? initialGenre = widget.initialPresent?['present_genre'];
     if (initialGenre != null && initialGenre.isNotEmpty) {
       _selectedGenres = {initialGenre};
@@ -1691,6 +1722,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     for (final controller in _controllers.values) {
       controller.dispose();
     }
+    _whoFieldController.dispose();
+    _whoFocusNode.dispose();
     super.dispose();
   }
 
@@ -1920,7 +1953,6 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_type': _presentType,
         'present_name': _controllers['present_name']!.text,
         'present_brand': _controllers['present_brand']!.text,
-        'present_company': _controllers['present_company']!.text,
         'present_imageurl': allImageUrls.isNotEmpty ? allImageUrls[0] : null,
         'present_imageurl2': allImageUrls.length > 1 ? allImageUrls[1] : null,
         'present_imageurl3': allImageUrls.length > 2 ? allImageUrls[2] : null,
@@ -1928,7 +1960,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 _controllers['present_price']!.text.replaceAll(',', '')) ??
             0,
         'present_date': DateFormat('yyyy-MM-dd').format(_selectedDate),
-        'present_who': _controllers['present_who']!.text,
+        'present_who': _whoFieldController.text,
         'present_reaction': _presentReaction,
         'present_genre': _selectedGenres.join(', '),
         'present_other_conditions': _selectedOtherConditions.join(', '),
@@ -2035,7 +2067,6 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       setState(() {
         _controllers['present_name']!.text = result['item_name'] ?? '';
         _controllers['present_brand']!.text = result['item_brand'] ?? '';
-        _controllers['present_company']!.text = result['item_company'] ?? '';
         _controllers['present_price']!.text =
             Utils.formatCurrency(result['item_price']);
         String? genre = result['item_genre'];
@@ -2106,7 +2137,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
           ),
           _buildFormToggleOption(
             label: '貰った',
-            icon: Icons.favorite,
+            icon: Icons.restaurant,
             isSelected: _presentType == 'received',
             onTap: () => setState(() => _presentType = 'received'),
           ),
@@ -2192,18 +2223,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             TextFormField(
               controller: _controllers['present_brand']!,
               decoration: CommonWidgets.buildInputDecoration(
-                'メーカー名 *',
+                'ブランド・会社名 *',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: () => _showSearchDialog(SearchType.brand),
                 ),
               ),
               validator: (value) => value!.isEmpty ? '必須項目です' : null,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _controllers['present_company']!,
-              decoration: CommonWidgets.buildInputDecoration('会社名'),
             ),
             const SizedBox(height: 24),
             _buildGenreSelector(),
@@ -2250,10 +2276,52 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
               ],
             ),
             const SizedBox(height: 24),
-            TextFormField(
-              controller: _controllers['present_who']!,
-              decoration: CommonWidgets.buildInputDecoration(whoLabel),
-              validator: (value) => value!.isEmpty ? '必須項目です' : null,
+            RawAutocomplete<String>(
+              textEditingController: _whoFieldController,
+              focusNode: _whoFocusNode,
+              optionsBuilder: (TextEditingValue value) {
+                if (value.text.isEmpty) return _allWhoNames;
+                return _allWhoNames
+                    .where((name) => name.contains(value.text));
+              },
+              onSelected: (String selection) {
+                _whoFieldController.text = selection;
+              },
+              fieldViewBuilder:
+                  (context, controller, focusNode, onFieldSubmitted) {
+                return TextFormField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: CommonWidgets.buildInputDecoration(whoLabel),
+                  validator: (value) => value!.isEmpty ? '必須項目です' : null,
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final option = options.elementAt(index);
+                          return ListTile(
+                            dense: true,
+                            title: Text(option,
+                                style: const TextStyle(fontSize: 14)),
+                            onTap: () => onSelected(option),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             Column(
@@ -2544,7 +2612,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
       backgroundColor: AppColors.dialogBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Text(
-        widget.searchType == SearchType.name ? 'お菓子名で検索' : 'メーカー名で検索',
+        widget.searchType == SearchType.name ? 'お菓子名で検索' : 'ブランド・会社名で検索',
         style: const TextStyle(
           color: AppColors.blackLight,
           fontWeight: FontWeight.w600,

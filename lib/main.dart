@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
-import 'package:alamode_app/view/present.dart';
+import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/view/user.dart';
 import 'package:alamode_app/widgets/header.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -146,7 +146,7 @@ class _MainAppState extends State<MainApp> {
           children: [
             _buildFooterIconWithText(Icons.search_rounded, "Search", 0),
             _buildFooterIconWithText(Icons.favorite_rounded, "Fav", 1),
-            _buildFooterIconWithText(Icons.edit_rounded, "Present", 2),
+            _buildFooterIconWithText(Icons.edit_rounded, "Memo", 2),
             _buildFooterIconWithText(Icons.settings_rounded, "Setting", 3),
           ],
         ),

@@ -713,7 +713,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterIndividualWrapping) {
       filterChips.add(_buildFilterChip(
-        label: '個包装',
+        label: '個包装可',
         onRemove: () {
           setState(() {
             _filterIndividualWrapping = false;
@@ -724,7 +724,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterRoomTemperature) {
       filterChips.add(_buildFilterChip(
-        label: '常温',
+        label: '常温可',
         onRemove: () {
           setState(() {
             _filterRoomTemperature = false;
@@ -735,7 +735,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterOnline) {
       filterChips.add(_buildFilterChip(
-        label: 'オンライン購入',
+        label: 'オンライン購入可',
         onRemove: () {
           setState(() {
             _filterOnline = false;
@@ -1518,19 +1518,19 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           runSpacing: 8.0,
           children: [
             _buildConditionChip(
-              '個包装',
+              '個包装可',
               _tempIndividualWrapping,
               (isSelected) =>
                   setState(() => _tempIndividualWrapping = !isSelected),
             ),
             _buildConditionChip(
-              '常温',
+              '常温可',
               _tempRoomTemperature,
               (isSelected) =>
                   setState(() => _tempRoomTemperature = !isSelected),
             ),
             _buildConditionChip(
-              'オンライン購入',
+              'オンライン購入可',
               _tempOnline,
               (isSelected) => setState(() => _tempOnline = !isSelected),
             ),
@@ -2255,9 +2255,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       details.add(_buildDetailItem('賞味期限', '${expiryDate.toInt()}日'));
     }
     final flags = <String, String>{
-      'item_individualwrapping': '個包装',
-      'item_roomtemperature': '常温',
-      'item_online': 'オンライン購入',
+      'item_individualwrapping': '個包装可',
+      'item_roomtemperature': '常温可',
+      'item_online': 'オンライン購入可',
     };
 
     List<Widget> flagWidgets = [];
