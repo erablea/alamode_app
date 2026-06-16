@@ -109,6 +109,108 @@ class MyApp extends StatelessWidget {
   }
 }
 
+Widget buildStarRating(BuildContext context, num rating) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: List.generate(5, (index) {
+      return Icon(
+        Icons.star_rounded,
+        color: index < rating
+            ? AppColors.starColor
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+      );
+    }),
+  );
+}
+
+class AdUtils {
+  static int calculateListItemCount(int itemCount) {
+    if (itemCount <= 3) return itemCount;
+    return itemCount + ((itemCount - 1) ~/ 3);
+  }
+
+  static bool shouldShowAdAt(int index) {
+    return index > 0 && (index + 1) % 4 == 0;
+  }
+
+  static int getActualItemIndex(int listIndex) {
+    final adCount = (listIndex) ~/ 4;
+    return listIndex - adCount;
+  }
+
+  static Widget buildAdBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      height: 80,
+      decoration: BoxDecoration(
+        color: AppColors.greyMedium.withOpacity(0.8),
+        border: Border.all(color: AppColors.greyMedium, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.greyMedium.withOpacity(0.8),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.greyLight, AppColors.greyMedium],
+              ),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.ads_click, color: AppColors.blackLight, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'スポンサード',
+                    style: TextStyle(
+                      color: AppColors.blackLight,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.greyDark,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                '広告',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MainApp extends StatefulWidget {
   final PresentManagementService presentService = PresentManagementService();
   MainApp({super.key});
