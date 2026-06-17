@@ -246,10 +246,10 @@ class _MainAppState extends State<MainApp> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildFooterIconWithText(Icons.search_rounded, "Search", 0),
-            _buildFooterIconWithText(Icons.favorite_rounded, "Fav", 1),
-            _buildFooterIconWithText(Icons.edit_rounded, "Memo", 2),
-            _buildFooterIconWithText(Icons.settings_rounded, "Setting", 3),
+            _buildFooterIconWithText(Icons.search, "Search", 0),
+            _buildFooterIconWithText(Icons.favorite, "Fav", 1),
+            _buildFooterIconWithText(Icons.edit, "Memo", 2),
+            _buildFooterIconWithText(Icons.settings, "Setting", 3),
           ],
         ),
       ),
