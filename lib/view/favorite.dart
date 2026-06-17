@@ -100,17 +100,17 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
       if (_filterIndividualWrapping) {
         final value = item['item_individualwrapping'];
-        if (value != "1" && value != 1) return false;
+        if (value != "1" && value != 1 && value != true) return false;
       }
 
       if (_filterRoomTemperature) {
         final value = item['item_roomtemperature'];
-        if (value != "1" && value != 1) return false;
+        if (value != "1" && value != 1 && value != true) return false;
       }
 
       if (_filterOnline) {
         final value = item['item_online'];
-        if (value != "1" && value != 1) return false;
+        if (value != "1" && value != 1 && value != true) return false;
       }
 
 /*     // 評価フィルター
@@ -448,7 +448,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         final item = _filteredList[itemIndex];
                         return ItemCard(
                           item: item,
-                          itemId: item['id'],
+                          itemId: item['item_id']?.toString() ?? '',
                           index: itemIndex,
                           onFavoriteChanged: () {
                             _loadFavoriteItems();
@@ -458,7 +458,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ItemDetailScreen(itemId: item['id']),
+                                    ItemDetailScreen(itemId: item['item_id']?.toString() ?? ''),
                               ),
                             );
                           },

@@ -2209,7 +2209,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     flags.forEach((key, label) {
       final value = item[key];
       if (value != null) {
-        final isActive = value == "1" || value == 1;
+        final isActive = value == "1" || value == 1 || value == true;
         flagWidgets.add(_buildFlagChip(label, isActive));
       }
     });
@@ -2738,9 +2738,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     return FutureBuilder<bool>(
       future: _isFavoriteFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
         bool isFavorite = snapshot.data ?? false;
         return IconButton(
           icon: Icon(
