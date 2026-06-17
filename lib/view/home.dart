@@ -925,9 +925,7 @@ class ItemCard extends StatelessWidget {
                     Expanded(
                       child: FutureBuilder<List<Map<String, dynamic>>>(
                         future: supabase
-                            .from('brand')
-                            .select()
-                            .eq('id', brandId),
+                            .from('brand').select().eq('brand_id', brandId),
                         builder: (context, snapshot) {
                           if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                             final brandData = snapshot.data!.first;
@@ -2471,7 +2469,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
 
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: supabase.from('brand').select().eq('id', brandId),
+      future: supabase.from('brand').select().eq('brand_id', brandId),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final brandData = snapshot.data!.first;
