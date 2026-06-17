@@ -953,10 +953,11 @@ class ItemCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   if (brandId != null)
                     Expanded(
-                      child: StreamBuilder<List<Map<String, dynamic>>>(
-                        stream: supabase
+                      child: FutureBuilder<List<Map<String, dynamic>>>(
+                        future: supabase
                             .from('brand')
-                            .stream(primaryKey: ['id']).eq('id', brandId),
+                            .select()
+                            .eq('id', brandId),
                         builder: (context, snapshot) {
                           if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                             final brandData = snapshot.data!.first;
@@ -989,22 +990,12 @@ class ItemCard extends StatelessWidget {
                               ],
                             );
                           }
-                          return Text(
-                            item['brand_name'] as String? ?? '',
-                            style: const TextStyle(fontSize: 14),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          );
+                          return const SizedBox.shrink();
                         },
                       ),
                     )
                   else
-                    Text(
-                      item['brand_name'] as String? ?? '',
-                      style: const TextStyle(fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                    const SizedBox.shrink(),
                 ],
               ),
               const SizedBox(height: 8),
@@ -2509,9 +2500,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
     }
 
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream:
-          supabase.from('brand').stream(primaryKey: ['id']).eq('id', brandId),
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: supabase.from('brand').select().eq('id', brandId),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final brandData = snapshot.data!.first;
@@ -2575,14 +2565,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               color: AppColors.blackLight,
             ),
             const SizedBox(width: 6),
-            Text(
-              item['brand_name'] as String? ?? '',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.blackLight,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            const SizedBox.shrink(),
           ],
         );
       },
@@ -2607,10 +2590,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        StreamBuilder<List<Map<String, dynamic>>>(
-          stream: supabase
+        FutureBuilder<List<Map<String, dynamic>>>(
+          future: supabase
               .from('item')
-              .stream(primaryKey: ['id'])
+              .select()
               .eq('item_brandid', brandId)
               .limit(10),
           builder: (context, snapshot) {

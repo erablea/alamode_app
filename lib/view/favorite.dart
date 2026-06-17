@@ -47,15 +47,27 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   Future<void> _loadFavoriteItems() async {
     final favoriteIds = await _getFavoriteItems();
     List<Map<String, dynamic>> items = [];
+    List<String> validIds = [];
 
     for (String itemId in favoriteIds) {
       try {
-        final data =
-            await supabase.from('item').select().eq('id', itemId).single();
-        items.add(data);
+        final data = await supabase
+            .from('item')
+            .select()
+            .eq('id', itemId)
+            .maybeSingle();
+        if (data != null) {
+          items.add(data);
+          validIds.add(itemId);
+        }
       } catch (e) {
-        // エラーハンドリング
+        // skip invalid items
       }
+    }
+
+    if (validIds.length != favoriteIds.length) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('favorite', validIds);
     }
 
     setState(() {
