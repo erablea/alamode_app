@@ -1,2 +1,4 @@
-2026/04/09-11:40:39.711 436c Creating DB C:\Users\erabl\AppData\Local\Temp\flutter_tools.13f71dd5\flutter_tools_chrome_device.26885dd5\Default\shared_proto_db since it was missing.
-2026/04/09-11:40:39.720 436c Reusing MANIFEST C:\Users\erabl\AppData\Local\Temp\flutter_tools.13f71dd5\flutter_tools_chrome_device.26885dd5\Default\shared_proto_db/MANIFEST-000001
+2026/06/17-15:32:11.843 5fc8 Reusing MANIFEST C:\Users\erabl\AppData\Local\Temp\flutter_tools.7eca8f2c\flutter_tools_chrome_device.1259cf0d\Default\shared_proto_db/MANIFEST-000001
+2026/06/17-15:32:11.844 5fc8 Recovering log #4
+2026/06/17-15:32:11.845 5fc8 Reusing old log C:\Users\erabl\AppData\Local\Temp\flutter_tools.7eca8f2c\flutter_tools_chrome_device.1259cf0d\Default\shared_proto_db/000004.log 
+2026/06/17-15:32:11.846 5fc8 Delete type=0 #3
