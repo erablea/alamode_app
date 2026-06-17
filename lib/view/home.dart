@@ -455,6 +455,8 @@ class _ItemListState extends State<ItemList>
               return const SizedBox.shrink();
             }
             final item = filteredDocs[itemIndex];
+            // ignore: avoid_print
+            if (itemIndex == 0) print('DEBUG item keys: ${item.keys.toList()}');
             return ItemCard(
               item: item,
               itemId: item['id']?.toString() ?? '',
