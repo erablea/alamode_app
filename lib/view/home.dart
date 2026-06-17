@@ -855,10 +855,6 @@ class ItemCard extends StatelessWidget {
       imageUrls.add(url3);
     }
 
-    if (imageUrls.isEmpty) {
-      imageUrls.add('item_notimage.png');
-    }
-
     return imageUrls;
   }
 
@@ -985,8 +981,21 @@ class ItemCard extends StatelessWidget {
     );
   }
 
+  Widget _buildNoImagePlaceholder({double height = 110}) {
+    return Container(
+      height: height,
+      color: AppColors.greyLight,
+      child: const Center(
+        child: Icon(Icons.image_not_supported_outlined,
+            size: 40, color: AppColors.greyDark),
+      ),
+    );
+  }
+
   Widget _buildItemImages(Map<String, dynamic> item) {
     final imageUrls = _getImageUrls(item);
+
+    if (imageUrls.isEmpty) return _buildNoImagePlaceholder();
 
     return Row(
       children: [
@@ -1004,10 +1013,12 @@ class ItemCard extends StatelessWidget {
                     color: AppColors.primaryColor,
                   ),
                 ),
-                errorWidget: (context, url, error) => const Icon(
-                  Icons.error_outline,
-                  size: 40,
-                  color: AppColors.errorColor,
+                errorWidget: (context, url, error) => Container(
+                  color: AppColors.greyLight,
+                  child: const Center(
+                    child: Icon(Icons.image_not_supported_outlined,
+                        size: 40, color: AppColors.greyDark),
+                  ),
                 ),
                 memCacheWidth: 240,
                 memCacheHeight: 240,
@@ -1749,17 +1760,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       imageUrls.add(url3);
     }
 
-    // 画像が1枚もない場合のデフォルト画像
-    if (imageUrls.isEmpty) {
-      imageUrls.add('item_notimage.png');
-    }
-
     return imageUrls;
   }
 
   Widget _buildImageSection(Map<String, dynamic> item) {
     final imageUrls = _getImageUrls(item);
     final imageCount = imageUrls.length;
+
+    if (imageUrls.isEmpty) {
+      return Container(
+        height: 300,
+        color: AppColors.greyLight,
+        child: const Center(
+          child: Icon(Icons.image_not_supported_outlined,
+              size: 60, color: AppColors.greyDark),
+        ),
+      );
+    }
 
     return Container(
       color: Colors.white,
