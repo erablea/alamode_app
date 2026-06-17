@@ -318,7 +318,7 @@ class _ItemListState extends State<ItemList>
     with AutomaticKeepAliveClientMixin {
   List<Map<String, dynamic>>? _cachedDocs;
   final currencyFormat = NumberFormat('#,###');
-  String _sortBy = 'brand_name';
+  String _sortBy = 'item_price_low';
   static Map<String, bool> _globalFilterGenre = {};
   static double _globalFilterPriceMin = 0;
   static double _globalFilterPriceMax = 20000;
