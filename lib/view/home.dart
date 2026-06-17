@@ -457,14 +457,14 @@ class _ItemListState extends State<ItemList>
             final item = filteredDocs[itemIndex];
             return ItemCard(
               item: item,
-              itemId: item['id'] ?? '',
+              itemId: item['id']?.toString() ?? '',
               index: itemIndex,
               onFavoriteChanged: () {},
               onTap: () async {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ItemDetailScreen(itemId: item['id']),
+                    builder: (context) => ItemDetailScreen(itemId: item['id']?.toString() ?? ''),
                   ),
                 );
                 if (result == true) setState(() {});
@@ -482,7 +482,7 @@ class _ItemListState extends State<ItemList>
     for (var item in docs) {
 // ジャンルフィルタリング（特定のジャンルタブの場合）
       if (widget.genre != 'all') {
-        final brandId = item['item_brandid'] as String?;
+        final brandId = item['item_brandid']?.toString();
         if (brandId != null) {
           try {
             final brandData = await supabase
@@ -511,7 +511,7 @@ class _ItemListState extends State<ItemList>
             .map((entry) => entry.key)
             .toList();
         if (selectedGenres.isNotEmpty) {
-          final brandId = item['item_brandid'] as String?;
+          final brandId = item['item_brandid']?.toString();
           if (brandId != null) {
             try {
               final brandData = await supabase
@@ -928,7 +928,7 @@ class ItemCard extends StatelessWidget {
   }
 
   Widget _buildItemHeader() {
-    final brandId = item['item_brandid'] as String?;
+    final brandId = item['item_brandid']?.toString();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -2477,7 +2477,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildBrandSection(Map<String, dynamic> item) {
-    final brandId = item['item_brandid'] as String?;
+    final brandId = item['item_brandid']?.toString();
 
     if (brandId == null) {
       return Row(
@@ -2573,7 +2573,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildSameBrandProducts(Map<String, dynamic> item) {
-    final brandId = item['item_brandid'] as String?;
+    final brandId = item['item_brandid']?.toString();
 
     if (brandId == null) return const SizedBox.shrink();
 
