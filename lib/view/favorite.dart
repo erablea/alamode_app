@@ -19,7 +19,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   List<Map<String, dynamic>> _filteredList = [];
 
   // フィルター・ソート用の変数（homeと同じ）
-  String _sortBy = 'item_rating';
+  String _sortBy = 'item_price_low';
   Map<String, bool> _filterGenre = {};
   double _filterPriceMin = 0;
   double _filterPriceMax = 20000;
