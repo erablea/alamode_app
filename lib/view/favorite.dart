@@ -54,7 +54,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         final data = await supabase
             .from('item')
             .select()
-            .eq('id', itemId)
+            .eq('item_id', itemId)
             .maybeSingle();
         if (data != null) {
           items.add(data);
@@ -91,7 +91,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             .map((entry) => entry.key)
             .toList();
         if (selectedGenres.isNotEmpty) {
-          final itemGenre = item['item_genre'] as String?;
+          final itemGenre = item['item_category'] as String?;
           if (itemGenre == null || !selectedGenres.contains(itemGenre)) {
             return false;
           }

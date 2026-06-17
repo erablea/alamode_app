@@ -32,11 +32,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _loadGenresFromSupabase() async {
     try {
-      final data = await supabase.from('brand').select();
+      final data = await supabase.from('item').select('item_category');
       Set<String> genres = {};
 
       for (var item in data) {
-        final genreString = item['brand_genre'] as String?;
+        final genreString = item['item_category'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
           final genreList =
               genreString.split(',').map((e) => e.trim()).toList();
@@ -456,17 +456,16 @@ class _ItemListState extends State<ItemList>
             }
             final item = filteredDocs[itemIndex];
             // ignore: avoid_print
-            if (itemIndex == 0) print('DEBUG item keys: ${item.keys.toList()}');
             return ItemCard(
               item: item,
-              itemId: item['id']?.toString() ?? '',
+              itemId: item['item_id']?.toString() ?? '',
               index: itemIndex,
               onFavoriteChanged: () {},
               onTap: () async {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ItemDetailScreen(itemId: item['id']?.toString() ?? ''),
+                    builder: (context) => ItemDetailScreen(itemId: item['item_id']?.toString() ?? ''),
                   ),
                 );
                 if (result == true) setState(() {});
@@ -484,24 +483,9 @@ class _ItemListState extends State<ItemList>
     for (var item in docs) {
 // ジャンルフィルタリング（特定のジャンルタブの場合）
       if (widget.genre != 'all') {
-        final brandId = item['item_brandid']?.toString();
-        if (brandId != null) {
-          try {
-            final brandData = await supabase
-                .from('brand')
-                .select()
-                .eq('id', brandId)
-                .single();
-            final genreString = brandData['brand_genre'] as String? ?? '';
-            final genreList =
-                genreString.split(',').map((e) => e.trim()).toList();
-            if (!genreList.contains(widget.genre)) {
-              continue;
-            }
-          } catch (e) {
-            continue;
-          }
-        } else {
+        final category = item['item_category'] as String? ?? '';
+        final categoryList = category.split(',').map((e) => e.trim()).toList();
+        if (!categoryList.contains(widget.genre)) {
           continue;
         }
       }
@@ -513,28 +497,12 @@ class _ItemListState extends State<ItemList>
             .map((entry) => entry.key)
             .toList();
         if (selectedGenres.isNotEmpty) {
-          final brandId = item['item_brandid']?.toString();
-          if (brandId != null) {
-            try {
-              final brandData = await supabase
-                  .from('brand')
-                  .select()
-                  .eq('id', brandId)
-                  .single();
-              final genreString = brandData['brand_genre'] as String? ?? '';
-              final genreList =
-                  genreString.split(',').map((e) => e.trim()).toList();
-              bool hasMatchingGenre = false;
-              for (String selectedGenre in selectedGenres) {
-                if (genreList.contains(selectedGenre)) {
-                  hasMatchingGenre = true;
-                  break;
-                }
-              }
-            } catch (e) {
-              continue;
-            }
-          } else {
+          final category = item['item_category'] as String? ?? '';
+          final categoryList =
+              category.split(',').map((e) => e.trim()).toList();
+          bool hasMatchingGenre =
+              selectedGenres.any((g) => categoryList.contains(g));
+          if (!hasMatchingGenre) {
             continue;
           }
         }
@@ -930,7 +898,7 @@ class ItemCard extends StatelessWidget {
   }
 
   Widget _buildItemHeader() {
-    final brandId = item['item_brandid']?.toString();
+    final brandId = item['brand_id']?.toString();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -1361,11 +1329,11 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
 
   Future<List<String>> _getAvailableGenres() async {
     try {
-      final data = await supabase.from('brand').select();
+      final data = await supabase.from('item').select('item_category');
       Set<String> genres = {};
 
       for (var item in data) {
-        final genreString = item['brand_genre'] as String?;
+        final genreString = item['item_category'] as String?;
         if (genreString != null && genreString.isNotEmpty) {
           final genreList =
               genreString.split(',').map((e) => e.trim()).toList();
@@ -1699,7 +1667,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         }
       },
       child: FutureBuilder<Map<String, dynamic>>(
-        future: supabase.from('item').select().eq('id', widget.itemId).single(),
+        future: supabase.from('item').select().eq('item_id', widget.itemId).single(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
@@ -2381,7 +2349,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildExternalLinkButton(Map<String, dynamic> item) {
-    final url = item['item_URL'] as String?;
+    final url = item['item_url'] as String?;
     if (url == null || url.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -2479,7 +2447,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildBrandSection(Map<String, dynamic> item) {
-    final brandId = item['item_brandid']?.toString();
+    final brandId = item['brand_id']?.toString();
 
     if (brandId == null) {
       return Row(
@@ -2575,7 +2543,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildSameBrandProducts(Map<String, dynamic> item) {
-    final brandId = item['item_brandid']?.toString();
+    final brandId = item['brand_id']?.toString();
 
     if (brandId == null) return const SizedBox.shrink();
 
@@ -2596,7 +2564,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           future: supabase
               .from('item')
               .select()
-              .eq('item_brandid', brandId)
+              .eq('brand_id', brandId)
               .limit(10),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -2604,7 +2572,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             }
 
             final sameBrandItems = snapshot.data!
-                .where((doc) => doc['id'] != widget.itemId)
+                .where((doc) => doc['item_id']?.toString() != widget.itemId)
                 .toList();
 
             if (sameBrandItems.isEmpty) {
@@ -2633,7 +2601,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ItemDetailScreen(itemId: itemData['id']),
+                              ItemDetailScreen(itemId: itemData['item_id']),
                         ),
                       );
                     },
