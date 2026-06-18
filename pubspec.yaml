@@ -57,6 +57,9 @@ flutter:
   assets:
     - lib/widgets/lace.png
   fonts:
+    - family: MaterialIcons
+      fonts:
+        - asset: assets/fonts/MaterialIcons-Regular.otf
     - family: PinyonScript
       fonts:
         - asset: assets/fonts/Pinyon_Script/PinyonScript-Regular.ttf

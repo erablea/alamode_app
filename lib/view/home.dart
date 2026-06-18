@@ -999,7 +999,7 @@ class ItemCard extends StatelessWidget {
   Widget _buildItemImages(Map<String, dynamic> item) {
     final imageUrls = _getImageUrls(item);
 
-    if (imageUrls.isEmpty) return _buildNoImagePlaceholder();
+    if (imageUrls.isEmpty) return const SizedBox.shrink();
 
     return Row(
       children: [
