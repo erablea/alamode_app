@@ -31,3 +31,4 @@ web/firebase_app_id_file.json
 # OS
 .DS_Store
 Thumbs.db
+.claude/
