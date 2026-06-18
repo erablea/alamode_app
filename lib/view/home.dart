@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:alamode_app/main.dart';
+import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -999,7 +1000,12 @@ class ItemCard extends StatelessWidget {
   Widget _buildItemImages(Map<String, dynamic> item) {
     final imageUrls = _getImageUrls(item);
 
-    if (imageUrls.isEmpty) return const SizedBox.shrink();
+    if (imageUrls.isEmpty) {
+      return CategoryPlaceholder(
+        category: item['item_category'] as String?,
+        height: 110,
+      );
+    }
 
     return Row(
       children: [
@@ -1772,13 +1778,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final imageCount = imageUrls.length;
 
     if (imageUrls.isEmpty) {
-      return Container(
+      return CategoryPlaceholder(
+        category: item['item_category'] as String?,
         height: 300,
-        color: AppColors.greyLight,
-        child: const Center(
-          child: Icon(Icons.image_not_supported_outlined,
-              size: 60, color: AppColors.greyDark),
-        ),
       );
     }
 
