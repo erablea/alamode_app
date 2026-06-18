@@ -34,7 +34,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     //   {'value': 'item_rating', 'label': '評価が高い順'},
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
-    {'value': 'item_brand', 'label': 'ブランド名順'},
+    {'value': 'item_brand', 'label': '商品名順'},
   ];
 
   @override
@@ -44,36 +44,44 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     _loadFavoriteItems();
   }
 
+  bool _isLoading = false;
+
   Future<void> _loadFavoriteItems() async {
+    if (_isLoading) return;
+    _isLoading = true;
+
     final favoriteIds = await _getFavoriteItems();
-    List<Map<String, dynamic>> items = [];
-    List<String> validIds = [];
+    if (favoriteIds.isEmpty) {
+      setState(() {
+        _itemList = [];
+        _applyFiltersAndSort();
+      });
+      _isLoading = false;
+      return;
+    }
 
-    for (String itemId in favoriteIds) {
-      try {
-        final data = await supabase
-            .from('item')
-            .select()
-            .eq('item_id', itemId)
-            .maybeSingle();
-        if (data != null) {
-          items.add(data);
-          validIds.add(itemId);
-        }
-      } catch (e) {
-        // skip invalid items
+    try {
+      final data = await supabase
+          .from('item')
+          .select()
+          .inFilter('item_id', favoriteIds);
+
+      final fetchedIds = data.map((d) => d['item_id'].toString()).toSet();
+      final validIds = favoriteIds.where((id) => fetchedIds.contains(id)).toList();
+
+      if (validIds.length != favoriteIds.length) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('favorite', validIds);
       }
-    }
 
-    if (validIds.length != favoriteIds.length) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('favorite', validIds);
+      setState(() {
+        _itemList = List<Map<String, dynamic>>.from(data);
+        _applyFiltersAndSort();
+      });
+    } catch (e) {
+      // keep existing list on error
     }
-
-    setState(() {
-      _itemList = items;
-      _applyFiltersAndSort();
-    });
+    _isLoading = false;
   }
 
   void _applyFiltersAndSort() {
@@ -91,8 +99,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             .map((entry) => entry.key)
             .toList();
         if (selectedGenres.isNotEmpty) {
-          final itemGenre = item['item_category'] as String?;
-          if (itemGenre == null || !selectedGenres.contains(itemGenre)) {
+          final itemCategory = item['item_category'] as String?;
+          if (itemCategory == null) return false;
+          final itemGenres = itemCategory.split(',').map((e) => e.trim()).toList();
+          if (!itemGenres.any((g) => selectedGenres.contains(g))) {
             return false;
           }
         }
@@ -132,7 +142,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         case 'item_price_high':
           return (b['item_price'] ?? 0).compareTo(a['item_price'] ?? 0);
         case 'item_brand':
-          return (a['item_brand'] ?? '').compareTo(b['item_brand'] ?? '');
+          return (a['item_name'] ?? '').compareTo(b['item_name'] ?? '');
         default:
           return 0;
       }

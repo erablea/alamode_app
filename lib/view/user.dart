@@ -1288,7 +1288,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       case '会社名':
         return sweetData['item_company'] ?? '不明';
       case 'ジャンル':
-        return sweetData['item_genre'] ?? '不明';
+        return sweetData['item_category'] ?? '不明';
       case '金額':
         return '¥${Utils.formatCurrency(sweetData['item_price'])}';
       case '賞味期限':

@@ -326,9 +326,6 @@ class _ItemListState extends State<ItemList>
   static bool _globalFilterIndividualWrapping = false;
   static bool _globalFilterRoomTemperature = false;
   static bool _globalFilterOnline = false;
-/*  static double _globalFilterRatingMin = 1;
-  static double _globalFilterRatingMax = 5;
-*/
   @override
   bool get wantKeepAlive => true;
 
@@ -353,16 +350,9 @@ class _ItemListState extends State<ItemList>
   bool get _filterOnline => _globalFilterOnline;
   set _filterOnline(bool value) => _globalFilterOnline = value;
 
-/*  double get _filterRatingMin => _globalFilterRatingMin;
-  set _filterRatingMin(double value) => _globalFilterRatingMin = value;
-
-  double get _filterRatingMax => _globalFilterRatingMax;
-  set _filterRatingMax(double value) => _globalFilterRatingMax = value;
-*/
 
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
-/*    {'value': 'item_rating', 'label': '評価が高い順'},*/
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
     {'value': 'brand_name', 'label': 'ブランド名順'},
@@ -374,7 +364,6 @@ class _ItemListState extends State<ItemList>
 
   bool get _sortDescending {
     switch (_sortBy) {
-/*      case 'item_rating': */
       case 'item_price_high':
         return true; // 降順
       case 'brand_name':
@@ -536,13 +525,6 @@ class _ItemListState extends State<ItemList>
     return filteredDocs;
   }
 
-/*      // 評価フィルター
-      final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
-      if (rating < _filterRatingMin || rating > _filterRatingMax) {
-        return false;
-      }
-*/
-
   Widget _buildFilterAndSortRow() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -617,7 +599,6 @@ class _ItemListState extends State<ItemList>
   bool _hasActiveFilters() {
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
-/*    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5; */
     final hasOtherFilter =
         _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter;
@@ -701,29 +682,6 @@ class _ItemListState extends State<ItemList>
       ));
     }
 
-/*    // 評価フィルター
-    if (_filterRatingMin > 1 || _filterRatingMax < 5) {
-      String ratingLabel = '';
-      if (_filterRatingMin > 1 && _filterRatingMax < 5) {
-        ratingLabel =
-            '★${_filterRatingMin.toInt()} - ★${_filterRatingMax.toInt()}';
-      } else if (_filterRatingMin > 1) {
-        ratingLabel = '★${_filterRatingMin.toInt()}以上';
-      } else {
-        ratingLabel = '★${_filterRatingMax.toInt()}以下';
-      }
-
-      filterChips.add(_buildFilterChip(
-        label: ratingLabel,
-        onRemove: () {
-          setState(() {
-            _filterRatingMin = 1;
-            _filterRatingMax = 5;
-          });
-        },
-      ));
-    }
-*/
 
     return SizedBox(
       height: 32,
@@ -800,8 +758,6 @@ class _ItemListState extends State<ItemList>
         currentIndividualWrapping: _filterIndividualWrapping,
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
-/*        currentFilterRatingMin: _filterRatingMin,
-        currentFilterRatingMax: _filterRatingMax, */
         isAllTab: widget.genre == 'all', // allタブかどうかを新しいパラメータで渡す
       ),
     );
@@ -815,8 +771,6 @@ class _ItemListState extends State<ItemList>
         _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
-/*        _filterRatingMin = result['filterRatingMin'];
-        _filterRatingMax = result['filterRatingMax']; */
         _cachedDocs = null;
       });
     }
@@ -1047,13 +1001,6 @@ class ItemCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
-          /*          buildStarRating(context, item['item_rating'] as num? ?? 0),
-          const SizedBox(width: 4),
-          Text(
-            (item['item_rating'] as num?)?.toStringAsFixed(1) ?? 'new',
-            style: const TextStyle(fontSize: 14),
-          ),
-		*/
           const Spacer(),
           const Icon(Icons.currency_yen, size: 18),
           const SizedBox(width: 4),
@@ -1086,8 +1033,6 @@ class HomeFilterDialog extends StatefulWidget {
   final bool currentIndividualWrapping;
   final bool currentRoomTemperature;
   final bool currentOnline;
-/*  final double currentFilterRatingMin;
-  final double currentFilterRatingMax; */
   final bool isAllTab;
 
   const HomeFilterDialog({
@@ -1099,8 +1044,6 @@ class HomeFilterDialog extends StatefulWidget {
     required this.currentIndividualWrapping,
     required this.currentRoomTemperature,
     required this.currentOnline,
-/*    required this.currentFilterRatingMin,
-    required this.currentFilterRatingMax, */
     required this.isAllTab,
   });
 
@@ -1125,8 +1068,6 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempIndividualWrapping = widget.currentIndividualWrapping;
     _tempRoomTemperature = widget.currentRoomTemperature;
     _tempOnline = widget.currentOnline;
-/*    _tempFilterRatingRange = RangeValues(
-        widget.currentFilterRatingMin, widget.currentFilterRatingMax); */
   }
 
   @override
@@ -1252,8 +1193,6 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                           'filterIndividualWrapping': _tempIndividualWrapping,
                           'filterRoomTemperature': _tempRoomTemperature,
                           'filterOnline': _tempOnline,
-/*                          'filterRatingMin': _tempFilterRatingRange.start,
-                          'filterRatingMax': _tempFilterRatingRange.end, */
                         });
                       },
                       child: Container(

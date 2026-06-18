@@ -2114,7 +2114,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         _controllers['present_brand']!.text = result['item_brand'] ?? '';
         _controllers['present_price']!.text =
             Utils.formatCurrency(result['item_price']);
-        String? genre = result['item_genre'];
+        String? genre = result['item_category'];
         if (genre != null && genre.isNotEmpty) {
           _selectedGenres = {genre};
         }
@@ -2521,7 +2521,8 @@ class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
         newValue.text.length - newValue.selection.extentOffset;
     final parts = newValue.text.replaceAll(',', '');
     final formatter = NumberFormat('#,###', 'en_US');
-    final formatted = formatter.format(int.parse(parts));
+    final parsed = int.tryParse(parts);
+    final formatted = parsed != null ? formatter.format(parsed) : parts;
 
     return TextEditingValue(
       text: formatted,
@@ -2566,7 +2567,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
       final allItems = await Supabase.instance.client
           .from('item')
           .select()
-          .limit(1000);
+          .limit(5000);
       final normalizedQuery = Utils.normalizeString(query);
 
       final filteredResults = List<Map<String, dynamic>>.from(allItems)
