@@ -22,6 +22,8 @@ class AppColors {
   static const Color dialogBackground = Color(0xFFFAFAFA);
   static const Color cardBackground = Colors.white;
   static const Color shadowColor = Color(0x1A000000);
+  static const Color accentGold = Color(0xFFC8A96E);   // ゴールドアクセント
+  static const Color warmWhite = Color(0xFFFAF9F7);    // 温かみのある白
 }
 
 void main() async {
@@ -259,17 +261,13 @@ class _MainAppState extends State<MainApp> {
   Widget _buildFooterIconWithText(IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
+      onTap: () => setState(() => _selectedIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryColor.withOpacity(0.08)
+              ? AppColors.primaryColor.withOpacity(0.06)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -278,20 +276,20 @@ class _MainAppState extends State<MainApp> {
           children: [
             Icon(
               icon,
-              size: 22,
+              size: 20,
               color: isSelected
                   ? AppColors.primaryColor
-                  : AppColors.blackLight.withOpacity(0.7),
+                  : AppColors.blackLight.withOpacity(0.6),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'PinyonScript',
-                fontSize: 18,
+                fontSize: 16,
                 color: isSelected
                     ? AppColors.primaryColor
-                    : AppColors.blackLight.withOpacity(0.7),
+                    : AppColors.blackLight.withOpacity(0.6),
               ),
             ),
           ],

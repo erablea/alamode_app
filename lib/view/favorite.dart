@@ -26,12 +26,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _filterIndividualWrapping = false;
   bool _filterRoomTemperature = false;
   bool _filterOnline = false;
-  //double _filterRatingMin = 1;
-  //double _filterRatingMax = 5;
-
   // 並び替えオプション（homeと同じ）
   static const List<Map<String, String>> _sortOptions = [
-    //   {'value': 'item_rating', 'label': '評価が高い順'},
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
     {'value': 'item_brand', 'label': '商品名順'},
@@ -123,20 +119,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         if (value != "1" && value != 1 && value != true) return false;
       }
 
-/*     // 評価フィルター
-      final rating = (item['item_rating'] as num?)?.toDouble() ?? 0;
-      if (rating < _filterRatingMin || rating > _filterRatingMax) {
-        return false;
-      }
-*/
       return true;
     }).toList();
 
     // ソート
     _filteredList.sort((a, b) {
       switch (_sortBy) {
-/*        case 'item_rating':
-          return (b['item_rating'] ?? 0).compareTo(a['item_rating'] ?? 0);*/
         case 'item_price_low':
           return (a['item_price'] ?? 0).compareTo(b['item_price'] ?? 0);
         case 'item_price_high':
@@ -162,8 +150,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         currentIndividualWrapping: _filterIndividualWrapping,
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
-/*        currentFilterRatingMin: _filterRatingMin,
-        currentFilterRatingMax: _filterRatingMax, */
         isAllTab: true, // お気に入りではジャンルフィルターを表示
       ),
     );
@@ -175,8 +161,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
-/*        _filterRatingMin = result['filterRatingMin'];
-        _filterRatingMax = result['filterRatingMax'];*/
       });
       _applyFiltersAndSort();
     }
@@ -188,10 +172,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
     final hasOtherFilter =
         _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
-//    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
-    return hasGenreFilter ||
-        hasPriceFilter ||
-        hasOtherFilter /*|| hasRatingFilter*/;
+    return hasGenreFilter || hasPriceFilter || hasOtherFilter;
   }
 
   // homeからアクティブフィルターチップを借用
@@ -275,30 +256,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       ));
     }
 
-/*    // 評価フィルター
-    if (_filterRatingMin > 1 || _filterRatingMax < 5) {
-      String ratingLabel = '';
-      if (_filterRatingMin > 1 && _filterRatingMax < 5) {
-        ratingLabel =
-            '★${_filterRatingMin.toInt()} - ★${_filterRatingMax.toInt()}';
-      } else if (_filterRatingMin > 1) {
-        ratingLabel = '★${_filterRatingMin.toInt()}以上';
-      } else {
-        ratingLabel = '★${_filterRatingMax.toInt()}以下';
-      }
-
-      filterChips.add(_buildFilterChip(
-        label: ratingLabel,
-        onRemove: () {
-          setState(() {
-            _filterRatingMin = 1;
-            _filterRatingMax = 5;
-          });
-          _applyFiltersAndSort();
-        },
-      ));
-    }
-*/
     return SizedBox(
       height: 32,
       child: ListView(
@@ -438,12 +395,24 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             ],
             Expanded(
               child: _filteredList.isEmpty
-                  ? const Center(
-                      child: Text(
-                      'Search画面からお気に入りを登録してください',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ))
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.favorite_border_rounded, size: 40, color: AppColors.greyDark),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'まだお気に入りがありません',
+                            style: TextStyle(fontSize: 15, color: AppColors.blackLight),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Search からハートを押して登録できます',
+                            style: TextStyle(fontSize: 12, color: AppColors.greyDark),
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
                       itemCount:
                           AdUtils.calculateListItemCount(_filteredList.length),

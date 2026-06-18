@@ -350,7 +350,6 @@ class _ItemListState extends State<ItemList>
   bool get _filterOnline => _globalFilterOnline;
   set _filterOnline(bool value) => _globalFilterOnline = value;
 
-
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
     {'value': 'item_price_low', 'label': '価格の安い順'},
@@ -602,7 +601,6 @@ class _ItemListState extends State<ItemList>
     final hasOtherFilter =
         _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter;
-    /*|| hasRatingFilter; */
   }
 
   Widget _buildActiveFilters() {
@@ -681,7 +679,6 @@ class _ItemListState extends State<ItemList>
         },
       ));
     }
-
 
     return SizedBox(
       height: 32,
@@ -997,27 +994,29 @@ class ItemCard extends StatelessWidget {
 
   Widget _buildItemFooter(
       NumberFormat currencyFormat, Map<String, dynamic> item) {
+    final price = item['item_price'] as num?;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Row(
         children: [
           const Spacer(),
-          const Icon(Icons.currency_yen, size: 18),
+          Text(
+            price != null ? '¥ ${currencyFormat.format(price)}' : '—',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.blackDark,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(width: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                currencyFormat.format(item['item_price'] as num? ?? 0),
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 2),
-              const Text(
-                '（税込）',
-                style: TextStyle(fontSize: 10, color: AppColors.blackLight),
-              ),
-            ],
+          const Text(
+            '(税込)',
+            style: TextStyle(
+              fontSize: 9,
+              color: AppColors.blackLight,
+              letterSpacing: 0.3,
+            ),
           ),
         ],
       ),
@@ -1057,7 +1056,6 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempIndividualWrapping;
   late bool _tempRoomTemperature;
   late bool _tempOnline;
-/*  late RangeValues _tempFilterRatingRange; */
 
   @override
   void initState() {
@@ -1144,8 +1142,6 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                     _buildPriceFilter(),
                     const SizedBox(height: 24),
                     _buildOtherConditionsFilter(),
-/*                    const SizedBox(height: 24),
-                    _buildRatingFilter(), */
                   ],
                 ),
               ),
@@ -1475,124 +1471,6 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     );
   }
 
-/*  Widget _buildRatingFilter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '評価',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.greyLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.greyLight),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.greyLight),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ...List.generate(
-                          _tempFilterRatingRange.start.toInt(),
-                          (index) => const Icon(
-                            Icons.star_rounded,
-                            color: AppColors.starColor,
-                            size: 16,
-                          ),
-                        ),
-                        if (_tempFilterRatingRange.start < 5)
-                          ...List.generate(
-                            5 - _tempFilterRatingRange.start.toInt(),
-                            (index) => Icon(
-                              Icons.star_rounded,
-                              color: AppColors.greyDark.withOpacity(0.3),
-                              size: 16,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const Text(
-                    '〜',
-                    style: TextStyle(color: AppColors.blackDark, fontSize: 16),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.greyMedium),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ...List.generate(
-                          _tempFilterRatingRange.end.toInt(),
-                          (index) => const Icon(
-                            Icons.star_rounded,
-                            color: AppColors.starColor,
-                            size: 16,
-                          ),
-                        ),
-                        if (_tempFilterRatingRange.end < 5)
-                          ...List.generate(
-                            5 - _tempFilterRatingRange.end.toInt(),
-                            (index) => Icon(
-                              Icons.star_rounded,
-                              color: AppColors.greyDark.withOpacity(0.3),
-                              size: 16,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: AppColors.primaryColor,
-                  thumbColor: AppColors.primaryColor,
-                  overlayColor: AppColors.primaryColor.withOpacity(0.2),
-                  inactiveTrackColor: AppColors.greyLight,
-                  trackHeight: 4,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 8),
-                ),
-                child: RangeSlider(
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  values: _tempFilterRatingRange,
-                  onChanged: (values) =>
-                      setState(() => _tempFilterRatingRange = values),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }*/
 }
 
 class ItemDetailScreen extends StatefulWidget {
