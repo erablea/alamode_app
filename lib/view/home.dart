@@ -925,6 +925,7 @@ class ItemCard extends StatelessWidget {
                         builder: (context, snapshot) {
                           if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                             final brandData = snapshot.data!.first;
+                            final category = item['item_category'] as String?;
                             return Row(
                               children: [
                                 Expanded(
@@ -935,22 +936,25 @@ class ItemCard extends StatelessWidget {
                                     maxLines: 1,
                                   ),
                                 ),
+                                if (category != null && category.isNotEmpty) ...[  
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: AppColors.greyDark, width: 1),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      category,
+                                      style: const TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.blackLight),
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(width: 25),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                        color: AppColors.greyDark, width: 1),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    brandData['brand_genre'] as String? ?? '',
-                                    style: const TextStyle(
-                                        fontSize: 10,
-                                        color: AppColors.blackLight),
-                                  ),
-                                ),
                               ],
                             );
                           }
@@ -2490,8 +2494,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final brandData = snapshot.data!.first;
-          final genreString = brandData['brand_genre'] as String? ?? '';
-          final genres = genreString.split(',').map((e) => e.trim()).toList();
+          final category = item['item_category'] as String?;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2514,31 +2517,26 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (genres.isNotEmpty && genres.first.isNotEmpty)
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: genres.map((genre) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.greyLight,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.greyMedium),
-                      ),
-                      child: Text(
-                        genre,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.blackLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              if (category != null && category.isNotEmpty) ...[  
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.greyLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.greyMedium),
+                  ),
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.blackLight,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
+              ],
             ],
           );
         }
