@@ -675,7 +675,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterIndividualWrapping) {
       filterChips.add(_buildFilterChip(
-        label: '個包装可',
+        label: '個包装',
         onRemove: () {
           setState(() {
             _filterIndividualWrapping = false;
@@ -686,7 +686,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterRoomTemperature) {
       filterChips.add(_buildFilterChip(
-        label: '常温可',
+        label: '常温',
         onRemove: () {
           setState(() {
             _filterRoomTemperature = false;
@@ -697,7 +697,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterOnline) {
       filterChips.add(_buildFilterChip(
-        label: 'オンライン購入可',
+        label: 'オンライン購入',
         onRemove: () {
           setState(() {
             _filterOnline = false;
@@ -1448,19 +1448,19 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           runSpacing: 8.0,
           children: [
             _buildConditionChip(
-              '個包装可',
+              '個包装',
               _tempIndividualWrapping,
               (isSelected) =>
                   setState(() => _tempIndividualWrapping = !isSelected),
             ),
             _buildConditionChip(
-              '常温可',
+              '常温',
               _tempRoomTemperature,
               (isSelected) =>
                   setState(() => _tempRoomTemperature = !isSelected),
             ),
             _buildConditionChip(
-              'オンライン購入可',
+              'オンライン購入',
               _tempOnline,
               (isSelected) => setState(() => _tempOnline = !isSelected),
             ),
