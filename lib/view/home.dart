@@ -2069,9 +2069,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       details.add(_buildDetailItem('賞味期限', '${expiryDate.toInt()}日'));
     }
     final flags = <String, String>{
-      'item_individualwrapping': '個包装可',
-      'item_roomtemperature': '常温可',
-      'item_online': 'オンライン購入可',
+      'item_individualwrapping': '個包装',
+      'item_roomtemperature': '常温',
+      'item_online': 'オンライン購入',
     };
 
     List<Widget> flagWidgets = [];
@@ -2195,22 +2195,36 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Widget _buildFlagChip(String label, bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : AppColors.greyMedium.withOpacity(0.3),
+        color: isActive ? Colors.white : AppColors.greyLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? AppColors.primaryColor : AppColors.blackLight,
+          color: isActive ? AppColors.primaryColor : AppColors.greyDark,
           width: 1,
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: isActive ? AppColors.primaryColor : AppColors.blackLight,
-          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isActive ? AppColors.blackDark : AppColors.blackLight,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isActive ? '○' : '×',
+            style: TextStyle(
+              fontSize: 11,
+              color: isActive ? AppColors.primaryColor : AppColors.blackLight,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
       ),
     );
   }
