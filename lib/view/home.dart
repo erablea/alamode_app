@@ -307,6 +307,30 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
+/*  Widget _buildRatingFilter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '評価',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
+          ),
+        ),
+        RangeSlider(
+          min: 1,
+          max: 5,
+          divisions: 4,
+          values: _tempFilterRatingRange,
+          onChanged: (values) =>
+              setState(() => _tempFilterRatingRange = values),
+        ),
+      ],
+    );
+  }
+*/
 class ItemList extends StatefulWidget {
   final String genre;
   const ItemList({super.key, required this.genre});
@@ -352,6 +376,7 @@ class _ItemListState extends State<ItemList>
 
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
+    //   {'value': 'item_rating', 'label': '評価が高い順'},
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
     {'value': 'brand_name', 'label': 'ブランド名順'},
@@ -600,7 +625,8 @@ class _ItemListState extends State<ItemList>
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
     final hasOtherFilter =
         _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
-    return hasGenreFilter || hasPriceFilter || hasOtherFilter;
+//    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
+    return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
 
   Widget _buildActiveFilters() {
@@ -1056,6 +1082,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempIndividualWrapping;
   late bool _tempRoomTemperature;
   late bool _tempOnline;
+/*  late RangeValues _tempFilterRatingRange; */
 
   @override
   void initState() {
@@ -1142,6 +1169,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                     _buildPriceFilter(),
                     const SizedBox(height: 24),
                     _buildOtherConditionsFilter(),
+/*                    const SizedBox(height: 24),
+                    _buildRatingFilter(), */
                   ],
                 ),
               ),
