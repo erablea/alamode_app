@@ -163,7 +163,7 @@ class CommonWidgets {
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
   }) {
-    const conditions = ['個包装可', '常温可', 'オンライン購入可'];
+    const conditions = ['個包装', '常温', 'オンライン購入'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
