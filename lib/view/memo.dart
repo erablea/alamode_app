@@ -224,19 +224,17 @@ class CommonWidgets {
                           fontSize: 11,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isSelected ? '○' : '×',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isSelected
-                              ? AppColors.primaryColor
-                              : AppColors.blackLight,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                      if (isSelected) ...[
+                        const SizedBox(width: 4),
+                        const Text(
+                          '○',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
