@@ -1,7 +1,7 @@
 # alamode_app — Claude向けプロジェクト情報
 
 ## 技術スタック
-- Flutter (Web, Chrome) — `flutter run -d chrome`
+- Flutter (Web, Chrome) — 起動は常に `flutter clean && flutter pub get && flutter run -d chrome`
 - Supabase (バックエンド・DB)
 - SharedPreferences (ローカルストレージ)
 - フォント: PinyonScript, PlayfairDisplay, ZenMaruGothic, Corinthia
