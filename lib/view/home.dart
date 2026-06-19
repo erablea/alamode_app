@@ -2077,10 +2077,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     List<Widget> flagWidgets = [];
     flags.forEach((key, label) {
       final value = item[key];
-      if (value != null) {
-        final isActive = value == "1" || value == 1 || value == true;
-        flagWidgets.add(_buildFlagChip(label, isActive));
-      }
+      final isActive = value == true || value == "yes" || value == "1" || value == 1;
+      flagWidgets.add(_buildFlagChip(label, isActive));
     });
 
     if (flagWidgets.isNotEmpty) {
