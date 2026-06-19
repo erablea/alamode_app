@@ -200,27 +200,44 @@ class CommonWidgets {
                 },
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isSelected ? Colors.white : AppColors.greyLight,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.primaryColor
-                          : AppColors.greyLight,
+                          : AppColors.greyDark,
                       width: 1,
                     ),
                   ),
-                  child: Text(
-                    condition,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppColors.primaryColor
-                          : AppColors.blackLight,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 13,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        condition,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.blackDark
+                              : AppColors.blackLight,
+                          fontWeight: FontWeight.normal,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isSelected ? '○' : '×',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : AppColors.blackLight,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1027,6 +1044,43 @@ class _PresentListState extends State<PresentList> {
             ],
           ),
           const SizedBox(height: 8),
+          if (present['present_other_conditions'] != null &&
+              present['present_other_conditions'].toString().isNotEmpty)
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: present['present_other_conditions']
+                  .toString()
+                  .split(', ')
+                  .where((s) => s.isNotEmpty)
+                  .map<Widget>((condition) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: AppColors.primaryColor, width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(condition,
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.blackDark)),
+                            const SizedBox(width: 3),
+                            const Text('○',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          const SizedBox(height: 4),
         ],
       ),
     );
