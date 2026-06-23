@@ -271,9 +271,12 @@ class CommonWidgets {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData) {
-          return kIsWeb
-              ? Image.memory(base64Decode(snapshot.data!), fit: BoxFit.cover)
-              : Image.file(File(snapshot.data!), fit: BoxFit.cover);
+          return Container(
+            color: AppColors.warmWhite,
+            child: kIsWeb
+                ? Image.memory(base64Decode(snapshot.data!), fit: BoxFit.contain)
+                : Image.file(File(snapshot.data!), fit: BoxFit.contain),
+          );
         }
         return Container(
           color: AppColors.greyLight,
