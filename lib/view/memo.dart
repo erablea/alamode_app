@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:alamode_app/main.dart';
+import 'package:alamode_app/widgets/category_placeholder.dart';
 
 final presentLogger = Logger('PresentManagement');
 
@@ -950,7 +951,7 @@ class _PresentListState extends State<PresentList> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildPresentHeader(present),
-            _buildPresentImages(present['present_imageurl']),
+            _buildPresentImages(present['present_imageurl'], present['present_genre']),
             _buildPresentFooter(present),
           ],
         ),
@@ -958,8 +959,13 @@ class _PresentListState extends State<PresentList> {
     );
   }
 
-  Widget _buildPresentImages(String? imageUrl) {
-    if (imageUrl == null) return const SizedBox.shrink();
+  Widget _buildPresentImages(String? imageUrl, String? genre) {
+    if (imageUrl == null) {
+      return CategoryPlaceholder(
+        category: genre,
+        height: 110,
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: ClipRRect(
@@ -1103,8 +1109,7 @@ class _PresentListState extends State<PresentList> {
             children: [
               Text(
                 Utils.formatCurrency(present['present_price'] ?? 0),
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.accentGold),
               ),
               const SizedBox(width: 2),
               const Text(

@@ -921,14 +921,14 @@ class ItemCard extends StatelessWidget {
                                         horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: AppColors.greyDark, width: 1),
+                                          color: AppColors.accentGold, width: 1),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Text(
                                       category,
                                       style: const TextStyle(
                                           fontSize: 10,
-                                          color: AppColors.blackLight),
+                                          color: AppColors.accentGold),
                                     ),
                                   ),
                                 ],
@@ -991,9 +991,10 @@ class ItemCard extends StatelessWidget {
             child: Container(
               margin: EdgeInsets.only(right: i < imageUrls.length - 1 ? 1 : 0),
               height: 110,
+              color: imageUrls.length == 1 ? AppColors.warmWhite : null,
               child: CachedNetworkImage(
                 imageUrl: imageUrls[i],
-                fit: BoxFit.cover,
+                fit: imageUrls.length == 1 ? BoxFit.contain : BoxFit.cover,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
@@ -1031,7 +1032,7 @@ class ItemCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.blackDark,
+              color: AppColors.accentGold,
               letterSpacing: 0.5,
             ),
           ),

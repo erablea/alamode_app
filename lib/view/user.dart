@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
+import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -192,10 +193,12 @@ class _UserScreenState extends State<UserScreen> {
                                                 _presentService,
                                               ),
                                             )
-                                          : const Icon(
-                                              Icons.image_outlined,
-                                              size: 32,
-                                              color: AppColors.blackLight,
+                                          : ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: CategoryPlaceholder(
+                                                category: present['present_genre'],
+                                                height: 60,
+                                              ),
                                             ),
                                     ),
                                     const SizedBox(width: 16),
@@ -232,7 +235,8 @@ class _UserScreenState extends State<UserScreen> {
                                                 '¥${Utils.formatCurrency(present['present_price'])}',
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: AppColors.blackLight,
+                                                  color: AppColors.accentGold,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                               const SizedBox(width: 16),
