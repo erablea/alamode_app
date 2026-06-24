@@ -991,10 +991,10 @@ class ItemCard extends StatelessWidget {
             child: Container(
               margin: EdgeInsets.only(right: i < imageUrls.length - 1 ? 1 : 0),
               height: 110,
-              color: imageUrls.length == 1 ? AppColors.warmWhite : null,
+              color: AppColors.warmWhite,
               child: CachedNetworkImage(
                 imageUrl: imageUrls[i],
-                fit: imageUrls.length == 1 ? BoxFit.contain : BoxFit.cover,
+                fit: BoxFit.contain,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
