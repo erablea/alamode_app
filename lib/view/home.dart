@@ -899,7 +899,6 @@ class ItemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -926,20 +925,16 @@ class ItemCard extends StatelessWidget {
                             ),
                             if (category != null && category.isNotEmpty) ...[
                               const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: AppColors.greyDark, width: 1),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  category,
-                                  style: const TextStyle(
-                                      fontSize: 10,
-                                      color: AppColors.blackLight),
-                                ),
+                              ...category.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).map((c) =>
+                                Container(
+                                  margin: const EdgeInsets.only(left: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColors.greyDark, width: 1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(c, style: const TextStyle(fontSize: 10, color: AppColors.blackLight)),
+                                )
                               ),
                             ],
                           ],

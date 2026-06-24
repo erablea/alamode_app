@@ -12,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const List<Map<String, dynamic>> appThemes = [
   {'key': 'blue',  'name': '花束に添えて',     'color': Color(0xFF1C6ECD)},
   {'key': 'pink',  'name': '愛と知る',         'color': Color(0xFFE8629A)},
-  {'key': 'green', 'name': '芽吹きの気配',     'color': Color(0xFF8CC63F)},
+  {'key': 'green', 'name': '芽吹きの気配',     'color': Color(0xFFA3C520)},
   {'key': 'gold',  'name': '季節の待ち合わせ', 'color': Color(0xFFC8A96E)},
 ];
 
@@ -336,8 +336,8 @@ class _MainAppState extends State<MainApp> {
             Text(
               label,
               style: TextStyle(
-                fontFamily: 'Corinthia',
-                fontSize: 18,
+                fontFamily: 'PinyonScript',
+                fontSize: 22,
                 color: isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
               ),
             ),

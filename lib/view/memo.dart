@@ -289,7 +289,10 @@ class CommonWidgets {
   }
 
   static InputDecoration buildInputDecoration(String labelText,
-      {Widget? suffixIcon}) {
+      {Widget? suffixIcon, BuildContext? context}) {
+    final focusColor = context != null
+        ? Theme.of(context).primaryColor
+        : AppColors.inputFocusColor;
     return InputDecoration(
       labelText: labelText,
       labelStyle: const TextStyle(
@@ -307,8 +310,7 @@ class CommonWidgets {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide:
-            const BorderSide(color: AppColors.inputFocusColor, width: 2),
+        borderSide: BorderSide(color: focusColor, width: 2),
       ),
       filled: true,
       fillColor: AppColors.cardBackground,
@@ -1980,7 +1982,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         TextFormField(
           controller: _whoFieldController,
           focusNode: _whoFocusNode,
-          decoration: CommonWidgets.buildInputDecoration(label),
+          decoration: CommonWidgets.buildInputDecoration(label, context: context),
           validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
           onChanged: (_) => setState(() {}),
         ),
@@ -2327,6 +2329,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                   icon: const Icon(Icons.search),
                   onPressed: () => _showSearchDialog(SearchType.name),
                 ),
+                context: context,
               ),
               validator: (value) => value!.isEmpty ? '必須項目です' : null,
             ),
@@ -2339,6 +2342,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                   icon: const Icon(Icons.search),
                   onPressed: () => _showSearchDialog(SearchType.brand),
                 ),
+                context: context,
               ),
               validator: (value) => value!.isEmpty ? '必須項目です' : null,
             ),
@@ -2353,7 +2357,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                   flex: 2,
                   child: TextFormField(
                     controller: _controllers['present_price']!,
-                    decoration: CommonWidgets.buildInputDecoration('金額'),
+                    decoration: CommonWidgets.buildInputDecoration('金額', context: context),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -2474,7 +2478,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
-                      color: AppColors.inputFocusColor, width: 2),
+                      color: Theme.of(context).primaryColor, width: 2),
                 ),
                 filled: true,
                 fillColor: AppColors.cardBackground,
@@ -2714,7 +2718,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
-                      color: AppColors.inputFocusColor, width: 2),
+                      color: Theme.of(context).primaryColor, width: 2),
                 ),
                 filled: true,
                 fillColor: AppColors.cardBackground,
@@ -2724,9 +2728,9 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
             const SizedBox(height: 16),
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.inputFocusColor,
+                        color: Theme.of(context).primaryColor,
                       ),
                     )
                   : !_hasSearched
