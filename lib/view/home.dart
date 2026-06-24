@@ -875,89 +875,85 @@ class ItemCard extends StatelessWidget {
     final brandId = item['brand_id']?.toString();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Stack(
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                item['item_name'] as String? ?? '',
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryColor),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+              Expanded(
+                child: Text(
+                  item['item_name'] as String? ?? '',
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryColor),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.storefront, size: 16),
-                  const SizedBox(width: 4),
-                  if (brandId != null)
-                    Expanded(
-                      child: FutureBuilder<List<Map<String, dynamic>>>(
-                        future: supabase
-                            .from('brand').select().eq('brand_id', brandId),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                            final brandData = snapshot.data!.first;
-                            final category = item['item_category'] as String?;
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    brandData['brand_name'] as String? ?? '',
-                                    style: const TextStyle(fontSize: 14),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ),
-                                if (category != null && category.isNotEmpty) ...[  
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: AppColors.accentGold, width: 1),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Text(
-                                      category,
-                                      style: const TextStyle(
-                                          fontSize: 10,
-                                          color: AppColors.accentGold),
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(width: 44),
-                              ],
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-          Positioned(
-            right: 0,
-            top: 10,
-            child: Transform.scale(
-              scale: 1.2,
-              child: FavoriteButton(
+              FavoriteButton(
                 itemId: itemId,
                 onFavoriteChanged: onFavoriteChanged ?? () {},
               ),
-            ),
+            ],
           ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.storefront, size: 14, color: AppColors.blackLight),
+              const SizedBox(width: 4),
+              if (brandId != null)
+                Expanded(
+                  child: FutureBuilder<List<Map<String, dynamic>>>(
+                    future: supabase
+                        .from('brand').select().eq('brand_id', brandId),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                        final brandData = snapshot.data!.first;
+                        final category = item['item_category'] as String?;
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                brandData['brand_name'] as String? ?? '',
+                                style: const TextStyle(fontSize: 13, color: AppColors.blackLight),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            if (category != null && category.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: AppColors.greyDark, width: 1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  category,
+                                  style: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.blackLight),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+            ],
+          ),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -1032,7 +1028,7 @@ class ItemCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.accentGold,
+              color: AppColors.blackDark,
               letterSpacing: 0.5,
             ),
           ),

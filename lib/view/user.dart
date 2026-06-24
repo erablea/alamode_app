@@ -235,7 +235,7 @@ class _UserScreenState extends State<UserScreen> {
                                                 '¥${Utils.formatCurrency(present['present_price'])}',
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: AppColors.accentGold,
+                                                  color: AppColors.blackDark,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
