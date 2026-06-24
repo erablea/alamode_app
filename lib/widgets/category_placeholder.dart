@@ -7,8 +7,21 @@ class CategoryPlaceholder extends StatelessWidget {
 
   const CategoryPlaceholder({super.key, this.category, this.height = 110});
 
+  static const _imageCategories = {
+    'クッキー': 'assets/images/cookie.png',
+  };
+
   @override
   Widget build(BuildContext context) {
+    final imagePath = _imageCategories[category];
+    if (imagePath != null) {
+      return Container(
+        width: double.infinity,
+        height: height,
+        color: const Color(0xFFF5F5F3),
+        child: Image.asset(imagePath, fit: BoxFit.contain),
+      );
+    }
     return Container(
       width: double.infinity,
       height: height,

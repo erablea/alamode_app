@@ -354,7 +354,7 @@ class _UserScreenState extends State<UserScreen> {
                 height: 40.0,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('lib/widgets/lace.png'),
+                    image: AssetImage('assets/images/lace.png'),
                     repeat: ImageRepeat.repeatX,
                     fit: BoxFit.fitHeight,
                   ),
