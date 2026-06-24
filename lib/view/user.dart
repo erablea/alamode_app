@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
+import 'package:alamode_app/widgets/person_icon.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -90,17 +91,22 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        radius: 20,
-                        child: Text(
-                          person.isNotEmpty ? person[0] : '?',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: AppColors.blackDark,
-                          ),
-                        ),
+                      GestureDetector(
+                        onTap: () async {
+                          final currentIndex = await PersonIconService.getIconIndex(person);
+                          final result = await showDialog<int>(
+                            context: context,
+                            builder: (_) => PersonIconPickerDialog(
+                              personName: person,
+                              currentIndex: currentIndex,
+                            ),
+                          );
+                          if (result != null) {
+                            await PersonIconService.saveIconIndex(person, result);
+                            setState(() {});
+                          }
+                        },
+                        child: PersonAvatar(personName: person, radius: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -636,18 +642,7 @@ class _UserScreenState extends State<UserScreen> {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
-                                    CircleAvatar(
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                      radius: 22,
-                                      child: Text(
-                                        person.isNotEmpty ? person[0] : '?',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: AppColors.blackDark,
-                                        ),
-                                      ),
-                                    ),
+                                    PersonAvatar(personName: person, radius: 22),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(

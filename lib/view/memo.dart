@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
+import 'package:alamode_app/widgets/person_icon.dart';
 
 final presentLogger = Logger('PresentManagement');
 
@@ -1035,7 +1036,10 @@ class _PresentListState extends State<PresentList> {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.person, size: 16),
+              PersonAvatar(
+                personName: present['present_who'] ?? '',
+                radius: 10,
+              ),
               const SizedBox(width: 4),
               Text(
                 present['present_who'] ?? '',
@@ -1975,16 +1979,48 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       final query = _whoFieldController.text;
       return query.isEmpty || name.contains(query);
     }).toList();
+    final whoName = _whoFieldController.text;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextFormField(
-          controller: _whoFieldController,
-          focusNode: _whoFocusNode,
-          decoration: CommonWidgets.buildInputDecoration(label, context: context),
-          validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
-          onChanged: (_) => setState(() {}),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: whoName.isEmpty ? null : () async {
+                final currentIndex = await PersonIconService.getIconIndex(whoName);
+                final result = await showDialog<int>(
+                  context: context,
+                  builder: (_) => PersonIconPickerDialog(
+                    personName: whoName,
+                    currentIndex: currentIndex,
+                  ),
+                );
+                if (result != null) {
+                  await PersonIconService.saveIconIndex(whoName, result);
+                  setState(() {});
+                }
+              },
+              child: whoName.isEmpty
+                  ? CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.greyMedium,
+                      child: const Icon(Icons.person, size: 20, color: AppColors.greyDark),
+                    )
+                  : PersonAvatar(personName: whoName, radius: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _whoFieldController,
+                focusNode: _whoFocusNode,
+                decoration: CommonWidgets.buildInputDecoration(label, context: context),
+                validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
         ),
         if (_whoFocusNode.hasFocus && suggestions.isNotEmpty)
           Material(

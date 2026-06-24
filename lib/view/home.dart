@@ -873,82 +873,77 @@ class ItemCard extends StatelessWidget {
 
   Widget _buildItemHeader(BuildContext context) {
     final brandId = item['brand_id']?.toString();
+    final category = item['item_category'] as String?;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 12, 0),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 0),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   item['item_name'] as String? ?? '',
                   style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
-              ),
-              FavoriteButton(
-                itemId: itemId,
-                onFavoriteChanged: onFavoriteChanged ?? () {},
-              ),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Icon(Icons.storefront, size: 13, color: AppColors.blackLight),
-              const SizedBox(width: 4),
-              if (brandId != null)
-                Expanded(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: supabase
-                        .from('brand').select().eq('brand_id', brandId),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                        final brandData = snapshot.data!.first;
-                        final category = item['item_category'] as String?;
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                brandData['brand_name'] as String? ?? '',
-                                style: const TextStyle(fontSize: 13, color: AppColors.blackLight),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.storefront, size: 12, color: AppColors.blackLight),
+                    const SizedBox(width: 3),
+                    if (brandId != null)
+                      Expanded(
+                        child: FutureBuilder<List<Map<String, dynamic>>>(
+                          future: supabase.from('brand').select().eq('brand_id', brandId),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                              return Text(
+                                snapshot.data!.first['brand_name'] as String? ?? '',
+                                style: const TextStyle(fontSize: 12, color: AppColors.blackLight),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
-                              ),
-                            ),
-                            if (category != null && category.isNotEmpty) ...[
-                              const SizedBox(width: 6),
-                              ...category.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).map((c) =>
-                                Container(
-                                  margin: const EdgeInsets.only(left: 3),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.greyDark, width: 1),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(c, style: const TextStyle(fontSize: 10, color: AppColors.blackLight)),
-                                )
-                              ),
-                            ],
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-            ],
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      )
+                    else
+                      const SizedBox.shrink(),
+                    if (category != null && category.isNotEmpty)
+                      ...category.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).map((c) =>
+                        Container(
+                          margin: const EdgeInsets.only(left: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.greyDark, width: 1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(c, style: const TextStyle(fontSize: 9, color: AppColors.blackLight)),
+                        )
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: FavoriteButton(
+              itemId: itemId,
+              onFavoriteChanged: onFavoriteChanged ?? () {},
+            ),
+          ),
         ],
       ),
     );
@@ -2619,6 +2614,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
             size: 22,
           ),
           onPressed: _toggleFavorite,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
         );
       },
     );
