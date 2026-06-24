@@ -560,7 +560,7 @@ class _UserScreenState extends State<UserScreen> {
             ),
           ),
           _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   height: 120,
                   child: Center(
                     child: CircularProgressIndicator(
@@ -823,7 +823,7 @@ class _UserScreenState extends State<UserScreen> {
         screen = _buildContactScreen();
         break;
       case '運営会社・利用規約':
-        screen = _buildTermsScreen();
+        screen = _buildTermsScreen(context);
         break;
       default:
         screen = Scaffold(
@@ -842,7 +842,7 @@ class _UserScreenState extends State<UserScreen> {
       appBar: AppBar(
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).primaryColor,
@@ -912,11 +912,11 @@ class _UserScreenState extends State<UserScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _buildFeatureItem(Icons.search, '商品検索',
+        _buildFeatureItem(context, Icons.search, '商品検索',
             'おすすめ商品を編集部が随時更新しています。お気に入りをして贈り物やご褒美の参考にしよう'),
-        _buildFeatureItem(Icons.star_outline, '反応や評価を記録',
+        _buildFeatureItem(context, Icons.star_outline, '反応や評価を記録',
             'Memoタブから贈った時の反応や自己評価を5段階で記録できます'),
-        _buildFeatureItem(Icons.people_outline, '人別管理',
+        _buildFeatureItem(context, Icons.people_outline, '人別管理',
             'Memoタブで記録すると、贈った人・貰った人ごとに履歴を管理できます'),
       ],
     );
@@ -2075,11 +2075,11 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
   }
 }
 
-Widget _buildTermsScreen() {
+Widget _buildTermsScreen(BuildContext context) {
   return Scaffold(
     backgroundColor: AppColors.greyLight,
     appBar: AppBar(
-      title: const Text(
+      title: Text(
         '運営会社・利用規約',
         style: TextStyle(
           fontSize: 18,
@@ -2228,32 +2228,32 @@ Widget _buildTermsScreen() {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第1条（適用）',
                       '1. 本規約は、ユーザーと当方との間の本サービスの利用に関わる一切の関係に適用されるものとします。\n'
                           '2. 当方は本サービスに関し、本規約のほか、ご利用にあたってのルール等、各種の定め（以下「個別規定」）をすることがあります。これら個別規定はその名称のいかんに関わらず、本規約の一部を構成するものとします。\n'
                           '3. 本規約の規定が前項の個別規定の規定と矛盾する場合には、個別規定において特段の定めなき限り、個別規定の規定が優先されるものとします。'),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第2条（利用登録）',
                       '1. 本サービスにおいては、登録希望者が本規約に同意の上、当方の定める方法によって利用登録を申請し、当方がこれを承認することによって、利用登録が完了するものとします。\n'
                           '2. 当方は、利用登録の申請者に以下の事由があると判断した場合、利用登録の申請を承認しないことがあり、その理由については一切の開示義務を負わないものとします。\n'
                           '・利用登録の申請に際して虚偽の事項を届け出た場合\n'
                           '・本規約に違反したことがある者からの申請である場合\n'
                           '・その他、当社が利用登録を相当でないと判断した場合'),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第3条（アカウント管理）',
                       '1. ユーザーは、自己の責任において、本サービスのアカウント情報を適切に管理するものとします。\n'
                           '2. ユーザーは、いかなる場合にも、アカウント情報を第三者に譲渡または貸与し、もしくは第三者と共用することはできません。\n'
                           '3. アカウント情報の管理不十分、使用上の過誤、第三者の使用等によって生じた損害の責任は、ユーザーが負うものとします。'),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第4条（サービス内容）',
                       '1. 本サービスは無料でご利用いただけます。\n'
                           '2. 本サービスで登録されたデータは、主にオフラインでの利用を想定しています。'),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第5条（個人情報の取扱い）',
                       '1. 当方は、本サービスの利用によって取得する個人情報については、当方プライバシーポリシーに従い適切に取り扱います。\n'
                           '2. 当方は、個人を特定できない形で統計的に処理したデータについて、サービス改善やその他の目的で利用する場合があります。'),
-                  _buildTermsSection(
+                  _buildTermsSection(context, 
                       '第6条（禁止事項）',
                       'ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。\n'
                           '1. 法令または公序良俗に違反する行為\n'
@@ -2286,7 +2286,7 @@ Widget _buildTermsScreen() {
   );
 }
 
-Widget _buildFeatureItem(IconData icon, String title, String description) {
+Widget _buildFeatureItem(BuildContext context, IconData icon, String title, String description) {
   return Container(
     margin: const EdgeInsets.only(bottom: 16),
     padding: const EdgeInsets.all(16),
@@ -2372,7 +2372,7 @@ Widget _buildInfoRow(String label, String content) {
   );
 }
 
-Widget _buildTermsSection(String title, String content) {
+Widget _buildTermsSection(BuildContext context, String title, String content) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 20),
     child: Column(
