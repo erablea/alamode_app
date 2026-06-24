@@ -2477,7 +2477,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                       color: Theme.of(context).primaryColor, width: 2),
                 ),
                 filled: true,
@@ -2717,7 +2717,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                       color: Theme.of(context).primaryColor, width: 2),
                 ),
                 filled: true,
