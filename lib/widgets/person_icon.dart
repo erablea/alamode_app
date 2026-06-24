@@ -58,8 +58,9 @@ class PersonIconService {
 class PersonAvatar extends StatefulWidget {
   final String personName;
   final double radius;
+  final bool showEditBadge;
 
-  const PersonAvatar({super.key, required this.personName, this.radius = 20});
+  const PersonAvatar({super.key, required this.personName, this.radius = 20, this.showEditBadge = false});
 
   @override
   State<PersonAvatar> createState() => _PersonAvatarState();
@@ -87,6 +88,32 @@ class _PersonAvatarState extends State<PersonAvatar> {
 
   @override
   Widget build(BuildContext context) {
+    final avatar = _buildAvatar(context);
+    if (!widget.showEditBadge) return avatar;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        avatar,
+        Positioned(
+          bottom: -4,
+          right: -8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.blackDark.withOpacity(0.65),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              '編集',
+              style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context) {
     if (_iconIndex != null && _iconIndex! >= 0 && _iconIndex! < kPersonIcons.length) {
       final def = kPersonIcons[_iconIndex!];
       return CircleAvatar(
