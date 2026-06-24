@@ -87,6 +87,7 @@ class CommonWidgets {
   }
 
   static Widget buildGenreSelector({
+    required BuildContext context,
     required Set<String> selectedGenres,
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
@@ -134,7 +135,7 @@ class CommonWidgets {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primaryColor
+                          ? Theme.of(context).primaryColor
                           : AppColors.greyLight,
                       width: 1,
                     ),
@@ -143,7 +144,7 @@ class CommonWidgets {
                     genre,
                     style: TextStyle(
                       color: isSelected
-                          ? AppColors.primaryColor
+                          ? Theme.of(context).primaryColor
                           : AppColors.blackLight,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -160,6 +161,7 @@ class CommonWidgets {
   }
 
   static Widget buildOtherConditionSelector({
+    required BuildContext context,
     required Set<String> selectedConditions,
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
@@ -207,7 +209,7 @@ class CommonWidgets {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primaryColor
+                          ? Theme.of(context).primaryColor
                           : AppColors.greyDark,
                       width: 1,
                     ),
@@ -227,11 +229,11 @@ class CommonWidgets {
                       ),
                       if (isSelected) ...[
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           '○',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.primaryColor,
+                            color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -690,7 +692,7 @@ class _PresentListState extends State<PresentList> {
               Icon(
                 icon,
                 size: 15,
-                color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
               ),
               const SizedBox(width: 5),
               Text(
@@ -698,7 +700,7 @@ class _PresentListState extends State<PresentList> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                  color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
                 ),
               ),
             ],
@@ -765,7 +767,7 @@ class _PresentListState extends State<PresentList> {
             Icons.check,
             size: 16,
             color: _currentSortOrder == value
-                ? AppColors.primaryColor
+                ? Theme.of(context).primaryColor
                 : Colors.transparent,
           ),
           const SizedBox(width: 8),
@@ -1067,7 +1069,7 @@ class _PresentListState extends State<PresentList> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: AppColors.primaryColor, width: 1),
+                              color: Theme.of(context).primaryColor, width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1077,10 +1079,10 @@ class _PresentListState extends State<PresentList> {
                                     fontSize: 10,
                                     color: AppColors.blackDark)),
                             const SizedBox(width: 3),
-                            const Text('○',
+                            Text('○',
                                 style: TextStyle(
                                     fontSize: 10,
-                                    color: AppColors.primaryColor,
+                                    color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.w600)),
                           ],
                         ),
@@ -1300,12 +1302,12 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'フィルタリング',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primaryColor,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                   Material(
@@ -1376,7 +1378,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                   ),
                   const SizedBox(width: 12),
                   Material(
-                    color: AppColors.primaryColor,
+                    color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -1416,6 +1418,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
 
   Widget _buildGenreSelector() {
     return CommonWidgets.buildGenreSelector(
+      context: context,
       selectedGenres: _selectedGenres,
       onSelectionChanged: (newSelection) {
         setState(() {
@@ -1433,6 +1436,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
 
   Widget _buildOtherConditionSelector() {
     return CommonWidgets.buildOtherConditionSelector(
+      context: context,
       selectedConditions: _selectedOtherConditions,
       onSelectionChanged: (newSelection) {
         setState(() {
@@ -1486,7 +1490,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primaryColor
+                          ? Theme.of(context).primaryColor
                           : AppColors.greyLight,
                       width: 1,
                     ),
@@ -1495,7 +1499,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     who.toString(),
                     style: TextStyle(
                       color: isSelected
-                          ? AppColors.primaryColor
+                          ? Theme.of(context).primaryColor
                           : AppColors.blackLight,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -1648,9 +1652,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
               const SizedBox(height: 16),
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: AppColors.primaryColor,
-                  thumbColor: AppColors.primaryColor,
-                  overlayColor: AppColors.primaryColor.withOpacity(0.2),
+                  activeTrackColor: Theme.of(context).primaryColor,
+                  thumbColor: Theme.of(context).primaryColor,
+                  overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
                   inactiveTrackColor: AppColors.greyLight,
                   trackHeight: 4,
                   thumbShape:
@@ -2011,6 +2015,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   Widget _buildGenreSelector() {
     return CommonWidgets.buildGenreSelector(
+      context: context,
       selectedGenres: _selectedGenres,
       onSelectionChanged: (newSelection) {
         setState(() {
@@ -2023,6 +2028,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   Widget _buildOtherConditionSelector() {
     return CommonWidgets.buildOtherConditionSelector(
+      context: context,
       selectedConditions: _selectedOtherConditions,
       onSelectionChanged: (newSelection) {
         setState(() {
@@ -2128,7 +2134,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
           child: Theme(
             data: Theme.of(context).copyWith(
               colorScheme: Theme.of(context).colorScheme.copyWith(
-                    primary: AppColors.primaryColor,
+                    primary: Theme.of(context).primaryColor,
                     onPrimary: AppColors.blackDark,
                     surface: AppColors.cardBackground,
                     onSurface: AppColors.blackDark,
@@ -2138,8 +2144,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
               view: DateRangePickerView.month,
               selectionMode: DateRangePickerSelectionMode.single,
               initialSelectedDate: _selectedDate,
-              selectionColor: AppColors.primaryColor,
-              todayHighlightColor: AppColors.primaryColor,
+              selectionColor: Theme.of(context).primaryColor,
+              todayHighlightColor: Theme.of(context).primaryColor,
               onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
                 if (args.value is DateTime) {
                   setState(() => _selectedDate = args.value);
@@ -2204,14 +2210,14 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       appBar: AppBar(
         title: Text(
           title,
-          style: const TextStyle(
-            color: AppColors.primaryColor,
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryColor),
+        iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
         actions: [
           if (widget.initialPresent != null)
             IconButton(
@@ -2282,7 +2288,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
               Icon(
                 icon,
                 size: 16,
-                color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
               ),
               const SizedBox(width: 6),
               Text(
@@ -2290,7 +2296,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+                  color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
                 ),
               ),
             ],

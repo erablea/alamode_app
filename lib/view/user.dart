@@ -82,7 +82,7 @@ class _UserScreenState extends State<UserScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -91,7 +91,7 @@ class _UserScreenState extends State<UserScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primaryColor,
+                        backgroundColor: Theme.of(context).primaryColor,
                         radius: 20,
                         child: Text(
                           person.isNotEmpty ? person[0] : '?',
@@ -315,7 +315,7 @@ class _UserScreenState extends State<UserScreen> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -383,10 +383,14 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
+  bool _themeExpanded = false;
+
   Widget _buildThemeSection() {
     return ValueListenableBuilder<int>(
       valueListenable: themeNotifier,
       builder: (context, currentIndex, _) {
+        final selectedColor = (appThemes[currentIndex]['color'] as Color);
+        final selectedName = appThemes[currentIndex]['name'] as String;
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -397,80 +401,98 @@ class _UserScreenState extends State<UserScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(8),
+              GestureDetector(
+                onTap: () => setState(() => _themeExpanded = !_themeExpanded),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: selectedColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: selectedColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.palette_outlined, color: Colors.white, size: 18),
                       ),
-                      child: const Icon(Icons.palette_outlined, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('テーマカラー', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
-                  ],
+                      const SizedBox(width: 12),
+                      const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(color: selectedColor, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(selectedName, style: TextStyle(fontSize: 12, color: selectedColor, fontWeight: FontWeight.w500)),
+                      const Spacer(),
+                      Icon(
+                        _themeExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: AppColors.blackLight,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: List.generate(appThemes.length, (i) {
-                    final theme = appThemes[i];
-                    final isSelected = currentIndex == i;
-                    final color = theme['color'] as Color;
-                    return GestureDetector(
-                      onTap: () async {
-                        themeNotifier.value = i;
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('theme_key', theme['key'] as String);
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                theme['name'] as String,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  color: isSelected ? color : AppColors.blackDark,
+              if (_themeExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Column(
+                    children: List.generate(appThemes.length, (i) {
+                      final theme = appThemes[i];
+                      final isSelected = currentIndex == i;
+                      final color = theme['color'] as Color;
+                      return GestureDetector(
+                        onTap: () async {
+                          themeNotifier.value = i;
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('theme_key', theme['key'] as String);
+                        },
+                        child: Container(
+                          margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
                                 ),
                               ),
-                            ),
-                            if (isSelected)
-                              Icon(Icons.check_circle, color: color, size: 20),
-                          ],
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  theme['name'] as String,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                    color: isSelected ? color : AppColors.blackDark,
+                                  ),
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(Icons.check_circle, color: color, size: 18),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -498,7 +520,7 @@ class _UserScreenState extends State<UserScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -509,7 +531,7 @@ class _UserScreenState extends State<UserScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor,
+                    color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -543,7 +565,7 @@ class _UserScreenState extends State<UserScreen> {
                   child: Center(
                     child: CircularProgressIndicator(
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
+                          AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
                     ),
                   ),
                 )
@@ -613,7 +635,7 @@ class _UserScreenState extends State<UserScreen> {
                                 child: Row(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor: AppColors.primaryColor,
+                                      backgroundColor: Theme.of(context).primaryColor,
                                       radius: 22,
                                       child: Text(
                                         person.isNotEmpty ? person[0] : '?',
@@ -742,7 +764,7 @@ class _UserScreenState extends State<UserScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -823,11 +845,11 @@ class _UserScreenState extends State<UserScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppColors.primaryColor,
+            color: Theme.of(context).primaryColor,
           ),
         ),
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryColor),
+        iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -907,7 +929,7 @@ class _UserScreenState extends State<UserScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -915,7 +937,7 @@ class _UserScreenState extends State<UserScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
+                  color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -1079,7 +1101,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -1284,7 +1306,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide:
-                    const BorderSide(color: AppColors.primaryColor, width: 2),
+                    BorderSide(color: Theme.of(context).primaryColor, width: 2),
               ),
               filled: true,
               fillColor: AppColors.cardBackground,
@@ -1740,7 +1762,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryColor,
+          backgroundColor: Theme.of(context).primaryColor,
           foregroundColor: AppColors.blackDark,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -1978,7 +2000,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: AppColors.blackDark,
                 ),
                 child: const Text(
@@ -2062,11 +2084,11 @@ Widget _buildTermsScreen() {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.primaryColor,
+          color: Theme.of(context).primaryColor,
         ),
       ),
       elevation: 0,
-      iconTheme: const IconThemeData(color: AppColors.primaryColor),
+      iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
     ),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -2095,7 +2117,7 @@ Widget _buildTermsScreen() {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
+                          color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -2147,7 +2169,7 @@ Widget _buildTermsScreen() {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
+                          color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -2171,10 +2193,10 @@ Widget _buildTermsScreen() {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
                       ),
                     ),
                     child: const Row(
@@ -2279,7 +2301,7 @@ Widget _buildFeatureItem(IconData icon, String title, String description) {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primaryColor,
+            color: Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
@@ -2359,7 +2381,7 @@ Widget _buildTermsSection(String title, String content) {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.2),
+            color: Theme.of(context).primaryColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(

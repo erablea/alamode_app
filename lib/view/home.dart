@@ -601,7 +601,7 @@ class _ItemListState extends State<ItemList>
                             Icons.check,
                             size: 16,
                             color: _sortBy == option['value']
-                                ? AppColors.primaryColor
+                                ? Theme.of(context).primaryColor
                                 : Colors.transparent,
                           ),
                           const SizedBox(width: 8),
@@ -875,7 +875,7 @@ class ItemCard extends StatelessWidget {
     final brandId = item['brand_id']?.toString();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 0),
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -953,7 +953,7 @@ class ItemCard extends StatelessWidget {
                 const SizedBox.shrink(),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
         ],
       ),
     );
@@ -976,7 +976,7 @@ class ItemCard extends StatelessWidget {
     if (imageUrls.isEmpty) {
       return CategoryPlaceholder(
         category: item['item_category'] as String?,
-        height: 110,
+        height: 90,
       );
     }
 
@@ -986,15 +986,15 @@ class ItemCard extends StatelessWidget {
           Expanded(
             child: Container(
               margin: EdgeInsets.only(right: i < imageUrls.length - 1 ? 1 : 0),
-              height: 110,
+              height: 90,
               color: AppColors.warmWhite,
               child: CachedNetworkImage(
                 imageUrl: imageUrls[i],
                 fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(
+                placeholder: (context, url) => Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.primaryColor,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
@@ -1019,8 +1019,10 @@ class ItemCard extends StatelessWidget {
       NumberFormat currencyFormat, Map<String, dynamic> item) {
     final price = item['item_price'] as num?;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           const Spacer(),
           Text(
@@ -1032,13 +1034,12 @@ class ItemCard extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           const Text(
-            '(税込)',
+            '税込',
             style: TextStyle(
               fontSize: 9,
               color: AppColors.blackLight,
-              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -1124,10 +1125,10 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'フィルタリング',
                     style: TextStyle(
-                      color: AppColors.primaryColor,
+                      color: Theme.of(context).primaryColor,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1201,7 +1202,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                   ),
                   const SizedBox(width: 12),
                   Material(
-                    color: AppColors.primaryColor,
+                    color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -1400,9 +1401,9 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
               const SizedBox(height: 16),
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: AppColors.primaryColor,
-                  thumbColor: AppColors.primaryColor,
-                  overlayColor: AppColors.primaryColor.withOpacity(0.2),
+                  activeTrackColor: Theme.of(context).primaryColor,
+                  thumbColor: Theme.of(context).primaryColor,
+                  overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
                   inactiveTrackColor: AppColors.greyLight,
                   trackHeight: 4,
                   thumbShape:
@@ -1572,14 +1573,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               surfaceTintColor: Colors.transparent,
               titleSpacing: 0,
               leading: IconButton(
-                icon:
-                    const Icon(Icons.arrow_back, color: AppColors.primaryColor),
+                icon: Icon(Icons.arrow_back, color: Theme.of(context).primaryColor),
                 onPressed: () => Navigator.of(context).pop(true),
               ),
               title: Text(
                 item['item_name'] as String? ?? '',
-                style: const TextStyle(
-                  color: AppColors.primaryColor,
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1690,10 +1690,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           color: AppColors.greyLight,
-                          child: const Center(
+                          child: Center(
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.primaryColor,
+                              color: Theme.of(context).primaryColor,
                             ),
                           ),
                         ),
@@ -2080,7 +2080,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     flags.forEach((key, label) {
       final value = item[key];
       final isActive = value == true || value == "yes" || value == "1" || value == 1;
-      flagWidgets.add(_buildFlagChip(label, isActive));
+      flagWidgets.add(_buildFlagChip(context, label, isActive));
     });
 
     if (flagWidgets.isNotEmpty) {
@@ -2193,14 +2193,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildFlagChip(String label, bool isActive) {
+  Widget _buildFlagChip(BuildContext context, String label, bool isActive) {
+    final primary = Theme.of(context).primaryColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: isActive ? Colors.white : AppColors.greyLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? AppColors.primaryColor : AppColors.greyDark,
+          color: isActive ? primary : AppColors.greyDark,
           width: 1,
         ),
       ),
@@ -2220,7 +2221,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             isActive ? '○' : '×',
             style: TextStyle(
               fontSize: 11,
-              color: isActive ? AppColors.primaryColor : AppColors.blackLight,
+              color: isActive ? primary : AppColors.blackLight,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -2510,10 +2511,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 width: double.infinity,
                                 placeholder: (context, url) => Container(
                                   color: AppColors.greyLight,
-                                  child: const Center(
+                                  child: Center(
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: AppColors.primaryColor,
+                                      color: Theme.of(context).primaryColor,
                                     ),
                                   ),
                                 ),

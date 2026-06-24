@@ -412,7 +412,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                 Icons.check,
                                 size: 16,
                                 color: _sortBy == option['value']
-                                    ? AppColors.primaryColor
+                                    ? Theme.of(context).primaryColor
                                     : Colors.transparent,
                               ),
                               const SizedBox(width: 8),
@@ -433,8 +433,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.favorite_border_rounded, size: 40, color: AppColors.greyDark),
-                          const SizedBox(height: 16),
                           const Text(
                             'まだお気に入りがありません',
                             style: TextStyle(fontSize: 15, color: AppColors.blackLight),

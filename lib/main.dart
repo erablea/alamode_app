@@ -11,8 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 // テーマ定義
 const List<Map<String, dynamic>> appThemes = [
   {'key': 'blue',  'name': '花束に添えて',     'color': Color(0xFF1C6ECD)},
-  {'key': 'pink',  'name': '愛と知る',         'color': Color(0xFFB9727C)},
-  {'key': 'green', 'name': '芽吹きの気配',     'color': Color(0xFF5A8A3C)},
+  {'key': 'pink',  'name': '愛と知る',         'color': Color(0xFFE8629A)},
+  {'key': 'green', 'name': '芽吹きの気配',     'color': Color(0xFF7DC52F)},
   {'key': 'gold',  'name': '季節の待ち合わせ', 'color': Color(0xFFC8A96E)},
 ];
 
