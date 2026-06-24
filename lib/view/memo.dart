@@ -1120,7 +1120,7 @@ class _PresentListState extends State<PresentList> {
             children: [
               Text(
                 Utils.formatCurrency(present['present_price'] ?? 0),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.accentGold),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
               ),
               const SizedBox(width: 2),
               const Text(
@@ -1715,6 +1715,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   int _remainingChars = Constants.memoMaxLength;
   late String _presentType;
   List<String> _allWhoNames = [];
+  bool _showWhoSuggestions = false;
+  int? _whoIconIndex;
   final _whoFieldController = TextEditingController();
   final _whoFocusNode = FocusNode();
 
@@ -1723,7 +1725,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     super.initState();
     _initializeForm();
     _loadAllWhoNames();
-    _whoFocusNode.addListener(() => setState(() {}));
+    _whoFocusNode.addListener(() {
+      setState(() => _showWhoSuggestions = _whoFocusNode.hasFocus);
+    });
   }
 
   Future<void> _loadAllWhoNames() async {
@@ -1758,6 +1762,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
     final initialWho = widget.initialPresent?['present_who']?.toString() ?? '';
     _whoFieldController.text = initialWho;
+    if (initialWho.isNotEmpty) {
+      PersonIconService.getIconIndex(initialWho).then((idx) {
+        if (mounted) setState(() => _whoIconIndex = idx);
+      });
+    }
     String? initialGenre = widget.initialPresent?['present_genre'];
     if (initialGenre != null && initialGenre.isNotEmpty) {
       _selectedGenres = {initialGenre};
@@ -1989,17 +1998,16 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
           children: [
             GestureDetector(
               onTap: whoName.isEmpty ? null : () async {
-                final currentIndex = await PersonIconService.getIconIndex(whoName);
                 final result = await showDialog<int>(
                   context: context,
                   builder: (_) => PersonIconPickerDialog(
                     personName: whoName,
-                    currentIndex: currentIndex,
+                    currentIndex: _whoIconIndex,
                   ),
                 );
                 if (result != null) {
                   await PersonIconService.saveIconIndex(whoName, result);
-                  setState(() {});
+                  setState(() => _whoIconIndex = result);
                 }
               },
               child: whoName.isEmpty
@@ -2008,7 +2016,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       backgroundColor: AppColors.greyMedium,
                       child: const Icon(Icons.person, size: 20, color: AppColors.greyDark),
                     )
-                  : PersonAvatar(personName: whoName, radius: 20),
+                  : _buildInlineAvatar(whoName),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -2022,7 +2030,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             ),
           ],
         ),
-        if (_whoFocusNode.hasFocus && suggestions.isNotEmpty)
+        if (_showWhoSuggestions && suggestions.isNotEmpty)
           Material(
             elevation: 4,
             borderRadius: BorderRadius.circular(8),
@@ -2035,12 +2043,17 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 itemBuilder: (context, index) {
                   return ListTile(
                     dense: true,
+                    leading: PersonAvatar(personName: suggestions[index], radius: 14),
                     title: Text(suggestions[index],
                         style: const TextStyle(fontSize: 14)),
                     onTap: () {
                       _whoFieldController.text = suggestions[index];
+                      setState(() => _showWhoSuggestions = false);
                       _whoFocusNode.unfocus();
-                      setState(() {});
+                      // load icon index for selected person
+                      PersonIconService.getIconIndex(suggestions[index]).then((idx) {
+                        if (mounted) setState(() => _whoIconIndex = idx);
+                      });
                     },
                   );
                 },
@@ -2048,6 +2061,29 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildInlineAvatar(String name) {
+    if (_whoIconIndex != null && _whoIconIndex! >= 0 && _whoIconIndex! < kPersonIcons.length) {
+      final def = kPersonIcons[_whoIconIndex!];
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: def.bgColor,
+        child: Text(def.emoji, style: const TextStyle(fontSize: 18)),
+      );
+    }
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
+      child: Text(
+        name.isNotEmpty ? name[0] : '?',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Theme.of(context).primaryColor,
+        ),
+      ),
     );
   }
 
