@@ -285,8 +285,8 @@ class _MainAppState extends State<MainApp> {
             Text(
               label,
               style: TextStyle(
-                fontFamily: 'PinyonScript',
-                fontSize: 16,
+                fontFamily: 'Corinthia',
+                fontSize: 18,
                 color: isSelected
                     ? AppColors.primaryColor
                     : AppColors.blackLight.withOpacity(0.6),

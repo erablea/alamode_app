@@ -594,6 +594,7 @@ class _UserScreenState extends State<UserScreen> {
     ];
 
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
