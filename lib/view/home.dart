@@ -899,11 +899,11 @@ class ItemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.storefront, size: 14, color: AppColors.blackLight),
+              const Icon(Icons.storefront, size: 13, color: AppColors.blackLight),
               const SizedBox(width: 4),
               if (brandId != null)
                 Expanded(
@@ -1036,7 +1036,7 @@ class ItemCard extends StatelessWidget {
           ),
           const SizedBox(width: 3),
           const Text(
-            '税込',
+            '(税込)',
             style: TextStyle(
               fontSize: 9,
               color: AppColors.blackLight,

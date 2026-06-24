@@ -424,9 +424,12 @@ class _UserScreenState extends State<UserScreen> {
                       const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
                       const SizedBox(width: 8),
                       Container(
-                        width: 12,
+                        width: 18,
                         height: 12,
-                        decoration: BoxDecoration(color: selectedColor, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: selectedColor,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
                       ),
                       const SizedBox(width: 6),
                       Text(selectedName, style: TextStyle(fontSize: 12, color: selectedColor, fontWeight: FontWeight.w500)),
@@ -465,12 +468,12 @@ class _UserScreenState extends State<UserScreen> {
                           child: Row(
                             children: [
                               Container(
-                                width: 24,
-                                height: 24,
+                                width: 28,
+                                height: 20,
                                 decoration: BoxDecoration(
                                   color: color,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
+                                  borderRadius: BorderRadius.circular(4),
+                                  boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))],
                                 ),
                               ),
                               const SizedBox(width: 14),
