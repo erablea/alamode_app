@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen>
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primaryColor : Colors.transparent,
+              color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
               width: 3.0,
             ),
           ),
@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen>
               fontSize: isAllTab ? 16.0 : 14.0, // 'all'のみ大きく
               fontWeight: FontWeight.normal,
               color: isSelected
-                  ? AppColors.primaryColor
+                  ? Theme.of(context).primaryColor
                   : Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
@@ -862,7 +862,7 @@ class ItemCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildItemHeader(),
+            _buildItemHeader(context),
             _buildItemImages(item),
             _buildItemFooter(currencyFormat, item),
           ],
@@ -871,7 +871,7 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildItemHeader() {
+  Widget _buildItemHeader(BuildContext context) {
     final brandId = item['brand_id']?.toString();
 
     return Padding(
@@ -885,10 +885,10 @@ class ItemCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   item['item_name'] as String? ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryColor),
+                      color: Theme.of(context).primaryColor),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -1280,7 +1280,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isSelected
-                              ? AppColors.primaryColor
+                              ? Theme.of(context).primaryColor
                               : AppColors.greyLight,
                           width: 1,
                         ),
@@ -1289,7 +1289,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                         genre,
                         style: TextStyle(
                           color: isSelected
-                              ? AppColors.primaryColor
+                              ? Theme.of(context).primaryColor
                               : AppColors.blackLight,
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -1440,35 +1440,40 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           ),
         ),
         const SizedBox(height: 12),
-        Wrap(
+        Builder(
+          builder: (context) => Wrap(
           spacing: 8.0,
           runSpacing: 8.0,
           children: [
             _buildConditionChip(
+              context,
               '個包装',
               _tempIndividualWrapping,
               (isSelected) =>
                   setState(() => _tempIndividualWrapping = !isSelected),
             ),
             _buildConditionChip(
+              context,
               '常温',
               _tempRoomTemperature,
               (isSelected) =>
                   setState(() => _tempRoomTemperature = !isSelected),
             ),
             _buildConditionChip(
+              context,
               'オンライン購入',
               _tempOnline,
               (isSelected) => setState(() => _tempOnline = !isSelected),
             ),
           ],
         ),
+        ),
       ],
     );
   }
 
   Widget _buildConditionChip(
-      String label, bool isSelected, Function(bool) onTap) {
+      BuildContext context, String label, bool isSelected, Function(bool) onTap) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1480,14 +1485,14 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
             color: isSelected ? Colors.white : AppColors.greyLight,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? AppColors.primaryColor : AppColors.greyLight,
+              color: isSelected ? Theme.of(context).primaryColor : AppColors.greyLight,
               width: 1,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppColors.primaryColor : AppColors.blackLight,
+              color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               fontSize: 13,
             ),

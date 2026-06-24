@@ -12,7 +12,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      title: const Column(
+      title: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -20,7 +20,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
             style: TextStyle(
               fontFamily: 'ZenMaruGothic',
               fontSize: 10,
-              color: AppColors.primaryColor,
+              color: Theme.of(context).primaryColor,
               letterSpacing: 2,
             ),
           ),
@@ -29,7 +29,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
             style: TextStyle(
               fontFamily: 'PinyonScript',
               fontSize: 34,
-              color: AppColors.primaryColor,
+              color: Theme.of(context).primaryColor,
               height: 0.9,
             ),
           ),

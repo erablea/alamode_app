@@ -372,12 +372,109 @@ class _UserScreenState extends State<UserScreen> {
               children: [
                 _buildPersonListSection(),
                 const SizedBox(height: 32),
+                _buildThemeSection(),
+                const SizedBox(height: 32),
                 _buildSettingsSection(),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildThemeSection() {
+    return ValueListenableBuilder<int>(
+      valueListenable: themeNotifier,
+      builder: (context, currentIndex, _) {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.palette_outlined, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('テーマカラー', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: List.generate(appThemes.length, (i) {
+                    final theme = appThemes[i];
+                    final isSelected = currentIndex == i;
+                    final color = theme['color'] as Color;
+                    return GestureDetector(
+                      onTap: () async {
+                        themeNotifier.value = i;
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('theme_key', theme['key'] as String);
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                theme['name'] as String,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  color: isSelected ? color : AppColors.blackDark,
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              Icon(Icons.check_circle, color: color, size: 20),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

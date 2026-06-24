@@ -6,6 +6,17 @@ import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/view/user.dart';
 import 'package:alamode_app/widgets/header.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Global theme notifier
+final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
+
+const List<Map<String, dynamic>> appThemes = [
+  {'key': 'blue',  'name': '花束に添えて',    'color': Color(0xFF1C6ECD)},
+  {'key': 'pink',  'name': '愛と知る',        'color': Color(0xFFB9727C)},
+  {'key': 'green', 'name': '芽吹きの気配',    'color': Color(0xFF5A8A3C)},
+  {'key': 'gold',  'name': '季節の待ち合わせ', 'color': Color(0xFFC8A96E)},
+];
 
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
@@ -44,6 +55,9 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbXRpbWdpcXRjeGltY2thZ2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NTkwNDAsImV4cCI6MjA4NTUzNTA0MH0.rolHffP2nRWabyhuJxN4Vsx7uuxaYRpaDXpcpGQ0xUw',
   );
+  final prefs = await SharedPreferences.getInstance();
+  final savedKey = prefs.getString('theme_key') ?? 'blue';
+  themeNotifier.value = appThemes.indexWhere((t) => t['key'] == savedKey).clamp(0, 3);
   runApp(MyApp());
 }
 
@@ -52,72 +66,77 @@ final supabase = Supabase.instance.client;
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  final ThemeData appTheme = ThemeData(
-    scaffoldBackgroundColor: const Color(0xFFFAF9F7),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      iconTheme: IconThemeData(color: AppColors.blackDark),
-      titleTextStyle: TextStyle(
-        fontFamily: 'ZenMaruGothic',
-        color: AppColors.blackDark,
-        fontSize: 17,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(
-        fontFamily: 'ZenMaruGothic',
-        color: AppColors.blackDark,
-      ),
-      bodyMedium: TextStyle(
-        fontFamily: 'ZenMaruGothic',
-        color: AppColors.blackDark,
-      ),
-      titleLarge: TextStyle(
-        fontFamily: 'PlayfairDisplay',
-        color: AppColors.blackDark,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-    cardTheme: CardTheme(
-      color: Colors.white,
-      elevation: 2,
-      shadowColor: AppColors.shadowColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: AppColors.primaryColor,
-      foregroundColor: Colors.white,
-      elevation: 2,
-    ),
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primaryColor,
-      primary: AppColors.primaryColor,
-      error: AppColors.errorColor,
-    ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.primaryColor,
-    ),
-    fontFamily: 'ZenMaruGothic',
-  );
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ア・ラ・モード a la mode',
-      theme: appTheme,
-      home: MainApp(),
+    return ValueListenableBuilder<int>(
+      valueListenable: themeNotifier,
+      builder: (context, themeIndex, _) {
+        final primaryColor = appThemes[themeIndex]['color'] as Color;
+        return MaterialApp(
+          title: 'ア・ラ・モード a la mode',
+          theme: ThemeData(
+            scaffoldBackgroundColor: const Color(0xFFFAF9F7),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              iconTheme: IconThemeData(color: AppColors.blackDark),
+              titleTextStyle: TextStyle(
+                fontFamily: 'ZenMaruGothic',
+                color: AppColors.blackDark,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(
+                fontFamily: 'ZenMaruGothic',
+                color: AppColors.blackDark,
+              ),
+              bodyMedium: TextStyle(
+                fontFamily: 'ZenMaruGothic',
+                color: AppColors.blackDark,
+              ),
+              titleLarge: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                color: AppColors.blackDark,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            cardTheme: CardTheme(
+              color: Colors.white,
+              elevation: 2,
+              shadowColor: AppColors.shadowColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 2,
+            ),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: primaryColor,
+              primary: primaryColor,
+              error: AppColors.errorColor,
+              brightness: Brightness.light,
+            ),
+            progressIndicatorTheme: ProgressIndicatorThemeData(
+              color: primaryColor,
+            ),
+            fontFamily: 'ZenMaruGothic',
+          ),
+          home: MainApp(),
+        );
+      },
     );
   }
 }
@@ -278,7 +297,7 @@ class _MainAppState extends State<MainApp> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryColor.withOpacity(0.06)
+              ? Theme.of(context).primaryColor.withOpacity(0.06)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -289,7 +308,7 @@ class _MainAppState extends State<MainApp> {
               icon,
               size: 20,
               color: isSelected
-                  ? AppColors.primaryColor
+                  ? Theme.of(context).primaryColor
                   : AppColors.blackLight.withOpacity(0.6),
             ),
             const SizedBox(height: 2),
@@ -299,7 +318,7 @@ class _MainAppState extends State<MainApp> {
                 fontFamily: 'Corinthia',
                 fontSize: 18,
                 color: isSelected
-                    ? AppColors.primaryColor
+                    ? Theme.of(context).primaryColor
                     : AppColors.blackLight.withOpacity(0.6),
               ),
             ),
