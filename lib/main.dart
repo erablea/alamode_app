@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
 import 'package:alamode_app/view/memo.dart';
@@ -28,6 +29,16 @@ class AppColors {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final corinthia = FontLoader('Corinthia')
+    ..addFont(rootBundle.load('assets/fonts/Corinthia/Corinthia-Regular.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/Corinthia/Corinthia-Bold.ttf'));
+  await corinthia.load();
+
+  final pinyon = FontLoader('PinyonScript')
+    ..addFont(rootBundle.load('assets/fonts/Pinyon_Script/PinyonScript-Regular.ttf'));
+  await pinyon.load();
+
   await Supabase.initialize(
     url: 'https://bdmtimgiqtcximckagle.supabase.co',
     anonKey:

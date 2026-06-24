@@ -932,7 +932,7 @@ class ItemCard extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                                const SizedBox(width: 25),
+                                const SizedBox(width: 44),
                               ],
                             );
                           }
