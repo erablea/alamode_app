@@ -18,26 +18,25 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         clipBehavior: Clip.none,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 7),
             child: Text(
               'a la mode',
               style: TextStyle(
                 fontFamily: 'PinyonScript',
-                fontSize: 34,
+                fontSize: 35,
                 color: color,
                 height: 0.9,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 18),
+            padding: const EdgeInsets.only(left: 29),
             child: Text(
               'ア・ラ・モード',
               style: TextStyle(
                 fontFamily: 'ZenMaruGothic',
                 fontSize: 9,
                 color: color,
-                letterSpacing: 2,
               ),
             ),
           ),
