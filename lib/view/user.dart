@@ -378,8 +378,6 @@ class _UserScreenState extends State<UserScreen> {
               children: [
                 _buildPersonListSection(),
                 const SizedBox(height: 32),
-                _buildThemeSection(),
-                const SizedBox(height: 32),
                 _buildSettingsSection(),
               ],
             ),
@@ -390,6 +388,72 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   bool _themeExpanded = false;
+
+  Widget _buildThemePickerSheet() {
+    return ValueListenableBuilder<int>(
+      valueListenable: themeNotifier,
+      builder: (context, currentIndex, _) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(color: AppColors.greyDark, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+              const SizedBox(height: 16),
+              ...List.generate(appThemes.length, (i) {
+                final theme = appThemes[i];
+                final isSelected = currentIndex == i;
+                final color = theme['color'] as Color;
+                return GestureDetector(
+                  onTap: () async {
+                    themeNotifier.value = i;
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('theme_key', theme['key'] as String);
+                    setState(() {});
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 28, height: 20,
+                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(child: Text(
+                          theme['name'] as String,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected ? color : AppColors.blackDark,
+                          ),
+                        )),
+                        if (isSelected) Icon(Icons.check_circle, color: color, size: 18),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildThemeSection() {
     return ValueListenableBuilder<int>(
@@ -696,6 +760,10 @@ class _UserScreenState extends State<UserScreen> {
   Widget _buildSettingsSection() {
     final settingsItems = [
       {
+        'title': 'テーマカラー',
+        'icon': Icons.palette_outlined,
+      },
+      {
         'title': 'アプリについて',
         'icon': Icons.info_outline,
       },
@@ -810,6 +878,18 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   void _navigateToInfoScreen(String title) {
+    if (title == 'テーマカラー') {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: AppColors.dialogBackground,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => _buildThemePickerSheet(),
+      );
+      return;
+    }
+
     Widget screen;
 
     switch (title) {

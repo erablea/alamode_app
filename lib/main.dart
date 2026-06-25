@@ -300,7 +300,7 @@ class _MainAppState extends State<MainApp> {
             ),
           ],
         ),
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+        padding: const EdgeInsets.fromLTRB(0, 5, 0, 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -335,7 +335,7 @@ class _MainAppState extends State<MainApp> {
               color:
                   isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 0),
             Text(
               label,
               style: TextStyle(
