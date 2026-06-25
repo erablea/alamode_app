@@ -9,6 +9,9 @@ class CategoryPlaceholder extends StatelessWidget {
 
   static const _imageCategories = {
     'クッキー': 'assets/images/cookie.png',
+    'ショコラ': 'assets/images/chocolat.png',
+    '和菓子':   'assets/images/wagashi.png',
+    '焼き菓子': 'assets/images/baked.png',
   };
 
   @override
