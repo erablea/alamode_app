@@ -186,29 +186,60 @@ class PaintSmearPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
-    final paint = Paint()..color = color..style = PaintingStyle.fill;
 
-    // 絵具スメアの形状（不均一なBlob）
-    final path = Path()
-      ..moveTo(w * 0.04, h * 0.52)
-      ..cubicTo(w * 0.00, h * 0.15, w * 0.22, h * -0.08, w * 0.46, h * 0.12)
-      ..cubicTo(w * 0.60, h * 0.00, w * 0.85, h * 0.05, w * 0.97, h * 0.35)
-      ..cubicTo(w * 1.05, h * 0.60, w * 0.90, h * 1.10, w * 0.62, h * 0.96)
-      ..cubicTo(w * 0.42, h * 1.12, w * 0.10, h * 1.05, w * 0.02, h * 0.80)
-      ..cubicTo(w * -0.02, h * 0.70, w * 0.04, h * 0.60, w * 0.04, h * 0.52)
-      ..close();
-    canvas.drawPath(path, paint);
+    // ドロップシャドウ
+    canvas.drawPath(
+      _blob(w, h, ox: 1.2, oy: 1.5),
+      Paint()
+        ..color = Colors.black.withOpacity(0.18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+    );
+
+    // 本体（不均一なエッジ）
+    canvas.drawPath(_blob(w, h), Paint()..color = color);
+
+    // テクスチャ：絵具の厚みによるリッジ（やや暗い同色）
+    final ridgeColor = Color.lerp(color, Colors.black, 0.18)!.withOpacity(0.55);
+    final ridgePaint = Paint()
+      ..color = ridgeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    ridgePaint.strokeWidth = h * 0.12;
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.13, h * 0.38)
+        ..cubicTo(w * 0.32, h * 0.22, w * 0.62, h * 0.26, w * 0.84, h * 0.42),
+      ridgePaint,
+    );
+    ridgePaint.strokeWidth = h * 0.08;
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.22, h * 0.64)
+        ..cubicTo(w * 0.42, h * 0.52, w * 0.66, h * 0.56, w * 0.80, h * 0.68),
+      ridgePaint,
+    );
 
     // ハイライト（光沢感）
-    final highlight = Paint()
-      ..color = Colors.white.withOpacity(0.28)
-      ..style = PaintingStyle.fill;
-    final hPath = Path()
-      ..moveTo(w * 0.18, h * 0.28)
-      ..cubicTo(w * 0.22, h * 0.08, w * 0.52, h * 0.08, w * 0.54, h * 0.28)
-      ..cubicTo(w * 0.54, h * 0.44, w * 0.22, h * 0.46, w * 0.18, h * 0.28)
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.14, h * 0.22)
+        ..cubicTo(w * 0.20, h * 0.04, w * 0.55, h * 0.04, w * 0.58, h * 0.24)
+        ..cubicTo(w * 0.58, h * 0.40, w * 0.20, h * 0.40, w * 0.14, h * 0.22)
+        ..close(),
+      Paint()..color = Colors.white.withOpacity(0.32),
+    );
+  }
+
+  Path _blob(double w, double h, {double ox = 0, double oy = 0}) {
+    return Path()
+      ..moveTo(ox + w * 0.06, oy + h * 0.48)
+      ..cubicTo(ox + w * -0.02, oy + h * 0.10, ox + w * 0.24, oy + h * -0.06, ox + w * 0.46, oy + h * 0.11)
+      ..cubicTo(ox + w * 0.58, oy + h * 0.02, ox + w * 0.82, oy + h * -0.02, ox + w * 0.96, oy + h * 0.28)
+      ..cubicTo(ox + w * 1.06, oy + h * 0.52, ox + w * 1.02, oy + h * 0.82, ox + w * 0.78, oy + h * 0.96)
+      ..cubicTo(ox + w * 0.60, oy + h * 1.06, ox + w * 0.30, oy + h * 1.08, ox + w * 0.12, oy + h * 0.90)
+      ..cubicTo(ox + w * -0.02, oy + h * 0.76, ox + w * 0.06, oy + h * 0.60, ox + w * 0.06, oy + h * 0.48)
       ..close();
-    canvas.drawPath(hPath, highlight);
   }
 
   @override

@@ -29,13 +29,16 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-          Text(
-            'ア・ラ・モード',
-            style: TextStyle(
-              fontFamily: 'ZenMaruGothic',
-              fontSize: 9,
-              color: color,
-              letterSpacing: 2,
+          Padding(
+            padding: const EdgeInsets.only(left: 18),
+            child: Text(
+              'ア・ラ・モード',
+              style: TextStyle(
+                fontFamily: 'ZenMaruGothic',
+                fontSize: 9,
+                color: color,
+                letterSpacing: 2,
+              ),
             ),
           ),
         ],
