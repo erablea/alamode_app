@@ -106,7 +106,7 @@ class _UserScreenState extends State<UserScreen> {
                             setState(() {});
                           }
                         },
-                        child: PersonAvatar(personName: person, radius: 22),
+                        child: PersonAvatar(personName: person, radius: 22, showEditBadge: true),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

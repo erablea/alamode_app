@@ -1120,7 +1120,7 @@ class _PresentListState extends State<PresentList> {
             children: [
               Text(
                 Utils.formatCurrency(present['present_price'] ?? 0),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.blackDark),
               ),
               const SizedBox(width: 2),
               const Text(
@@ -1726,7 +1726,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     _initializeForm();
     _loadAllWhoNames();
     _whoFocusNode.addListener(() {
-      setState(() => _showWhoSuggestions = _whoFocusNode.hasFocus);
+      if (_whoFocusNode.hasFocus) {
+        setState(() => _showWhoSuggestions = true);
+      } else {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) setState(() => _showWhoSuggestions = false);
+        });
+      }
     });
   }
 
@@ -2067,25 +2073,50 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   Widget _buildInlineAvatar(String name) {
     if (_whoIconIndex != null && _whoIconIndex! >= 0 && _whoIconIndex! < kPersonIcons.length) {
       final def = kPersonIcons[_whoIconIndex!];
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: def.bgColor,
-        child: Text(def.emoji, style: const TextStyle(fontSize: 18)),
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: def.bgColor,
+            child: Text(def.emoji, style: const TextStyle(fontSize: 18)),
+          ),
+          _editBadge(),
+        ],
       );
     }
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
-      child: Text(
-        name.isNotEmpty ? name[0] : '?',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Theme.of(context).primaryColor,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
+          child: Text(
+            name.isNotEmpty ? name[0] : '?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
         ),
-      ),
+        _editBadge(),
+      ],
     );
   }
+
+  Widget _editBadge() => Positioned(
+    bottom: -4,
+    right: -8,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: AppColors.blackDark.withOpacity(0.65),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text('編集', style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w500)),
+    ),
+  );
 
   Widget _buildGenreSelector() {
     return CommonWidgets.buildGenreSelector(
