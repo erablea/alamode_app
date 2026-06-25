@@ -9,28 +9,33 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).primaryColor;
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      title: Column(
-        mainAxisSize: MainAxisSize.min,
+      title: Stack(
+        alignment: Alignment.topCenter,
+        clipBehavior: Clip.none,
         children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'a la mode',
+              style: TextStyle(
+                fontFamily: 'PinyonScript',
+                fontSize: 34,
+                color: color,
+                height: 0.9,
+              ),
+            ),
+          ),
           Text(
             'ア・ラ・モード',
             style: TextStyle(
               fontFamily: 'ZenMaruGothic',
-              fontSize: 10,
-              color: Theme.of(context).primaryColor,
+              fontSize: 9,
+              color: color,
               letterSpacing: 2,
-            ),
-          ),
-          Text(
-            'a la mode',
-            style: TextStyle(
-              fontFamily: 'PinyonScript',
-              fontSize: 34,
-              color: Theme.of(context).primaryColor,
-              height: 0.9,
             ),
           ),
         ],

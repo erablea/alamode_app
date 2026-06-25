@@ -179,6 +179,42 @@ Widget buildStarRating(BuildContext context, num rating) {
   );
 }
 
+class PaintSmearPainter extends CustomPainter {
+  final Color color;
+  const PaintSmearPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final paint = Paint()..color = color..style = PaintingStyle.fill;
+
+    // 絵具スメアの形状（不均一なBlob）
+    final path = Path()
+      ..moveTo(w * 0.04, h * 0.52)
+      ..cubicTo(w * 0.00, h * 0.15, w * 0.22, h * -0.08, w * 0.46, h * 0.12)
+      ..cubicTo(w * 0.60, h * 0.00, w * 0.85, h * 0.05, w * 0.97, h * 0.35)
+      ..cubicTo(w * 1.05, h * 0.60, w * 0.90, h * 1.10, w * 0.62, h * 0.96)
+      ..cubicTo(w * 0.42, h * 1.12, w * 0.10, h * 1.05, w * 0.02, h * 0.80)
+      ..cubicTo(w * -0.02, h * 0.70, w * 0.04, h * 0.60, w * 0.04, h * 0.52)
+      ..close();
+    canvas.drawPath(path, paint);
+
+    // ハイライト（光沢感）
+    final highlight = Paint()
+      ..color = Colors.white.withOpacity(0.28)
+      ..style = PaintingStyle.fill;
+    final hPath = Path()
+      ..moveTo(w * 0.18, h * 0.28)
+      ..cubicTo(w * 0.22, h * 0.08, w * 0.52, h * 0.08, w * 0.54, h * 0.28)
+      ..cubicTo(w * 0.54, h * 0.44, w * 0.22, h * 0.46, w * 0.18, h * 0.28)
+      ..close();
+    canvas.drawPath(hPath, highlight);
+  }
+
+  @override
+  bool shouldRepaint(PaintSmearPainter old) => old.color != color;
+}
+
 class AdUtils {
   static int calculateListItemCount(int itemCount) {
     if (itemCount <= 3) return itemCount;

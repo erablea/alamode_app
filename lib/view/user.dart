@@ -429,12 +429,11 @@ class _UserScreenState extends State<UserScreen> {
                       const SizedBox(width: 12),
                       const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
                       const SizedBox(width: 8),
-                      Container(
-                        width: 18,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(3),
+                      SizedBox(
+                        width: 24,
+                        height: 16,
+                        child: CustomPaint(
+                          painter: PaintSmearPainter(selectedColor),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -473,12 +472,11 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: 28,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  borderRadius: BorderRadius.circular(4),
+                              SizedBox(
+                                width: 36,
+                                height: 26,
+                                child: CustomPaint(
+                                  painter: PaintSmearPainter(color),
                                 ),
                               ),
                               const SizedBox(width: 14),
