@@ -926,6 +926,7 @@ class ItemCard extends StatelessWidget {
                     child: Text(c, style: const TextStyle(fontSize: 9, color: AppColors.blackLight)),
                   )
                 ),
+              const SizedBox(width: 6),
               SizedBox(
                 width: 32,
                 height: 28,

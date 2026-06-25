@@ -979,6 +979,16 @@ class _UserScreenState extends State<UserScreen> {
             height: 1.7,
           ),
         ),
+        const SizedBox(height: 24),
+        // イラスト挿入予定
+        Container(
+          height: 180,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.greyLight,
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
         const SizedBox(height: 32),
         const Text(
           '主な機能',

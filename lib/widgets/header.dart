@@ -5,7 +5,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   const Header({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(46);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -13,10 +13,12 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      title: Stack(
-        alignment: Alignment.topCenter,
-        clipBehavior: Clip.none,
-        children: [
+      title: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Stack(
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.none,
+          children: [
           Padding(
             padding: const EdgeInsets.only(top: 7),
             child: Text(
@@ -40,7 +42,8 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
       centerTitle: true,
     );
