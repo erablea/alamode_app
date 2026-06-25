@@ -10,17 +10,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // テーマ定義
 const List<Map<String, dynamic>> appThemes = [
-  {'key': 'blue',  'name': '花束に添えて',     'color': Color(0xFF1C6ECD)},
-  {'key': 'pink',  'name': '愛と知る',         'color': Color(0xFFE8629A)},
-  {'key': 'green', 'name': '芽吹きの気配',     'color': Color(0xFFBBCC00)},
-  {'key': 'gold',  'name': '季節の待ち合わせ', 'color': Color(0xFFC8A96E)},
+  {'key': 'blue', 'name': '花束に添えて', 'color': Color(0xFF1C6ECD)},
+  {'key': 'pink', 'name': '愛と知る', 'color': Color(0xFFE8629A)},
+  {'key': 'green', 'name': '芽吹きの気配', 'color': Color(0xFFBBCC00)},
+  {'key': 'gold', 'name': '季節の待ち合わせ', 'color': Color(0xFFC8A96E)},
 ];
 
 final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
 
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
-  static const Color secondryColor = Color(0xFFEDEE9E);
   static const Color blackDark = Color(0xFF1A1A1A);
   static const Color blackLight = Color(0xFF808080);
   static const Color greyDark = Color(0xFFCCCCCC);
@@ -34,8 +33,7 @@ class AppColors {
   static const Color dialogBackground = Color(0xFFFAFAFA);
   static const Color cardBackground = Colors.white;
   static const Color shadowColor = Color(0x1A000000);
-  static const Color accentGold = Color(0xFFC8A96E);   // ゴールドアクセント
-  static const Color warmWhite = Color(0xFFFAF9F7);    // 温かみのある白
+  static const Color warmWhite = Color(0xFFFAF9F7); // 温かみのある白
 }
 
 void main() async {
@@ -47,12 +45,14 @@ void main() async {
   await corinthia.load();
 
   final pinyon = FontLoader('PinyonScript')
-    ..addFont(rootBundle.load('assets/fonts/Pinyon_Script/PinyonScript-Regular.ttf'));
+    ..addFont(
+        rootBundle.load('assets/fonts/Pinyon_Script/PinyonScript-Regular.ttf'));
   await pinyon.load();
 
   final prefs = await SharedPreferences.getInstance();
   final savedKey = prefs.getString('theme_key') ?? 'blue';
-  themeNotifier.value = appThemes.indexWhere((t) => t['key'] == savedKey).clamp(0, 3);
+  themeNotifier.value =
+      appThemes.indexWhere((t) => t['key'] == savedKey).clamp(0, 3);
 
   await Supabase.initialize(
     url: 'https://bdmtimgiqtcximckagle.supabase.co',
@@ -148,10 +148,12 @@ class MyApp extends StatelessWidget {
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            progressIndicatorTheme: ProgressIndicatorThemeData(color: primaryColor),
+            progressIndicatorTheme:
+                ProgressIndicatorThemeData(color: primaryColor),
             floatingActionButtonTheme: FloatingActionButtonThemeData(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
@@ -329,8 +331,9 @@ class _MainAppState extends State<MainApp> {
           children: [
             Icon(
               icon,
-              size: 24,
-              color: isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
+              size: 25,
+              color:
+                  isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
             ),
             const SizedBox(height: 2),
             Text(
@@ -338,7 +341,9 @@ class _MainAppState extends State<MainApp> {
               style: TextStyle(
                 fontFamily: 'PinyonScript',
                 fontSize: 22,
-                color: isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
+                color: isSelected
+                    ? primary
+                    : AppColors.blackLight.withOpacity(0.6),
               ),
             ),
           ],
