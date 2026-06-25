@@ -967,7 +967,9 @@ class _UserScreenState extends State<UserScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: const Text(
           '「今年の帰省は何のお土産を持って行こう？ 前回は何を贈ったのだったっけ？」「この前食べたあのお菓子、とっても美味しかったけど、似たお菓子を開拓したいなぁ」\n\n'
           'このアプリは、大切な人への贈り物や、自分にとってのご褒美を記録するために作られました。\n\n'
           '「ア・ラ・モード」は、フランス語で「流行の」「おしゃれな」という意味。日本では「プリン・ア・ラ・モード」を思い浮かべる人が多いと思います。\n'
@@ -978,6 +980,7 @@ class _UserScreenState extends State<UserScreen> {
             color: AppColors.blackDark,
             height: 1.7,
           ),
+        ),
         ),
         const SizedBox(height: 24),
         // イラスト挿入予定
