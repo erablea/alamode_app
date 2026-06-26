@@ -12,6 +12,8 @@ class CategoryPlaceholder extends StatelessWidget {
     'ショコラ': 'assets/images/chocolat.png',
     '和菓子':   'assets/images/wagashi.png',
     '焼き菓子': 'assets/images/baked.png',
+    'ゼリー・プリン': 'assets/images/pudding.png',
+    'その他':   'assets/images/others.png',
   };
 
   @override
