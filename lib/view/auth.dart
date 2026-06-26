@@ -72,8 +72,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       setState(() => _signupError = 'メールアドレスを入力してください');
       return;
     }
-    if (_signupPasswordCtrl.text.length < 6) {
-      setState(() => _signupError = 'パスワードは6文字以上で入力してください');
+    if (_signupPasswordCtrl.text.length < 10) {
+      setState(() => _signupError = 'パスワードは10文字以上で入力してください');
       return;
     }
     if (_signupPasswordCtrl.text != _signupPasswordConfirmCtrl.text) {
@@ -119,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (error.contains('Invalid login credentials')) return 'メールアドレスまたはパスワードが正しくありません';
     if (error.contains('Email not confirmed')) return 'メールアドレスの確認が完了していません';
     if (error.contains('User already registered')) return 'このメールアドレスはすでに登録されています';
-    if (error.contains('Password should be')) return 'パスワードは6文字以上で入力してください';
+    if (error.contains('Password should be')) return 'パスワードは10文字以上で入力してください';
     if (error.contains('rate limit')) return 'しばらく時間をおいてから再試行してください';
     return 'エラーが発生しました。もう一度お試しください。';
   }
@@ -155,9 +155,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 8),
-          _buildPromotionCard(),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           _buildTextField(_loginEmailCtrl, 'メールアドレス', Icons.email_outlined, false),
           const SizedBox(height: 16),
           _buildTextField(
@@ -176,6 +174,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Text('ログイン', style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
+          const SizedBox(height: 24),
+          _buildNote(),
         ],
       ),
     );
@@ -187,15 +187,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 8),
-          _buildPromotionCard(),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           _buildTextField(_signupNameCtrl, 'お名前（ニックネーム可）', Icons.person_outline, false),
           const SizedBox(height: 16),
           _buildTextField(_signupEmailCtrl, 'メールアドレス', Icons.email_outlined, false),
           const SizedBox(height: 16),
           _buildTextField(
-            _signupPasswordCtrl, 'パスワード（6文字以上）', Icons.lock_outline, _obscureSignup,
+            _signupPasswordCtrl, 'パスワード（10文字以上）', Icons.lock_outline, _obscureSignup,
             toggle: () => setState(() => _obscureSignup = !_obscureSignup),
           ),
           const SizedBox(height: 16),
@@ -215,32 +213,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Text('アカウントを作成', style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
+          const SizedBox(height: 24),
+          _buildNote(),
         ],
       ),
     );
   }
 
-  Widget _buildPromotionCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.cloud_done_outlined, color: Theme.of(context).primaryColor, size: 22),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。機種変更時のデータ引き継ぎも可能です。',
-              style: TextStyle(fontSize: 13, color: AppColors.blackDark, height: 1.55),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildNote() {
+    return const Text(
+      'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。機種変更時のデータ引き継ぎも可能です。',
+      style: TextStyle(fontSize: 12, color: AppColors.blackLight, height: 1.6),
+      textAlign: TextAlign.center,
     );
   }
 
@@ -301,41 +285,39 @@ class _LoginPromptDialogState extends State<LoginPromptDialog> {
       backgroundColor: AppColors.dialogBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(Icons.cloud_done_outlined, size: 44, color: primary),
-            const SizedBox(height: 14),
             const Text(
-              'データを安全に保存しよう',
+              'ログイン / 新規登録',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blackDark),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。機種変更時にもデータを引き継ぐことができます。',
-              style: TextStyle(fontSize: 13, color: AppColors.blackLight, height: 1.55),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _dismiss(goLogin: true),
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                child: const Text('ログイン / 新規登録', style: TextStyle(color: Colors.white)),
-              ),
+            ElevatedButton(
+              onPressed: () => _dismiss(goLogin: true),
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+              child: const Text('ログイン / 新規登録', style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () => _dismiss(),
               child: const Text('あとで', style: TextStyle(color: AppColors.blackLight, fontSize: 13)),
             ),
+            const SizedBox(height: 4),
+            const Text(
+              'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。',
+              style: TextStyle(fontSize: 11, color: AppColors.blackLight, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: 20,
+                  height: 20,
                   child: Checkbox(
                     value: _neverShow,
                     onChanged: (v) => setState(() => _neverShow = v ?? false),
@@ -344,7 +326,7 @@ class _LoginPromptDialogState extends State<LoginPromptDialog> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Text('今後表示しない', style: TextStyle(fontSize: 13, color: AppColors.blackLight)),
+                const Text('今後表示しない', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
               ],
             ),
             const SizedBox(height: 4),

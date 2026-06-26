@@ -842,7 +842,7 @@ class _UserScreenState extends State<UserScreen> {
                   children: [
                     Text('ログイン / 新規登録', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.blackDark)),
                     SizedBox(height: 2),
-                    Text('データをクラウドで安全に保存', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                    Text('記録を端末間で引き継ぐことができます', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
                   ],
                 ),
               ),
