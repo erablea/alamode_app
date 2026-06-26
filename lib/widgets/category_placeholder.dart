@@ -16,9 +16,12 @@ class CategoryPlaceholder extends StatelessWidget {
     'その他':   'assets/images/others.png',
   };
 
+  static String getImagePath(String? category) =>
+      _imageCategories[category] ?? 'assets/images/others.png';
+
   @override
   Widget build(BuildContext context) {
-    final imagePath = _imageCategories[category] ?? 'assets/images/others.png';
+    final imagePath = getImagePath(category);
     return Container(
       width: double.infinity,
       height: height,

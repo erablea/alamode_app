@@ -188,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 16),
-          _buildTextField(_signupNameCtrl, 'お名前（ニックネーム可）', Icons.person_outline, false),
+          _buildTextField(_signupNameCtrl, 'ユーザー名（後から変更可能です）', Icons.person_outline, false),
           const SizedBox(height: 16),
           _buildTextField(_signupEmailCtrl, 'メールアドレス', Icons.email_outlined, false),
           const SizedBox(height: 16),
@@ -290,17 +290,12 @@ class _LoginPromptDialogState extends State<LoginPromptDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'ログイン / 新規登録',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blackDark),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _dismiss(goLogin: true),
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
               child: const Text('ログイン / 新規登録', style: TextStyle(color: Colors.white)),
             ),
+            const SizedBox(height: 8),
             TextButton(
               onPressed: () => _dismiss(),
               child: const Text('あとで', style: TextStyle(color: AppColors.blackLight, fontSize: 13)),

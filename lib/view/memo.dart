@@ -649,7 +649,7 @@ class _PresentListState extends State<PresentList> {
     if (!dismissed && mounted) {
       final result = await showDialog<String>(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         builder: (_) => const LoginPromptDialog(),
       );
       if (result == 'login' && mounted) {
@@ -1147,99 +1147,114 @@ class _PresentListState extends State<PresentList> {
   }
 
   Widget _buildPresentImages(String? imageUrl, String? genre) {
-    if (imageUrl == null) {
-      return CategoryPlaceholder(
-        category: genre,
-        height: 110,
+    if (imageUrl != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: CommonWidgets.buildImage(imageUrl, widget.presentService),
+          ),
+        ),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 120,
-          width: double.infinity,
-          child: CommonWidgets.buildImage(imageUrl, widget.presentService),
-        ),
+    if (genre == null || genre.isEmpty) {
+      return CategoryPlaceholder(category: null, height: 100);
+    }
+    final categories = genre.split(', ').where((s) => s.isNotEmpty).take(3).toList();
+    if (categories.length == 1) {
+      return CategoryPlaceholder(category: categories[0], height: 100);
+    }
+    return SizedBox(
+      height: 100,
+      child: Row(
+        children: categories.map((cat) => Expanded(
+          child: CategoryPlaceholder(category: cat, height: 100),
+        )).toList(),
       ),
     );
   }
 
   Widget _buildPresentHeader(Map<String, dynamic> present) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            present['present_name'] ?? '',
-            style: const TextStyle(
-              fontFamily: 'PlayfairDisplay',
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-          const SizedBox(height: 4),
+          // Row 1: name + date
           Row(
             children: [
-              const Icon(Icons.storefront, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                present['present_brand'] ?? '',
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+              Expanded(
+                child: Text(
+                  present['present_name'] ?? '',
+                  style: const TextStyle(
+                    fontFamily: 'PlayfairDisplay',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-              const SizedBox(width: 25),
+              const SizedBox(width: 6),
+              const Icon(Icons.calendar_month, size: 13, color: AppColors.blackLight),
+              const SizedBox(width: 3),
+              Text(
+                present['present_date'] ?? '',
+                style: const TextStyle(fontSize: 12, color: AppColors.blackLight),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          // Row 2: brand + genre badge flush right
+          Row(
+            children: [
+              const Icon(Icons.storefront, size: 13, color: AppColors.blackLight),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  present['present_brand'] ?? '',
+                  style: const TextStyle(fontSize: 13, color: AppColors.blackLight),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
               if (present['present_genre'] != null &&
                   present['present_genre'].toString().isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.greyDark, width: 1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     present['present_genre'],
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.blackLight),
+                    style: const TextStyle(fontSize: 10, color: AppColors.blackLight),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
+          // Row 3: person avatar + name
           Row(
             children: [
-              PersonAvatar(
-                personName: present['present_who'] ?? '',
-                radius: 10,
-              ),
+              PersonAvatar(personName: present['present_who'] ?? '', radius: 9),
               const SizedBox(width: 4),
               Text(
                 present['present_who'] ?? '',
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              const Spacer(),
-              const Icon(Icons.calendar_month, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                present['present_date'] ?? '',
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(fontSize: 13, color: AppColors.blackLight),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
             ],
           ),
-          const SizedBox(height: 8),
           if (present['present_other_conditions'] != null &&
-              present['present_other_conditions'].toString().isNotEmpty)
+              present['present_other_conditions'].toString().isNotEmpty) ...[
+            const SizedBox(height: 4),
             Wrap(
               spacing: 6,
               runSpacing: 4,
@@ -1248,32 +1263,24 @@ class _PresentListState extends State<PresentList> {
                   .split(', ')
                   .where((s) => s.isNotEmpty)
                   .map<Widget>((condition) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: Theme.of(context).primaryColor, width: 1),
+                          border: Border.all(color: Theme.of(context).primaryColor, width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(condition,
-                                style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.blackDark)),
+                            Text(condition, style: const TextStyle(fontSize: 10, color: AppColors.blackDark)),
                             const SizedBox(width: 3),
-                            Text('○',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: Theme.of(context).primaryColor,
-                                    fontWeight: FontWeight.w600)),
+                            Text('○', style: TextStyle(fontSize: 10, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ))
                   .toList(),
             ),
+          ],
           const SizedBox(height: 4),
         ],
       ),
@@ -1282,32 +1289,19 @@ class _PresentListState extends State<PresentList> {
 
   Widget _buildPresentFooter(Map<String, dynamic> present) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: Row(
         children: [
-          buildStarRating(context, present['present_reaction'] ?? 0),
-          const SizedBox(width: 4),
-          Text(
-            (present['present_reaction'] ?? 0).toString(),
-            style: const TextStyle(fontSize: 14),
-          ),
+          buildStarRating(context, present['present_reaction'] ?? 0, size: 15),
           const Spacer(),
-          const Icon(Icons.currency_yen, size: 18),
-          const SizedBox(width: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                Utils.formatCurrency(present['present_price'] ?? 0),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.blackDark),
-              ),
-              const SizedBox(width: 2),
-              const Text(
-                '（税込）',
-                style: TextStyle(fontSize: 10, color: AppColors.blackLight),
-              ),
-            ],
+          const Icon(Icons.currency_yen, size: 16, color: AppColors.blackLight),
+          const SizedBox(width: 2),
+          Text(
+            Utils.formatCurrency(present['present_price'] ?? 0),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.blackDark),
           ),
+          const SizedBox(width: 2),
+          const Text('（税込）', style: TextStyle(fontSize: 10, color: AppColors.blackLight)),
         ],
       ),
     );

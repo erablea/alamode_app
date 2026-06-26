@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
@@ -779,40 +780,50 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   Widget _buildLoggedInTile(Color primary) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.cloud_done_outlined, color: primary, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('ログイン中', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
-                FutureBuilder<String?>(
-                  future: AuthService.instance.getUserName(),
-                  builder: (context, snap) => Text(
-                    snap.data ?? AuthService.instance.currentUser?.email ?? '',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.blackDark),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyPageScreen()));
+          setState(() {});
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
+                child: Icon(Icons.account_circle_outlined, color: primary, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('ログイン中', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                    FutureBuilder<String?>(
+                      future: AuthService.instance.getUserName(),
+                      builder: (context, snap) => Text(
+                        snap.data ?? AuthService.instance.currentUser?.email ?? '',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.blackDark),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: _logout,
+                child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor, fontSize: 13)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: _logout,
-            child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor, fontSize: 13)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -833,7 +844,7 @@ class _UserScreenState extends State<UserScreen> {
                   color: primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.cloud_outlined, color: AppColors.blackDark, size: 20),
+                child: Icon(Icons.login, color: AppColors.blackDark, size: 20),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -2596,6 +2607,367 @@ Widget _buildInfoRow(String label, String content) {
       ],
     ),
   );
+}
+
+class MyPageScreen extends StatefulWidget {
+  const MyPageScreen({super.key});
+
+  @override
+  State<MyPageScreen> createState() => _MyPageScreenState();
+}
+
+class _MyPageScreenState extends State<MyPageScreen> {
+  final _nameCtrl = TextEditingController();
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _email;
+  String? _gender;
+  DateTime? _birthday;
+  int? _iconIndex;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) { setState(() => _isLoading = false); return; }
+    _userId = user.id;
+    _email = user.email;
+    try {
+      final profile = await AuthService.instance.getUserProfile();
+      _nameCtrl.text = profile?['user_name'] ?? '';
+      _gender = profile?['user_gender'];
+      final bday = profile?['user_birthday'];
+      if (bday != null) _birthday = DateTime.tryParse(bday);
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    _iconIndex = prefs.getInt('user_profile_icon_${_userId}');
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      final uid = _userId!;
+      await supabase.from('user').update({
+        'user_name': _nameCtrl.text.trim(),
+        'user_gender': _gender,
+        'user_birthday': _birthday?.toIso8601String().substring(0, 10),
+        'user_update': DateTime.now().toIso8601String(),
+      }).eq('user_id', uid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存しました'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _changeEmail() async {
+    final ctrl = TextEditingController();
+    final primary = Theme.of(context).primaryColor;
+    final newEmail = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('メールアドレス変更'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: '新しいメールアドレス',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(_), child: const Text('キャンセル')),
+          ElevatedButton(onPressed: () => Navigator.pop(_, ctrl.text.trim()), child: const Text('変更')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (newEmail == null || newEmail.isEmpty) return;
+    try {
+      await supabase.auth.updateUser(UserAttributes(email: newEmail));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('確認メールを送信しました'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('変更に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    final primary = Theme.of(context).primaryColor;
+    String? error;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('パスワード変更'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: newCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: '新しいパスワード（10文字以上）',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'パスワード（確認）',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+              ),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(error!, style: const TextStyle(color: AppColors.errorColor, fontSize: 13)),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          ElevatedButton(
+            onPressed: () {
+              if (newCtrl.text.length < 10) { setS(() => error = 'パスワードは10文字以上で入力してください'); return; }
+              if (newCtrl.text != confirmCtrl.text) { setS(() => error = 'パスワードが一致しません'); return; }
+              Navigator.pop(ctx, true);
+            },
+            child: const Text('変更'),
+          ),
+        ],
+      )),
+    );
+    final newPass = newCtrl.text;
+    newCtrl.dispose();
+    confirmCtrl.dispose();
+    if (confirmed != true) return;
+    try {
+      await supabase.auth.updateUser(UserAttributes(password: newPass));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('パスワードを変更しました'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('変更に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickBirthday() async {
+    final primary = Theme.of(context).primaryColor;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthday ?? DateTime(1990),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(colorScheme: ColorScheme.light(primary: primary)),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _birthday = picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('マイページ', style: TextStyle(color: primary)),
+        iconTheme: IconThemeData(color: primary),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Icon
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await showDialog<int>(
+                        context: context,
+                        builder: (_) => PersonIconPickerDialog(
+                          personName: _nameCtrl.text.isNotEmpty ? _nameCtrl.text : 'ユーザー',
+                          currentIndex: _iconIndex,
+                        ),
+                      );
+                      if (result != null && _userId != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('user_profile_icon_$_userId', result);
+                        setState(() => _iconIndex = result);
+                      }
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        _iconIndex != null && _iconIndex! >= 0 && _iconIndex! < kPersonIcons.length
+                            ? CircleAvatar(
+                                radius: 36,
+                                backgroundColor: kPersonIcons[_iconIndex!].bgColor,
+                                child: Text(kPersonIcons[_iconIndex!].emoji, style: const TextStyle(fontSize: 30)),
+                              )
+                            : CircleAvatar(
+                                radius: 36,
+                                backgroundColor: primary.withOpacity(0.15),
+                                child: Text(
+                                  _nameCtrl.text.isNotEmpty ? _nameCtrl.text[0] : '?',
+                                  style: TextStyle(fontSize: 28, color: primary, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                        Positioned(
+                          bottom: -2,
+                          right: -6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.blackDark.withOpacity(0.65), borderRadius: BorderRadius.circular(8)),
+                            child: const Text('変更', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Username
+                  _buildSection(
+                    title: 'ユーザー名',
+                    child: TextField(
+                      controller: _nameCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'ユーザー名',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorderColor)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorderColor)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Email
+                  _buildSection(
+                    title: 'メールアドレス',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(_email ?? '', style: const TextStyle(fontSize: 14, color: AppColors.blackDark)),
+                      trailing: TextButton(onPressed: _changeEmail, child: Text('変更', style: TextStyle(color: primary))),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Password
+                  _buildSection(
+                    title: 'パスワード',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('••••••••••', style: TextStyle(fontSize: 14, color: AppColors.blackLight)),
+                      trailing: TextButton(onPressed: _changePassword, child: Text('変更', style: TextStyle(color: primary))),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Birthday
+                  _buildSection(
+                    title: '生年月日',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        _birthday != null ? '${_birthday!.year}年${_birthday!.month}月${_birthday!.day}日' : '未設定',
+                        style: TextStyle(fontSize: 14, color: _birthday != null ? AppColors.blackDark : AppColors.blackLight),
+                      ),
+                      trailing: TextButton(onPressed: _pickBirthday, child: Text('設定', style: TextStyle(color: primary))),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Gender
+                  _buildSection(
+                    title: '性別',
+                    child: Column(
+                      children: ['男性', '女性', 'その他', '無回答'].map((g) => RadioListTile<String>(
+                        value: g,
+                        groupValue: _gender,
+                        onChanged: (v) => setState(() => _gender = v),
+                        title: Text(g, style: const TextStyle(fontSize: 14)),
+                        activeColor: primary,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                      )).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _save,
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                      child: _isSaving
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('保存', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildSection({required String title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 12, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          child,
+        ],
+      ),
+    );
+  }
 }
 
 Widget _buildTermsSection(BuildContext context, String title, String content) {

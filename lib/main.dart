@@ -169,12 +169,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
-Widget buildStarRating(BuildContext context, num rating) {
+Widget buildStarRating(BuildContext context, num rating, {double size = 20}) {
   return Row(
     mainAxisSize: MainAxisSize.min,
     children: List.generate(5, (index) {
       return Icon(
         Icons.star_rounded,
+        size: size,
         color: index < rating
             ? AppColors.starColor
             : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
@@ -297,7 +298,7 @@ class _MainAppState extends State<MainApp> {
       await prefs.setBool('first_launch_done', true);
       final result = await showDialog<String>(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         builder: (_) => const LoginPromptDialog(),
       );
       if (result == 'login' && mounted) {
