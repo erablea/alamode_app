@@ -15,10 +15,10 @@ const List<_PersonIconDef> kPersonIcons = [
   _PersonIconDef(7,  '🍋', Color(0xFFFFF3B0)), // レモンイエロー
   _PersonIconDef(8,  '🍒', Color(0xFFF8A8B8)), // チェリーピンク
   _PersonIconDef(9,  '🍓', Color(0xFFFFB8CC)), // ストロベリーピンク
-  _PersonIconDef(10, '🍰', Color(0xFFF8E8D0)), // バニラ
-  _PersonIconDef(11, '🕶️', Color(0xFFB8E8C0)), // フレッシュグリーン
+  _PersonIconDef(10, '🍰', Color(0xFFFCF4EC)), // ホワイトクリーム
+  _PersonIconDef(11, '🕶️', Color(0xFFD8D8D8)), // グレー
   _PersonIconDef(12, '🩰', Color(0xFFFFD8E8)), // バレエピンク
-  _PersonIconDef(13, '👒', Color(0xFFFFE5CC)), // ピーチ
+  _PersonIconDef(13, '👒', Color(0xFFCCE8A0)), // 黄緑
   _PersonIconDef(14, '🫧', Color(0xFFA8E8F8)), // アクア
   _PersonIconDef(15, '🎀', Color(0xFFFFB0CC)), // ホットピンク
 ];

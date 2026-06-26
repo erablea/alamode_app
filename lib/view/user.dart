@@ -5,6 +5,8 @@ import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
 import 'package:alamode_app/view/memo.dart';
+import 'package:alamode_app/view/auth.dart';
+import 'package:alamode_app/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserScreen extends StatefulWidget {
@@ -378,6 +380,8 @@ class _UserScreenState extends State<UserScreen> {
               children: [
                 _buildPersonListSection(),
                 const SizedBox(height: 32),
+                _buildAuthSection(),
+                const SizedBox(height: 16),
                 _buildSettingsSection(),
               ],
             ),
@@ -755,6 +759,138 @@ class _UserScreenState extends State<UserScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildAuthSection() {
+    final primary = Theme.of(context).primaryColor;
+    final isLoggedIn = AuthService.instance.isLoggedIn;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: isLoggedIn ? _buildLoggedInTile(primary) : _buildLoggedOutTile(primary),
+    );
+  }
+
+  Widget _buildLoggedInTile(Color primary) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.cloud_done_outlined, color: primary, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('ログイン中', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                FutureBuilder<String?>(
+                  future: AuthService.instance.getUserName(),
+                  builder: (context, snap) => Text(
+                    snap.data ?? AuthService.instance.currentUser?.email ?? '',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.blackDark),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: _logout,
+            child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoggedOutTile(Color primary) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: _navigateToLogin,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.cloud_outlined, color: AppColors.blackDark, size: 20),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ログイン / 新規登録', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.blackDark)),
+                    SizedBox(height: 2),
+                    Text('データをクラウドで安全に保存', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.blackLight),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToLogin() async {
+    final loggedIn = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+    if (loggedIn == true) {
+      setState(() {});
+      await _loadPersonList();
+    }
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('ログアウト'),
+        content: const Text('ログアウトしますか？\nログアウト後もローカルのデータは引き続き閲覧できます。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('キャンセル')),
+          TextButton(
+            onPressed: () => Navigator.pop(_, true),
+            child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await AuthService.instance.signOut();
+      if (mounted) {
+        setState(() {});
+        await _loadPersonList();
+      }
+    }
   }
 
   Widget _buildSettingsSection() {

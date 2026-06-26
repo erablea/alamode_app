@@ -15,6 +15,8 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
+import 'package:alamode_app/services/auth_service.dart';
+import 'package:alamode_app/view/auth.dart';
 
 final presentLogger = Logger('PresentManagement');
 
@@ -380,6 +382,10 @@ class PresentManagementService {
   }
 
   Future<void> savePresent(Map<String, dynamic> presentData) async {
+    if (AuthService.instance.isLoggedIn) {
+      await _savePresentToSupabase(presentData);
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
@@ -393,6 +399,10 @@ class PresentManagementService {
   }
 
   Future<void> updatePresent(Map<String, dynamic> presentData) async {
+    if (AuthService.instance.isLoggedIn) {
+      await _updatePresentInSupabase(presentData);
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
@@ -414,6 +424,10 @@ class PresentManagementService {
   }
 
   Future<void> deletePresent(String presentId) async {
+    if (AuthService.instance.isLoggedIn) {
+      await _deletePresentFromSupabase(presentId);
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
@@ -431,6 +445,9 @@ class PresentManagementService {
   }
 
   Future<List<Map<String, dynamic>>> getAllPresents() async {
+    if (AuthService.instance.isLoggedIn) {
+      return _getAllPresentsFromSupabase();
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
@@ -441,6 +458,148 @@ class PresentManagementService {
       presentLogger.warning('データの読み込みに失敗しました: $e');
       return [];
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _getAllPresentsFromSupabase() async {
+    final uid = AuthService.instance.userId!;
+    try {
+      final data = await supabase
+          .from('event')
+          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_memo, useritem_image), who(who_id, who_name)')
+          .eq('user_id', uid)
+          .order('event_createdate', ascending: false);
+      return (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      presentLogger.warning('Supabaseからの読み込みに失敗: $e');
+      return [];
+    }
+  }
+
+  static Map<String, dynamic> _supabaseToPresent(Map<String, dynamic> event) {
+    final useritem = event['useritem'] as Map<String, dynamic>? ?? {};
+    final who = event['who'] as Map<String, dynamic>?;
+    final conditions = <String>[];
+    if (useritem['useritem_roomtemperature'] == 'yes') conditions.add('常温');
+    if (useritem['useritem_individualwrapping'] == 'yes') conditions.add('個包装');
+    if (useritem['useritem_online'] == 'yes') conditions.add('オンライン購入');
+    return {
+      'present_id': event['event_id'],
+      'present_type': event['event_how'] == 'treat' ? 'received' : 'sent',
+      'present_name': useritem['useritem_name'] ?? '',
+      'present_brand': useritem['useritem_brand'] ?? '',
+      'present_genre': useritem['useritem_category'] ?? '',
+      'present_price': useritem['useritem_price'] ?? 0,
+      'present_date': event['event_date'] ?? '',
+      'present_who': who?['who_name'] ?? '',
+      'present_reaction': event['event_reaction_rating'] ?? 0,
+      'present_other_conditions': conditions.join(', '),
+      'present_memo': useritem['useritem_memo'] ?? '',
+      'present_imageurl': useritem['useritem_image'],
+      'present_imageurl2': null,
+      'present_imageurl3': null,
+      'present_createdate': event['event_createdate'] ?? DateTime.now().toIso8601String(),
+      '_event_id': event['event_id'],
+      '_useritem_id': useritem['useritem_id'],
+      '_who_id': who?['who_id'],
+    };
+  }
+
+  Future<void> _savePresentToSupabase(Map<String, dynamic> data) async {
+    final uid = AuthService.instance.userId!;
+    final whoName = data['present_who'] as String? ?? '';
+    String? whoId;
+    if (whoName.isNotEmpty) {
+      whoId = await AuthService.instance.getOrCreateWho(uid, whoName);
+    }
+    final otherConditions = data['present_other_conditions'] as String? ?? '';
+    final useritemResult = await supabase.from('useritem').insert({
+      'user_id': uid,
+      'useritem_name': data['present_name'] ?? '',
+      'useritem_brand': data['present_brand'] ?? '',
+      'useritem_category': data['present_genre'] ?? '',
+      'useritem_price': data['present_price'] ?? 0,
+      'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
+      'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
+      'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
+      'useritem_memo': data['present_memo'] ?? '',
+      'useritem_URL': '',
+      'useritem_image': data['present_imageurl'],
+      'useritem_createdate': DateTime.now().toIso8601String(),
+      'useritem_update': DateTime.now().toIso8601String(),
+    }).select('useritem_id').single();
+    await supabase.from('event').insert({
+      'user_id': uid,
+      'useritem_id': useritemResult['useritem_id'],
+      'event_how': data['present_type'] == 'received' ? 'treat' : 'present',
+      'event_reaction_rating': data['present_reaction'] ?? 0,
+      'event_taste_rating': 0,
+      'event_memo': data['present_memo'] ?? '',
+      'who_id': whoId,
+      'event_date': data['present_date'],
+      'event_createdate': DateTime.now().toIso8601String(),
+      'event_update': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<void> _updatePresentInSupabase(Map<String, dynamic> data) async {
+    final uid = AuthService.instance.userId!;
+    final eventId = data['_event_id'] ?? data['present_id'];
+    final useritemId = data['_useritem_id'];
+    if (eventId == null || useritemId == null) return;
+    final whoName = data['present_who'] as String? ?? '';
+    String? whoId;
+    if (whoName.isNotEmpty) {
+      whoId = await AuthService.instance.getOrCreateWho(uid, whoName);
+    }
+    final otherConditions = data['present_other_conditions'] as String? ?? '';
+    await supabase.from('useritem').update({
+      'useritem_name': data['present_name'] ?? '',
+      'useritem_brand': data['present_brand'] ?? '',
+      'useritem_category': data['present_genre'] ?? '',
+      'useritem_price': data['present_price'] ?? 0,
+      'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
+      'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
+      'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
+      'useritem_memo': data['present_memo'] ?? '',
+      'useritem_image': data['present_imageurl'],
+      'useritem_update': DateTime.now().toIso8601String(),
+    }).eq('useritem_id', useritemId);
+    await supabase.from('event').update({
+      'event_how': data['present_type'] == 'received' ? 'treat' : 'present',
+      'event_reaction_rating': data['present_reaction'] ?? 0,
+      'event_memo': data['present_memo'] ?? '',
+      'who_id': whoId,
+      'event_date': data['present_date'],
+      'event_update': DateTime.now().toIso8601String(),
+    }).eq('event_id', eventId);
+  }
+
+  Future<void> _deletePresentFromSupabase(String presentId) async {
+    final eventData = await supabase
+        .from('event')
+        .select('useritem_id')
+        .eq('event_id', presentId)
+        .maybeSingle();
+    await supabase.from('event').delete().eq('event_id', presentId);
+    if (eventData != null) {
+      final useritemId = eventData['useritem_id'];
+      if (useritemId != null) {
+        final others = await supabase.from('event').select('event_id').eq('useritem_id', useritemId);
+        if ((others as List).isEmpty) {
+          await supabase.from('useritem').delete().eq('useritem_id', useritemId);
+        }
+      }
+    }
+  }
+
+  Future<List<String>> getWhoNamesFromSupabase() async {
+    final uid = AuthService.instance.userId!;
+    final data = await supabase
+        .from('who')
+        .select('who_name')
+        .eq('user_id', uid)
+        .order('who_name');
+    return (data as List).map((e) => e['who_name'] as String).toList();
   }
 }
 
@@ -480,6 +639,26 @@ class _PresentListState extends State<PresentList> {
     await _loadTabState();
     await _loadPresentList();
     await _loadSortOrder();
+    _checkLoginPrompt();
+  }
+
+  Future<void> _checkLoginPrompt() async {
+    if (AuthService.instance.isLoggedIn) return;
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool('login_popup_dismissed') ?? false;
+    if (!dismissed && mounted) {
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const LoginPromptDialog(),
+      );
+      if (result == 'login' && mounted) {
+        final loggedIn = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+        if (loggedIn == true) await _loadPresentList();
+      }
+    }
   }
 
   Future<void> _loadTabState() async {
@@ -1737,6 +1916,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   }
 
   Future<void> _loadAllWhoNames() async {
+    if (AuthService.instance.isLoggedIn) {
+      try {
+        final names = await widget.presentService.getWhoNamesFromSupabase();
+        if (mounted) setState(() => _allWhoNames = names);
+      } catch (_) {}
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     final presentList = prefs.getStringList(Constants.presentListKey) ?? [];
     final names = <String>{};
@@ -2166,6 +2352,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             DateTime.now().millisecondsSinceEpoch.toString(),
         'present_createdate': widget.initialPresent?['present_createdate'] ??
             DateTime.now().toIso8601String(),
+        '_event_id': widget.initialPresent?['_event_id'],
+        '_useritem_id': widget.initialPresent?['_useritem_id'],
+        '_who_id': widget.initialPresent?['_who_id'],
         'present_type': _presentType,
         'present_name': _controllers['present_name']!.text,
         'present_brand': _controllers['present_brand']!.text,

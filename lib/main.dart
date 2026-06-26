@@ -4,7 +4,9 @@ import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/view/user.dart';
+import 'package:alamode_app/view/auth.dart';
 import 'package:alamode_app/widgets/header.dart';
+import 'package:alamode_app/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -279,6 +281,30 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunchPrompt());
+  }
+
+  Future<void> _checkFirstLaunchPrompt() async {
+    if (AuthService.instance.isLoggedIn) return;
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool('login_popup_dismissed') ?? false;
+    final firstDone = prefs.getBool('first_launch_done') ?? false;
+    if (!dismissed && !firstDone && mounted) {
+      await prefs.setBool('first_launch_done', true);
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const LoginPromptDialog(),
+      );
+      if (result == 'login' && mounted) {
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

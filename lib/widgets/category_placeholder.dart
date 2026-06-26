@@ -18,22 +18,12 @@ class CategoryPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = _imageCategories[category];
-    if (imagePath != null) {
-      return Container(
-        width: double.infinity,
-        height: height,
-        color: const Color(0xFFF5F5F3),
-        child: Image.asset(imagePath, fit: BoxFit.contain),
-      );
-    }
+    final imagePath = _imageCategories[category] ?? 'assets/images/others.png';
     return Container(
       width: double.infinity,
       height: height,
       color: const Color(0xFFF5F5F3),
-      child: CustomPaint(
-        painter: _getPainter(category),
-      ),
+      child: Image.asset(imagePath, fit: BoxFit.contain),
     );
   }
 
