@@ -8,7 +8,7 @@ const List<_PersonIconDef> kPersonIcons = [
   _PersonIconDef(0,  '🦄', Color(0xFFE8D5F5)), // ラベンダー
   _PersonIconDef(1,  '🦢', Color(0xFFBEE5F5)), // スカイブルー
   _PersonIconDef(2,  '🦋', Color(0xFFC8D4F0)), // パープルブルー
-  _PersonIconDef(3,  '🐻', Color(0xFFE8D4B8)), // キャラメルベージュ
+  _PersonIconDef(3,  '🧸', Color(0xFFEEDDC8)), // ウォームベージュ
   _PersonIconDef(4,  '💐', Color(0xFFDDD0F0)), // ライラック
   _PersonIconDef(5,  '🌷', Color(0xFFE8C8E0)), // モーブ
   _PersonIconDef(6,  '🌱', Color(0xFFC5EDD5)), // ミント
@@ -21,7 +21,6 @@ const List<_PersonIconDef> kPersonIcons = [
   _PersonIconDef(13, '👒', Color(0xFFFFE5CC)), // ピーチ
   _PersonIconDef(14, '🫧', Color(0xFFC0EEF5)), // アクア
   _PersonIconDef(15, '🎀', Color(0xFFFFB0CC)), // ホットピンク
-  _PersonIconDef(16, '🧸', Color(0xFFEEDDC8)), // ウォームベージュ
 ];
 
 class _PersonIconDef {
