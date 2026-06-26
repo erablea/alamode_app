@@ -290,6 +290,14 @@ class _LoginPromptDialogState extends State<LoginPromptDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Image.asset(
+                'assets/images/others.png',
+                height: 100,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 8),
             ElevatedButton(
               onPressed: () => _dismiss(goLogin: true),
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),

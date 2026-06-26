@@ -2906,20 +2906,32 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   // Email
                   _buildSection(
                     title: 'メールアドレス',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_email ?? '', style: const TextStyle(fontSize: 14, color: AppColors.blackDark)),
-                      trailing: TextButton(onPressed: _changeEmail, child: Text('変更', style: TextStyle(color: primary))),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(_email ?? '', style: const TextStyle(fontSize: 14, color: AppColors.blackDark)),
+                          trailing: TextButton(onPressed: _changeEmail, child: Text('変更', style: TextStyle(color: primary))),
+                        ),
+                        const Text('1日3回まで変更可能です', style: TextStyle(fontSize: 11, color: AppColors.blackLight)),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
                   // Password
                   _buildSection(
                     title: 'パスワード',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('••••••••••', style: TextStyle(fontSize: 14, color: AppColors.blackLight)),
-                      trailing: TextButton(onPressed: _changePassword, child: Text('変更', style: TextStyle(color: primary))),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('••••••••••', style: TextStyle(fontSize: 14, color: AppColors.blackLight)),
+                          trailing: TextButton(onPressed: _changePassword, child: Text('変更', style: TextStyle(color: primary))),
+                        ),
+                        const Text('1日3回まで変更可能です', style: TextStyle(fontSize: 11, color: AppColors.blackLight)),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
