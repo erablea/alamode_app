@@ -2681,7 +2681,25 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
+  Future<bool> _checkDailyLimit(String key) async {
+    final today = DateTime.now();
+    final dateStr = '${today.year}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}';
+    final prefs = await SharedPreferences.getInstance();
+    final count = prefs.getInt('${key}_$dateStr') ?? 0;
+    if (count >= 3) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('本日の変更上限（3回）に達しました'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+        );
+      }
+      return false;
+    }
+    await prefs.setInt('${key}_$dateStr', count + 1);
+    return true;
+  }
+
   Future<void> _changeEmail() async {
+    if (!await _checkDailyLimit('email_change')) return;
     final ctrl = TextEditingController();
     final primary = Theme.of(context).primaryColor;
     final newEmail = await showDialog<String>(
@@ -2723,6 +2741,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Future<void> _changePassword() async {
+    if (!await _checkDailyLimit('password_change')) return;
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
     final primary = Theme.of(context).primaryColor;
@@ -2921,7 +2940,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   _buildSection(
                     title: '性別',
                     child: Column(
-                      children: ['男性', '女性', 'その他', '無回答'].map((g) => RadioListTile<String>(
+                      children: ['女性', '男性', '無回答'].map((g) => RadioListTile<String>(
                         value: g,
                         groupValue: _gender,
                         onChanged: (v) => setState(() => _gender = v),

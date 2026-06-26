@@ -1955,7 +1955,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     }
     String? initialGenre = widget.initialPresent?['present_genre'];
     if (initialGenre != null && initialGenre.isNotEmpty) {
-      _selectedGenres = {initialGenre};
+      _selectedGenres = Set.from(initialGenre.split(', ').where((s) => s.isNotEmpty));
     }
     String? initialOtherConditions =
         widget.initialPresent?['present_other_conditions'];
