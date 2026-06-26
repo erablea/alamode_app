@@ -5,18 +5,24 @@ import 'package:alamode_app/main.dart';
 
 // 12種類のアイコン定義（画像が揃ったら assets/icons/person_XX.png に差し替え予定）
 const List<_PersonIconDef> kPersonIcons = [
-  _PersonIconDef(0,  '🐱', Color(0xFFFFB6C1)), // ピンク
-  _PersonIconDef(1,  '🐶', Color(0xFFFFD9A8)), // オレンジ
-  _PersonIconDef(2,  '🐰', Color(0xFFE8D5F5)), // 薄紫
-  _PersonIconDef(3,  '🐻', Color(0xFFD4C4A8)), // ベージュ
-  _PersonIconDef(4,  '🦊', Color(0xFFFFCBA4)), // サーモン
-  _PersonIconDef(5,  '🐼', Color(0xFFCCE8CC)), // 薄緑
-  _PersonIconDef(6,  '🐸', Color(0xFFB8E8B8)), // 緑
-  _PersonIconDef(7,  '🐨', Color(0xFFCCDDEE)), // 水色
-  _PersonIconDef(8,  '🦋', Color(0xFFB8D4E8)), // 青
-  _PersonIconDef(9,  '🌸', Color(0xFFF5C6D4)), // ローズ
-  _PersonIconDef(10, '⭐', Color(0xFFFFF0A0)), // 黄色
-  _PersonIconDef(11, '🌙', Color(0xFFE0D4F0)), // ラベンダー
+  _PersonIconDef(0,  '🦄', Color(0xFFE8D5F5)), // ラベンダー
+  _PersonIconDef(1,  '🦢', Color(0xFFBEE5F5)), // スカイブルー
+  _PersonIconDef(2,  '🦋', Color(0xFFC8D4F0)), // パープルブルー
+  _PersonIconDef(3,  '🐞', Color(0xFFF5C8C0)), // コーラル
+  _PersonIconDef(4,  '💐', Color(0xFFDDD0F0)), // ライラック
+  _PersonIconDef(5,  '🌹', Color(0xFFF0B8C8)), // ローズ
+  _PersonIconDef(6,  '🌷', Color(0xFFE8C8E0)), // モーブ
+  _PersonIconDef(7,  '🌱', Color(0xFFC5EDD5)), // ミント
+  _PersonIconDef(8,  '🍋', Color(0xFFD5EDD5)), // セージグリーン
+  _PersonIconDef(9,  '🍒', Color(0xFFF5A8B8)), // チェリーピンク
+  _PersonIconDef(10, '🍓', Color(0xFFFFD0C0)), // サーモン
+  _PersonIconDef(11, '🍰', Color(0xFFF5E8D0)), // バニラ
+  _PersonIconDef(12, '🕶️', Color(0xFFF0E5C0)), // ペールゴールド
+  _PersonIconDef(13, '🩰', Color(0xFFFFE0E8)), // バレエピンク
+  _PersonIconDef(14, '👒', Color(0xFFFFE5CC)), // ピーチ
+  _PersonIconDef(15, '🫧', Color(0xFFC0EEF5)), // アクア
+  _PersonIconDef(16, '🎀', Color(0xFFFFB0CC)), // ホットピンク
+  _PersonIconDef(17, '🧸', Color(0xFFE8D4B8)), // キャラメルベージュ
 ];
 
 class _PersonIconDef {
