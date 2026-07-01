@@ -7,6 +7,7 @@ import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/view/auth.dart';
+import 'package:alamode_app/view/legal.dart';
 import 'package:alamode_app/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -922,6 +923,10 @@ class _UserScreenState extends State<UserScreen> {
         'title': '運営会社・利用規約',
         'icon': Icons.business_outlined,
       },
+      {
+        'title': 'プライバシーポリシー',
+        'icon': Icons.privacy_tip_outlined,
+      },
     ];
 
     return Container(
@@ -1049,6 +1054,9 @@ class _UserScreenState extends State<UserScreen> {
       case '運営会社・利用規約':
         screen = _buildTermsScreen(context);
         break;
+      case 'プライバシーポリシー':
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+        return;
       default:
         screen = Scaffold(
           appBar: AppBar(title: Text(title)),

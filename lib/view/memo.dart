@@ -169,7 +169,7 @@ class CommonWidgets {
     required Function(Set<String>) onSelectionChanged,
     bool multiSelect = false,
   }) {
-    const conditions = ['個包装', '常温', 'オンライン購入'];
+    const conditions = ['個包装', '常温', 'オンライン購入', '洋酒使用', '洋酒不使用'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1961,6 +1961,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         widget.initialPresent?['present_other_conditions'];
     if (initialOtherConditions != null && initialOtherConditions.isNotEmpty) {
       _selectedOtherConditions = Set.from(initialOtherConditions.split(', '));
+    } else if (widget.initialPresent == null) {
+      _selectedOtherConditions = {'洋酒不使用'};
     }
     _selectedDate = widget.initialPresent?['present_date'] != null
         ? DateTime.parse(widget.initialPresent!['present_date'])
@@ -2317,6 +2319,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       selectedConditions: _selectedOtherConditions,
       onSelectionChanged: (newSelection) {
         setState(() {
+          if (newSelection.contains('洋酒使用') && !_selectedOtherConditions.contains('洋酒使用')) {
+            newSelection.remove('洋酒不使用');
+          } else if (newSelection.contains('洋酒不使用') && !_selectedOtherConditions.contains('洋酒不使用')) {
+            newSelection.remove('洋酒使用');
+          }
           _selectedOtherConditions = newSelection;
         });
       },

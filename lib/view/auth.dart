@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/services/auth_service.dart';
+import 'package:alamode_app/view/legal.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _obscureLogin = true;
   bool _obscureSignup = true;
   bool _obscureSignupConfirm = true;
+  bool _agreedToTerms = false;
   String? _loginError;
   String? _signupError;
 
@@ -78,6 +81,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
     if (_signupPasswordCtrl.text != _signupPasswordConfirmCtrl.text) {
       setState(() => _signupError = 'パスワードが一致しません');
+      return;
+    }
+    if (!_agreedToTerms) {
+      setState(() => _signupError = '利用規約とプライバシーポリシーに同意してください');
       return;
     }
     setState(() { _isLoading = true; _signupError = null; });
@@ -200,6 +207,46 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           _buildTextField(
             _signupPasswordConfirmCtrl, 'パスワード（確認）', Icons.lock_outline, _obscureSignupConfirm,
             toggle: () => setState(() => _obscureSignupConfirm = !_obscureSignupConfirm),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Checkbox(
+                  value: _agreedToTerms,
+                  onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+                  activeColor: Theme.of(context).primaryColor,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 12, color: AppColors.blackLight, height: 1.5),
+                    children: [
+                      TextSpan(
+                        text: '利用規約',
+                        style: TextStyle(color: Theme.of(context).primaryColor, decoration: TextDecoration.underline),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsScreen())),
+                      ),
+                      const TextSpan(text: 'と'),
+                      TextSpan(
+                        text: 'プライバシーポリシー',
+                        style: TextStyle(color: Theme.of(context).primaryColor, decoration: TextDecoration.underline),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                      ),
+                      const TextSpan(text: 'に同意する'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           if (_signupError != null) ...[
             const SizedBox(height: 10),
