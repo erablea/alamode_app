@@ -214,6 +214,7 @@ class CommonWidgets {
     Color textColor;
     Widget? iconWidget;
 
+    bool isDashed = false;
     switch (state) {
       case 'yes':
         borderColor = primary;
@@ -225,22 +226,18 @@ class CommonWidgets {
         borderColor = AppColors.greyDark;
         bgColor = AppColors.greyLight;
         textColor = AppColors.blackLight;
-        iconWidget = Icon(Icons.close, size: 11, color: AppColors.blackLight);
+        iconWidget = null;
         break;
       default:
         borderColor = AppColors.greyDark;
         bgColor = Colors.transparent;
         textColor = AppColors.blackLight;
         iconWidget = null;
+        isDashed = true;
     }
 
-    Widget chip = Container(
+    Widget chipContent = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1),
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -249,6 +246,20 @@ class CommonWidgets {
         ],
       ),
     );
+
+    Widget chip = isDashed
+        ? CustomPaint(
+            painter: _DashedBorderPainter(color: borderColor, radius: 16),
+            child: chipContent,
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: chipContent,
+          );
 
     if (onTap == null) return chip;
     return Material(
@@ -296,6 +307,11 @@ class CommonWidgets {
               onStateChanged(newStates);
             });
           }).toList(),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'タップするたびに「未設定 → はい → いいえ → 未設定」の順に切り替わります。',
+          style: TextStyle(fontSize: 10, color: AppColors.blackLight),
         ),
       ],
     );
@@ -382,6 +398,38 @@ enum SortOrder {
 }
 
 enum SearchType { name, brand }
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  const _DashedBorderPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    const dashLen = 4.0;
+    const gapLen = 3.0;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      double dist = 0;
+      while (dist < metric.length) {
+        canvas.drawPath(metric.extractPath(dist, dist + dashLen), paint);
+        dist += dashLen + gapLen;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
+}
 
 class PresentManagementService {
   Future<String?> saveImageLocally(XFile pickedFile) async {
