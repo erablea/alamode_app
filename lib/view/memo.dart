@@ -1961,8 +1961,6 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         widget.initialPresent?['present_other_conditions'];
     if (initialOtherConditions != null && initialOtherConditions.isNotEmpty) {
       _selectedOtherConditions = Set.from(initialOtherConditions.split(', '));
-    } else if (widget.initialPresent == null) {
-      _selectedOtherConditions = {'洋酒不使用'};
     }
     _selectedDate = widget.initialPresent?['present_date'] != null
         ? DateTime.parse(widget.initialPresent!['present_date'])
