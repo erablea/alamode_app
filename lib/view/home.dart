@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:alamode_app/main.dart';
+import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -2061,10 +2062,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     };
 
     List<Widget> flagWidgets = [];
-    flags.forEach((key, label) {
-      final value = item[key];
-      final isActive = value == true || value == "yes" || value == "1" || value == 1;
-      flagWidgets.add(_buildFlagChip(context, label, isActive));
+    flags.forEach((itemKey, condKey) {
+      final value = item[itemKey];
+      final state = (value == true || value == 'yes' || value == '1' || value == 1)
+          ? 'yes'
+          : (value == false || value == 'no')
+              ? 'no'
+              : 'unknown';
+      final chip = _buildFlagChip(context, condKey, state);
+      if (chip is! SizedBox) flagWidgets.add(chip);
     });
 
     if (flagWidgets.isNotEmpty) {
@@ -2177,41 +2183,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildFlagChip(BuildContext context, String label, bool isActive) {
-    final primary = Theme.of(context).primaryColor;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white : AppColors.greyLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isActive ? primary : AppColors.greyDark,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isActive ? AppColors.blackDark : AppColors.blackLight,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            isActive ? '○' : '×',
-            style: TextStyle(
-              fontSize: 11,
-              color: isActive ? primary : AppColors.blackLight,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget _buildFlagChip(BuildContext context, String condKey, String state) {
+    if (state == 'unknown') return const SizedBox.shrink();
+    return CommonWidgets.buildConditionChip(context, condKey, state);
   }
 
   Widget _buildExternalLinkButton(Map<String, dynamic> item) {

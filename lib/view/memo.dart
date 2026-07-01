@@ -163,89 +163,138 @@ class CommonWidgets {
     );
   }
 
+  static const List<String> conditionKeys = ['個包装', '常温', 'オンライン購入', '洋酒'];
+
+  static const Map<String, Map<String, String>> conditionLabels = {
+    '個包装':       {'unknown': '個包装',       'yes': '個包装あり',     'no': '個包装なし'},
+    '常温':         {'unknown': '常温',         'yes': '常温保存',       'no': '要冷蔵・冷凍'},
+    'オンライン購入': {'unknown': 'オンライン購入', 'yes': 'オンライン購入可', 'no': 'オンライン購入不可'},
+    '洋酒':         {'unknown': '洋酒',         'yes': '洋酒不使用',     'no': '洋酒使用'},
+  };
+
+  static Map<String, String> parseConditionString(String? raw) {
+    final result = {for (final k in conditionKeys) k: 'unknown'};
+    if (raw == null || raw.isEmpty) return result;
+    for (final part in raw.split(',')) {
+      final trimmed = part.trim();
+      if (trimmed.contains(':')) {
+        final idx = trimmed.indexOf(':');
+        final key = trimmed.substring(0, idx);
+        final val = trimmed.substring(idx + 1);
+        if (result.containsKey(key)) result[key] = val;
+      } else if (trimmed.isNotEmpty) {
+        // 旧形式との後方互換
+        if (trimmed == '個包装') result['個包装'] = 'yes';
+        else if (trimmed == '常温') result['常温'] = 'yes';
+        else if (trimmed == 'オンライン購入') result['オンライン購入'] = 'yes';
+        else if (trimmed == '洋酒不使用') result['洋酒'] = 'yes';
+        else if (trimmed == '洋酒使用') result['洋酒'] = 'no';
+      }
+    }
+    return result;
+  }
+
+  static String serializeConditionStates(Map<String, String> states) {
+    return states.entries
+        .where((e) => e.value != 'unknown')
+        .map((e) => '${e.key}:${e.value}')
+        .join(',');
+  }
+
+  static Widget buildConditionChip(
+    BuildContext context,
+    String key,
+    String state, {
+    VoidCallback? onTap,
+  }) {
+    final label = conditionLabels[key]?[state] ?? key;
+    final primary = Theme.of(context).primaryColor;
+    Color borderColor;
+    Color bgColor;
+    Color textColor;
+    Widget? iconWidget;
+
+    switch (state) {
+      case 'yes':
+        borderColor = primary;
+        bgColor = Colors.white;
+        textColor = AppColors.blackDark;
+        iconWidget = Icon(Icons.check, size: 11, color: primary);
+        break;
+      case 'no':
+        borderColor = AppColors.greyDark;
+        bgColor = AppColors.greyLight;
+        textColor = AppColors.blackLight;
+        iconWidget = Icon(Icons.close, size: 11, color: AppColors.blackLight);
+        break;
+      default:
+        borderColor = AppColors.greyDark;
+        bgColor = Colors.transparent;
+        textColor = AppColors.blackLight;
+        iconWidget = null;
+    }
+
+    Widget chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (iconWidget != null) ...[iconWidget, const SizedBox(width: 3)],
+          Text(label, style: TextStyle(fontSize: 11, color: textColor)),
+        ],
+      ),
+    );
+
+    if (onTap == null) return chip;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: chip,
+      ),
+    );
+  }
+
+  static Widget buildConditionDisplayChips(BuildContext context, String? raw) {
+    final states = parseConditionString(raw);
+    final chips = conditionKeys
+        .where((k) => states[k] != 'unknown')
+        .map((k) => buildConditionChip(context, k, states[k]!))
+        .toList();
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Wrap(spacing: 6, runSpacing: 4, children: chips);
+  }
+
   static Widget buildOtherConditionSelector({
     required BuildContext context,
-    required Set<String> selectedConditions,
-    required Function(Set<String>) onSelectionChanged,
-    bool multiSelect = false,
+    required Map<String, String> conditionStates,
+    required Function(Map<String, String>) onStateChanged,
   }) {
-    const conditions = ['個包装', '常温', 'オンライン購入', '洋酒使用', '洋酒不使用'];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'その他',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.blackLight),
         ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8.0,
           runSpacing: 8.0,
-          children: conditions.map((condition) {
-            final isSelected = selectedConditions.contains(condition);
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  Set<String> newSelection = Set.from(selectedConditions);
-                  if (isSelected) {
-                    newSelection.remove(condition);
-                  } else {
-                    if (!multiSelect) {
-                      newSelection.clear(); // 単一選択の場合
-                    }
-                    newSelection.add(condition);
-                  }
-                  onSelectionChanged(newSelection);
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : AppColors.greyLight,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : AppColors.greyDark,
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        condition,
-                        style: TextStyle(
-                          color: isSelected
-                              ? AppColors.blackDark
-                              : AppColors.blackLight,
-                          fontWeight: FontWeight.normal,
-                          fontSize: 11,
-                        ),
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          '○',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            );
+          children: conditionKeys.map((key) {
+            final state = conditionStates[key] ?? 'unknown';
+            return buildConditionChip(context, key, state, onTap: () {
+              final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
+              final newStates = Map<String, String>.from(conditionStates);
+              newStates[key] = next;
+              onStateChanged(newStates);
+            });
           }).toList(),
         ),
       ],
@@ -478,10 +527,13 @@ class PresentManagementService {
   static Map<String, dynamic> _supabaseToPresent(Map<String, dynamic> event) {
     final useritem = event['useritem'] as Map<String, dynamic>? ?? {};
     final who = event['who'] as Map<String, dynamic>?;
-    final conditions = <String>[];
-    if (useritem['useritem_roomtemperature'] == 'yes') conditions.add('常温');
-    if (useritem['useritem_individualwrapping'] == 'yes') conditions.add('個包装');
-    if (useritem['useritem_online'] == 'yes') conditions.add('オンライン購入');
+    String _dbVal(String? v) => v == 'yes' ? 'yes' : v == 'no' ? 'no' : 'unknown';
+    final conditions = {
+      '個包装': _dbVal(useritem['useritem_individualwrapping'] as String?),
+      '常温': _dbVal(useritem['useritem_roomtemperature'] as String?),
+      'オンライン購入': _dbVal(useritem['useritem_online'] as String?),
+      '洋酒': 'unknown',
+    };
     return {
       'present_id': event['event_id'],
       'present_type': event['event_how'] == 'treat' ? 'received' : 'sent',
@@ -492,7 +544,7 @@ class PresentManagementService {
       'present_date': event['event_date'] ?? '',
       'present_who': who?['who_name'] ?? '',
       'present_reaction': event['event_reaction_rating'] ?? 0,
-      'present_other_conditions': conditions.join(', '),
+      'present_other_conditions': CommonWidgets.serializeConditionStates(conditions),
       'present_memo': useritem['useritem_memo'] ?? '',
       'present_imageurl': useritem['useritem_image'],
       'present_imageurl2': null,
@@ -511,16 +563,16 @@ class PresentManagementService {
     if (whoName.isNotEmpty) {
       whoId = await AuthService.instance.getOrCreateWho(uid, whoName);
     }
-    final otherConditions = data['present_other_conditions'] as String? ?? '';
+    final condStates = CommonWidgets.parseConditionString(data['present_other_conditions'] as String?);
     final useritemResult = await supabase.from('useritem').insert({
       'user_id': uid,
       'useritem_name': data['present_name'] ?? '',
       'useritem_brand': data['present_brand'] ?? '',
       'useritem_category': data['present_genre'] ?? '',
       'useritem_price': data['present_price'] ?? 0,
-      'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
-      'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
-      'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
+      'useritem_roomtemperature': condStates['常温'] == 'unknown' ? null : condStates['常温'],
+      'useritem_individualwrapping': condStates['個包装'] == 'unknown' ? null : condStates['個包装'],
+      'useritem_online': condStates['オンライン購入'] == 'unknown' ? null : condStates['オンライン購入'],
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': data['present_imageurl'],
@@ -551,15 +603,15 @@ class PresentManagementService {
     if (whoName.isNotEmpty) {
       whoId = await AuthService.instance.getOrCreateWho(uid, whoName);
     }
-    final otherConditions = data['present_other_conditions'] as String? ?? '';
+    final condStates2 = CommonWidgets.parseConditionString(data['present_other_conditions'] as String?);
     await supabase.from('useritem').update({
       'useritem_name': data['present_name'] ?? '',
       'useritem_brand': data['present_brand'] ?? '',
       'useritem_category': data['present_genre'] ?? '',
       'useritem_price': data['present_price'] ?? 0,
-      'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
-      'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
-      'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
+      'useritem_roomtemperature': condStates2['常温'] == 'unknown' ? null : condStates2['常温'],
+      'useritem_individualwrapping': condStates2['個包装'] == 'unknown' ? null : condStates2['個包装'],
+      'useritem_online': condStates2['オンライン購入'] == 'unknown' ? null : condStates2['オンライン購入'],
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_image': data['present_imageurl'],
       'useritem_update': DateTime.now().toIso8601String(),
@@ -779,18 +831,18 @@ class _PresentListState extends State<PresentList> {
       return false;
     }
 
-// その他条件フィルタリング
+// その他条件フィルタリング（キー形式: "個包装:yes" など）
     if (_filterOtherCondition.isNotEmpty) {
-      String presentOtherConditions = present['present_other_conditions'] ?? '';
+      final condStates = CommonWidgets.parseConditionString(present['present_other_conditions'] as String?);
       bool matchesOtherCondition = false;
-      _filterOtherCondition.forEach((condition, isSelected) {
-        if (isSelected && presentOtherConditions.contains(condition)) {
+      _filterOtherCondition.forEach((condKey, isSelected) {
+        if (!isSelected) return;
+        final parts = condKey.split(':');
+        if (parts.length == 2 && condStates[parts[0]] == parts[1]) {
           matchesOtherCondition = true;
         }
       });
-      if (!matchesOtherCondition) {
-        return false;
-      }
+      if (!matchesOtherCondition) return false;
     }
 
     // 価格フィルタリング
@@ -1023,14 +1075,18 @@ class _PresentListState extends State<PresentList> {
       }
     });
 
-// その他条件フィルター
-    _filterOtherCondition.forEach((condition, isSelected) {
+// その他条件フィルター（キー: "個包装:yes" など）
+    _filterOtherCondition.forEach((condKey, isSelected) {
       if (isSelected) {
+        final parts = condKey.split(':');
+        final label = parts.length == 2
+            ? (CommonWidgets.conditionLabels[parts[0]]?[parts[1]] ?? condKey)
+            : condKey;
         filterChips.add(_buildFilterChip(
-          label: condition,
+          label: label,
           onRemove: () {
             setState(() {
-              _filterOtherCondition[condition] = false;
+              _filterOtherCondition[condKey] = false;
             });
             _applyFiltersAndSort();
           },
@@ -1252,35 +1308,14 @@ class _PresentListState extends State<PresentList> {
               ),
             ],
           ),
-          if (present['present_other_conditions'] != null &&
-              present['present_other_conditions'].toString().isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: present['present_other_conditions']
-                  .toString()
-                  .split(', ')
-                  .where((s) => s.isNotEmpty)
-                  .map<Widget>((condition) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Theme.of(context).primaryColor, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(condition, style: const TextStyle(fontSize: 10, color: AppColors.blackDark)),
-                            const SizedBox(width: 3),
-                            Text('○', style: TextStyle(fontSize: 10, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ],
+          Builder(builder: (ctx) {
+            final chips = CommonWidgets.buildConditionDisplayChips(ctx, present['present_other_conditions'] as String?);
+            final hasChips = present['present_other_conditions'] != null &&
+                CommonWidgets.parseConditionString(present['present_other_conditions'] as String?)
+                    .values.any((v) => v != 'unknown');
+            if (!hasChips) return const SizedBox.shrink();
+            return Padding(padding: const EdgeInsets.only(top: 4), child: chips);
+          }),
           const SizedBox(height: 4),
         ],
       ),
@@ -1432,7 +1467,6 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
   late Map<String, bool> _tempFilterOtherCondition;
   late RangeValues _tempFilterPriceRange;
   Set<String> _selectedGenres = {};
-  Set<String> _selectedOtherConditions = {};
 
   @override
   void initState() {
@@ -1445,8 +1479,6 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
         RangeValues(widget.currentPriceMin, widget.currentPriceMax);
     _selectedGenres = Set.from(
         _tempFilterGenre.keys.where((key) => _tempFilterGenre[key] == true));
-    _selectedOtherConditions = Set.from(_tempFilterOtherCondition.keys
-        .where((key) => _tempFilterOtherCondition[key] == true));
   }
 
   @override
@@ -1614,20 +1646,54 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
   }
 
   Widget _buildOtherConditionSelector() {
-    return CommonWidgets.buildOtherConditionSelector(
-      context: context,
-      selectedConditions: _selectedOtherConditions,
-      onSelectionChanged: (newSelection) {
-        setState(() {
-          _selectedOtherConditions = newSelection;
-          // フィルター用の Map も更新
-          _tempFilterOtherCondition.clear();
-          for (String condition in newSelection) {
-            _tempFilterOtherCondition[condition] = true;
-          }
-        });
-      },
-      multiSelect: true, // 複数選択可能
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('その他', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.blackLight)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: CommonWidgets.conditionKeys.expand((key) {
+            return ['yes', 'no'].map((state) {
+              final filterKey = '$key:$state';
+              final isSelected = _tempFilterOtherCondition[filterKey] ?? false;
+              final label = CommonWidgets.conditionLabels[key]?[state] ?? key;
+              final primary = Theme.of(context).primaryColor;
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => setState(() {
+                    _tempFilterOtherCondition[filterKey] = !isSelected;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : AppColors.greyLight,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? primary : AppColors.greyDark,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isSelected) ...[
+                          Icon(Icons.check, size: 11, color: primary),
+                          const SizedBox(width: 3),
+                        ],
+                        Text(label, style: TextStyle(fontSize: 11, color: isSelected ? AppColors.blackDark : AppColors.blackLight)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            });
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -1880,7 +1946,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   final _controllers = <String, TextEditingController>{};
   late DateTime _selectedDate;
   Set<String> _selectedGenres = {};
-  Set<String> _selectedOtherConditions = {};
+  Map<String, String> _conditionStates = {for (final k in CommonWidgets.conditionKeys) k: 'unknown'};
   int _presentReaction = 0;
   List<XFile> _pickedFiles = [];
   List<Uint8List> _webImages = [];
@@ -1957,11 +2023,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     if (initialGenre != null && initialGenre.isNotEmpty) {
       _selectedGenres = Set.from(initialGenre.split(', ').where((s) => s.isNotEmpty));
     }
-    String? initialOtherConditions =
-        widget.initialPresent?['present_other_conditions'];
-    if (initialOtherConditions != null && initialOtherConditions.isNotEmpty) {
-      _selectedOtherConditions = Set.from(initialOtherConditions.split(', '));
-    }
+    _conditionStates = CommonWidgets.parseConditionString(
+        widget.initialPresent?['present_other_conditions'] as String?);
     _selectedDate = widget.initialPresent?['present_date'] != null
         ? DateTime.parse(widget.initialPresent!['present_date'])
         : DateTime.now();
@@ -2314,18 +2377,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   Widget _buildOtherConditionSelector() {
     return CommonWidgets.buildOtherConditionSelector(
       context: context,
-      selectedConditions: _selectedOtherConditions,
-      onSelectionChanged: (newSelection) {
-        setState(() {
-          if (newSelection.contains('洋酒使用') && !_selectedOtherConditions.contains('洋酒使用')) {
-            newSelection.remove('洋酒不使用');
-          } else if (newSelection.contains('洋酒不使用') && !_selectedOtherConditions.contains('洋酒不使用')) {
-            newSelection.remove('洋酒使用');
-          }
-          _selectedOtherConditions = newSelection;
-        });
-      },
-      multiSelect: true, // 複数選択可能
+      conditionStates: _conditionStates,
+      onStateChanged: (newStates) => setState(() => _conditionStates = newStates),
     );
   }
 
@@ -2367,7 +2420,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_who': _whoFieldController.text,
         'present_reaction': _presentReaction,
         'present_genre': _selectedGenres.join(', '),
-        'present_other_conditions': _selectedOtherConditions.join(', '),
+        'present_other_conditions': CommonWidgets.serializeConditionStates(_conditionStates),
         'present_memo': _controllers['present_memo']!.text,
       };
 
