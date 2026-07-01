@@ -139,7 +139,7 @@ class CommonWidgets {
                     border: Border.all(
                       color: isSelected
                           ? Theme.of(context).primaryColor
-                          : AppColors.greyLight,
+                          : AppColors.greyDark,
                       width: 1,
                     ),
                   ),
@@ -220,7 +220,7 @@ class CommonWidgets {
         borderColor = primary;
         bgColor = Colors.white;
         textColor = AppColors.blackDark;
-        iconWidget = Icon(Icons.check, size: 11, color: primary);
+        iconWidget = Icon(Icons.check, size: 13, color: primary);
         break;
       case 'no':
         borderColor = AppColors.greyDark;
@@ -237,25 +237,27 @@ class CommonWidgets {
     }
 
     Widget chipContent = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (iconWidget != null) ...[iconWidget, const SizedBox(width: 3)],
-          Text(label, style: TextStyle(fontSize: 11, color: textColor)),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (iconWidget != null) ...[iconWidget, const SizedBox(width: 4)],
+            Text(label, style: TextStyle(fontSize: 13, color: textColor)),
+          ],
+        ),
       ),
     );
 
     Widget chip = isDashed
         ? CustomPaint(
-            painter: _DashedBorderPainter(color: borderColor, radius: 16),
+            painter: _DashedBorderPainter(color: borderColor, radius: 20),
             child: chipContent,
           )
         : Container(
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: borderColor, width: 1),
             ),
             child: chipContent,
@@ -295,18 +297,50 @@ class CommonWidgets {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.blackLight),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: conditionKeys.map((key) {
-            final state = conditionStates[key] ?? 'unknown';
-            return buildConditionChip(context, key, state, onTap: () {
-              final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
-              final newStates = Map<String, String>.from(conditionStates);
-              newStates[key] = next;
-              onStateChanged(newStates);
-            });
-          }).toList(),
+        Column(
+          children: [
+            Row(
+              children: [
+                for (int i = 0; i < 2; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  Expanded(child: Builder(builder: (ctx) {
+                    final key = conditionKeys[i];
+                    final state = conditionStates[key] ?? 'unknown';
+                    return SizedBox(
+                      width: double.infinity,
+                      child: buildConditionChip(ctx, key, state, onTap: () {
+                        final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
+                        final newStates = Map<String, String>.from(conditionStates);
+                        newStates[key] = next;
+                        onStateChanged(newStates);
+                      }),
+                    );
+                  })),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (int i = 2; i < 4; i++) ...[
+                  if (i > 2) const SizedBox(width: 8),
+                  Expanded(child: Builder(builder: (ctx) {
+                    final key = conditionKeys[i];
+                    final state = conditionStates[key] ?? 'unknown';
+                    return SizedBox(
+                      width: double.infinity,
+                      child: buildConditionChip(ctx, key, state, onTap: () {
+                        final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
+                        final newStates = Map<String, String>.from(conditionStates);
+                        newStates[key] = next;
+                        onStateChanged(newStates);
+                      }),
+                    );
+                  })),
+                ],
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         const Text(

@@ -190,15 +190,105 @@ class PrivacyPolicyScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader('最終更新日：2026年○月○日',
-                'a la mode運営事務局（以下「当方」といいます。）は、モバイルアプリケーションおよび関連サービス「a la mode（ア・ラ・モード）」におけるユーザー情報の取扱いについて、以下のとおり定めます。'),
-            ..._sections.map((s) => _buildSection(context, s.title, s.content)),
-            _buildFooter(),
+            // ヘッダーカード
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4))],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.privacy_tip_outlined, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('プライバシーポリシー',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: primary.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.update, color: AppColors.blackDark, size: 16),
+                          SizedBox(width: 8),
+                          Text('最終更新日：2026年○月○日',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.blackDark)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'a la mode運営事務局（以下「当方」といいます。）は、モバイルアプリケーションおよび関連サービス「a la mode（ア・ラ・モード）」におけるユーザー情報の取扱いについて、以下のとおり定めます。',
+                      style: TextStyle(fontSize: 14, color: AppColors.blackLight, height: 1.7),
+                    ),
+                    const SizedBox(height: 20),
+                    ..._sections.map((s) => _buildPolicySection(context, s.title, s.content)),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.greyLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('以上',
+                          style: TextStyle(fontSize: 14, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+}
+
+Widget _buildPolicySection(BuildContext context, String title, String content) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(title,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.greyLight,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.greyMedium, width: 1),
+          ),
+          child: Text(content,
+              style: const TextStyle(fontSize: 13, color: AppColors.blackLight, height: 1.6)),
+        ),
+      ],
+    ),
+  );
 }
 
 class _Section {
