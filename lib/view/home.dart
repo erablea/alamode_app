@@ -2061,7 +2061,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       'item_online': 'オンライン購入',
     };
 
-    List<Widget> flagWidgets = [];
+    final flagEntries = <MapEntry<String, String>>[];
     flags.forEach((itemKey, condKey) {
       final value = item[itemKey];
       final state = (value == true || value == 'yes' || value == '1' || value == 1)
@@ -2069,24 +2069,28 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           : (value == false || value == 'no')
               ? 'no'
               : 'unknown';
-      final chip = _buildFlagChip(context, condKey, state);
-      if (chip is! SizedBox) flagWidgets.add(chip);
+      if (state != 'unknown') flagEntries.add(MapEntry(condKey, state));
     });
 
-    if (flagWidgets.isNotEmpty) {
-      details.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    if (flagEntries.isNotEmpty) {
+      final rows = <Widget>[];
+      for (int i = 0; i < flagEntries.length; i += 2) {
+        rows.add(Row(
           children: [
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: flagWidgets,
-            ),
+            Expanded(child: _buildFlagChip(context, flagEntries[i].key, flagEntries[i].value)),
+            if (i + 1 < flagEntries.length) ...[
+              const SizedBox(width: 8),
+              Expanded(child: _buildFlagChip(context, flagEntries[i + 1].key, flagEntries[i + 1].value)),
+            ] else
+              const Expanded(child: SizedBox()),
           ],
-        ),
-      );
+        ));
+        if (i + 2 < flagEntries.length) rows.add(const SizedBox(height: 8));
+      }
+      details.add(Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [const SizedBox(height: 8), ...rows],
+      ));
     }
     if (item['brand_description'] != null &&
         (item['brand_description'] as String).isNotEmpty) {
@@ -2184,7 +2188,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildFlagChip(BuildContext context, String condKey, String state) {
-    if (state == 'unknown') return const SizedBox.shrink();
     return CommonWidgets.buildConditionChip(context, condKey, state);
   }
 

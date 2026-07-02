@@ -249,29 +249,28 @@ class CommonWidgets {
       ),
     );
 
-    Widget chip = isDashed
-        ? CustomPaint(
-            painter: _DashedBorderPainter(color: borderColor, radius: 20),
-            child: chipContent,
-          )
-        : Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderColor, width: 1),
+    // 常に同じウィジェット構造を維持してレイアウトシフトを防ぐ
+    Widget chip = Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20),
+            border: isDashed ? null : Border.all(color: borderColor, width: 1),
+          ),
+          child: chipContent,
+        ),
+        if (isDashed)
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _DashedBorderPainter(color: borderColor, radius: 20),
             ),
-            child: chipContent,
-          );
+          ),
+      ],
+    );
 
     if (onTap == null) return chip;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: chip,
-      ),
-    );
+    return GestureDetector(onTap: onTap, child: chip);
   }
 
   static Widget buildConditionDisplayChips(BuildContext context, String? raw) {
