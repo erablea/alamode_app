@@ -44,6 +44,10 @@ class AuthService {
     await supabase.auth.signOut();
   }
 
+  Future<void> resetPassword(String email) async {
+    await supabase.auth.resetPasswordForEmail(email.trim());
+  }
+
   Future<void> _ensureUserRecord(String uid, String email) async {
     final existing = await supabase
         .from('user')

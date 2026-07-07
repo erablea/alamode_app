@@ -137,6 +137,8 @@ class MyApp extends StatelessWidget {
         final primaryColor = appThemes[themeIndex]['color'] as Color;
         return MaterialApp(
           title: 'ア・ラ・モード a la mode',
+          builder: (context, child) =>
+              SelectionArea(child: child ?? const SizedBox.shrink()),
           theme: appTheme.copyWith(
             primaryColor: primaryColor,
             colorScheme: ColorScheme.fromSeed(

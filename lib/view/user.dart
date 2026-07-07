@@ -1829,8 +1829,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.greyMedium),
           ),
-          child: const Text(
-            '本アプリは2025年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
+          child: Text(
+            '本アプリは${DateTime.now().year}年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.blackLight,
@@ -1986,8 +1986,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.greyMedium),
           ),
-          child: const Text(
-            '本アプリは2025年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
+          child: Text(
+            '本アプリは${DateTime.now().year}年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.blackLight,
