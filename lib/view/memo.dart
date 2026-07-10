@@ -212,7 +212,7 @@ class CommonWidgets {
     Color borderColor;
     Color bgColor;
     Color textColor;
-    Widget? iconWidget;
+    bool showIcon;
 
     bool isDashed = false;
     switch (state) {
@@ -220,29 +220,33 @@ class CommonWidgets {
         borderColor = primary;
         bgColor = Colors.white;
         textColor = AppColors.blackDark;
-        iconWidget = Icon(Icons.check, size: 13, color: primary);
+        showIcon = true;
         break;
       case 'no':
         borderColor = AppColors.greyDark;
         bgColor = AppColors.greyLight;
         textColor = AppColors.blackLight;
-        iconWidget = null;
+        showIcon = false;
         break;
       default:
         borderColor = AppColors.greyDark;
         bgColor = Colors.transparent;
         textColor = AppColors.blackLight;
-        iconWidget = null;
+        showIcon = false;
         isDashed = true;
     }
 
+    // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする
     Widget chipContent = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (iconWidget != null) ...[iconWidget, const SizedBox(width: 4)],
+            SizedBox(
+              width: 17,
+              child: showIcon ? Icon(Icons.check, size: 13, color: primary) : null,
+            ),
             Text(label, style: TextStyle(fontSize: 13, color: textColor)),
           ],
         ),

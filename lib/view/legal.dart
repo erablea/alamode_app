@@ -84,10 +84,97 @@ class TermsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader('最終更新日：2026年○月○日',
-                '本利用規約（以下「本規約」といいます。）は、a la mode運営事務局（以下「当方」といいます。）が提供するモバイルアプリケーションおよび関連サービス「a la mode（ア・ラ・モード）」（以下「本サービス」といいます。）の利用条件を定めるものです。ユーザーは、本サービスを利用することにより、本規約に同意したものとみなします。'),
-            ..._sections.map((s) => _buildSection(context, s.title, s.content)),
-            _buildFooter(),
+            // 運営者情報カード
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4))],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.business, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('運営者情報',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildInfoRow('事業者名', '合同会社カイエ Cahier'),
+                    _buildInfoRow('事業内容', 'モバイルアプリケーションの企画・開発・運営'),
+                    _buildInfoRow('連絡先', 'メールアドレス：aaa@gmail.com'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 利用規約カード
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4))],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.description_outlined, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('利用規約',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: primary.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.update, color: AppColors.blackDark, size: 16),
+                          SizedBox(width: 8),
+                          Text('最終更新日：2026年○月○日',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.blackDark)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '本利用規約（以下「本規約」といいます。）は、a la mode運営事務局（以下「当方」といいます。）が提供するモバイルアプリケーションおよび関連サービス「a la mode（ア・ラ・モード）」（以下「本サービス」といいます。）の利用条件を定めるものです。ユーザーは、本サービスを利用することにより、本規約に同意したものとみなします。',
+                      style: TextStyle(fontSize: 14, color: AppColors.blackLight, height: 1.7),
+                    ),
+                    const SizedBox(height: 20),
+                    ..._sections.map((s) => _buildLegalSection(context, s.title, s.content)),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(8)),
+                      child: const Text('以上',
+                          style: TextStyle(fontSize: 14, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -232,7 +319,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 14, color: AppColors.blackLight, height: 1.7),
                     ),
                     const SizedBox(height: 20),
-                    ..._sections.map((s) => _buildPolicySection(context, s.title, s.content)),
+                    ..._sections.map((s) => _buildLegalSection(context, s.title, s.content)),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -254,7 +341,28 @@ class PrivacyPolicyScreen extends StatelessWidget {
   }
 }
 
-Widget _buildPolicySection(BuildContext context, String title, String content) {
+Widget _buildInfoRow(String label, String content) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(8)),
+          child: Text(content,
+              style: const TextStyle(fontSize: 14, color: AppColors.blackDark, height: 1.5)),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildLegalSection(BuildContext context, String title, String content) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 20),
     child: Column(
@@ -292,67 +400,3 @@ class _Section {
   const _Section(this.title, this.content);
 }
 
-Widget _buildHeader(String date, String intro) {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 20),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 8, offset: Offset(0, 2))],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(date, style: const TextStyle(fontSize: 12, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        Text(intro, style: const TextStyle(fontSize: 13, color: AppColors.blackDark, height: 1.6)),
-      ],
-    ),
-  );
-}
-
-Widget _buildSection(BuildContext context, String title, String content) {
-  final primary = Theme.of(context).primaryColor;
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: primary.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.greyMedium),
-          ),
-          child: Text(content, style: const TextStyle(fontSize: 13, color: AppColors.blackLight, height: 1.7)),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildFooter() {
-  return Container(
-    margin: const EdgeInsets.only(top: 4, bottom: 8),
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: AppColors.greyLight,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: const Center(
-      child: Text('以上', style: TextStyle(fontSize: 13, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
-    ),
-  );
-}
