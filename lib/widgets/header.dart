@@ -1,4 +1,3 @@
-import 'package:alamode_app/main.dart';
 import 'package:flutter/material.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {

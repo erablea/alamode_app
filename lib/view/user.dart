@@ -1,7 +1,6 @@
-import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
@@ -393,8 +392,6 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  bool _themeExpanded = false;
-
   Widget _buildThemePickerSheet() {
     return ValueListenableBuilder<int>(
       valueListenable: themeNotifier,
@@ -454,123 +451,6 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 );
               }),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildThemeSection() {
-    return ValueListenableBuilder<int>(
-      valueListenable: themeNotifier,
-      builder: (context, currentIndex, _) {
-        final selectedColor = (appThemes[currentIndex]['color'] as Color);
-        final selectedName = appThemes[currentIndex]['name'] as String;
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () => setState(() => _themeExpanded = !_themeExpanded),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: selectedColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.palette_outlined, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 20,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(selectedName, style: TextStyle(fontSize: 12, color: selectedColor, fontWeight: FontWeight.w500)),
-                      const Spacer(),
-                      Icon(
-                        _themeExpanded ? Icons.expand_less : Icons.expand_more,
-                        color: AppColors.blackLight,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (_themeExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Column(
-                    children: List.generate(appThemes.length, (i) {
-                      final theme = appThemes[i];
-                      final isSelected = currentIndex == i;
-                      final color = theme['color'] as Color;
-                      return GestureDetector(
-                        onTap: () async {
-                          themeNotifier.value = i;
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('theme_key', theme['key'] as String);
-                        },
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Text(
-                                  theme['name'] as String,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                    color: isSelected ? color : AppColors.blackDark,
-                                  ),
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(Icons.check_circle, color: color, size: 18),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
             ],
           ),
         );
@@ -1613,35 +1493,10 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
               ),
             ),
           ],
-          const Text(
-            '正しい内容 *',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.blackLight,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
+          _buildLabeledField(
+            label: '正しい内容 *',
             controller: item.correctContentController,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.inputBorderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.inputBorderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                    color: AppColors.inputFocusColor, width: 2),
-              ),
-              filled: true,
-              fillColor: AppColors.cardBackground,
-              hintText: '正しい内容を入力してください',
-            ),
+            hintText: '正しい内容を入力してください',
             maxLines: 3,
             minLines: 2,
           ),
@@ -1682,35 +1537,10 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        const Text(
-          '不具合の内容 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: '不具合の内容 *',
           controller: _bugReportController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: '不具合の詳細を入力してください',
-          ),
+          hintText: '不具合の詳細を入力してください',
           maxLines: 5,
           minLines: 3,
         ),
@@ -1725,119 +1555,28 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        const Text(
-          'お名前 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'お名前 *',
           controller: _otherNameController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: 'お名前を入力してください',
-          ),
+          hintText: 'お名前を入力してください',
         ),
         const SizedBox(height: 16),
-        // メールアドレス
-        const Text(
-          'メールアドレス *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'メールアドレス *',
           controller: _otherEmailController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: 'メールアドレスを入力してください',
-          ),
+          hintText: 'メールアドレスを入力してください',
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
-        const Text(
-          'お問い合わせ内容 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'お問い合わせ内容 *',
           controller: _otherInquiryController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: 'お問い合わせ内容を入力してください',
-          ),
+          hintText: 'お問い合わせ内容を入力してください',
           maxLines: 5,
           minLines: 3,
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.greyLight.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.greyMedium),
-          ),
-          child: Text(
-            '本アプリは${DateTime.now().year}年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.blackLight,
-              height: 1.5,
-            ),
-          ),
-        ),
+        _buildContactDisclaimer(),
         const SizedBox(height: 24),
         _buildSendButton(() => _sendOtherInquiry()),
       ],
@@ -1849,152 +1588,34 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        // 会社名
-        const Text(
-          '会社名 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: '会社名 *',
           controller: _businessCompanyController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: '会社名を入力してください',
-          ),
+          hintText: '会社名を入力してください',
         ),
         const SizedBox(height: 16),
-        // ご担当者名
-        const Text(
-          'ご担当者名 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'ご担当者名 *',
           controller: _businessNameController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: 'ご担当者名を入力してください',
-          ),
+          hintText: 'ご担当者名を入力してください',
         ),
         const SizedBox(height: 16),
-        // メールアドレス
-        const Text(
-          'メールアドレス *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'メールアドレス *',
           controller: _businessEmailController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: 'メールアドレスを入力してください',
-          ),
+          hintText: 'メールアドレスを入力してください',
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
-        const Text(
-          'お問い合わせ内容 *',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.blackLight,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
+        _buildLabeledField(
+          label: 'お問い合わせ内容 *',
           controller: _businessController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.inputBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
-            ),
-            filled: true,
-            fillColor: AppColors.cardBackground,
-            hintText: '企業様からの商品情報提供や宣伝のご活用お待ちしております。内容を入力してください',
-          ),
+          hintText: '企業様からの商品情報提供や宣伝のご活用お待ちしております。内容を入力してください',
           maxLines: 5,
           minLines: 3,
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.greyLight.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.greyMedium),
-          ),
-          child: Text(
-            '本アプリは${DateTime.now().year}年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.blackLight,
-              height: 1.5,
-            ),
-          ),
-        ),
+        _buildContactDisclaimer(),
         const SizedBox(height: 24),
         _buildSendButton(() => _sendBusinessInquiry()),
       ],
@@ -2023,6 +1644,73 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabeledField({
+    required String label,
+    required TextEditingController controller,
+    required String hintText,
+    int maxLines = 1,
+    int? minLines,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackLight,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          minLines: minLines,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.inputBorderColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.inputBorderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide:
+                  const BorderSide(color: AppColors.inputFocusColor, width: 2),
+            ),
+            filled: true,
+            fillColor: AppColors.cardBackground,
+            hintText: hintText,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactDisclaimer() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.greyLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.greyMedium),
+      ),
+      child: Text(
+        '本アプリは${DateTime.now().year}年現在、個人が運営しております。お問い合わせに対する返信は必ず行われるものではございませんので、ご了承ください。',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppColors.blackLight,
+          height: 1.5,
         ),
       ),
     );
@@ -2270,27 +1958,34 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
   }
 
+  static const String _contactEmail = 'alamode.jpn@gmail.com';
+
   Future<void> _sendEmail(
       {required String subject, required String body}) async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: _contactEmail,
+      query: Uri(queryParameters: {'subject': subject, 'body': body}).query,
+    );
     try {
-      // 開発用：コンソールに出力（実際の実装では削除）
-      print('=== メール送信 ===');
-      print('宛先: ---@gmail.com');
-      print('件名: $subject');
-      print('本文: $body');
-      print('================');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('送信完了しました'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      _clearForm();
-      setState(() => _expandedSection = -1);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('メールアプリを起動しました。内容をご確認のうえ送信してください。'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _clearForm();
+        setState(() => _expandedSection = -1);
+      } else {
+        if (!mounted) return;
+        _showValidationError('メールアプリを起動できませんでした');
+      }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('送信に失敗しました: $e'),
@@ -2506,6 +2201,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
     final primary = Theme.of(context).primaryColor;
+    InputDecoration dialogFieldDecoration(String label) => InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: primary, width: 2)),
+        );
     String? error;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -2518,21 +2220,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
             TextField(
               controller: newCtrl,
               obscureText: true,
-              decoration: InputDecoration(
-                labelText: '新しいパスワード（10文字以上）',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
-              ),
+              decoration: dialogFieldDecoration('新しいパスワード（10文字以上）'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: confirmCtrl,
               obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'パスワード（確認）',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
-              ),
+              decoration: dialogFieldDecoration('パスワード（確認）'),
             ),
             if (error != null) ...[
               const SizedBox(height: 8),

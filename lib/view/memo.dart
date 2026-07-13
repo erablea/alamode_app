@@ -201,6 +201,94 @@ class CommonWidgets {
         .join(',');
   }
 
+  /// 「贈った/貰った」のような2択のピル型セグメントコントロール
+  static Widget buildTypeToggle({
+    required BuildContext context,
+    required bool isFirstSelected,
+    required String firstLabel,
+    required IconData firstIcon,
+    required VoidCallback onFirstTap,
+    required String secondLabel,
+    required IconData secondIcon,
+    required VoidCallback onSecondTap,
+  }) {
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          _buildToggleOption(
+            context: context,
+            label: firstLabel,
+            icon: firstIcon,
+            isSelected: isFirstSelected,
+            onTap: onFirstTap,
+          ),
+          _buildToggleOption(
+            context: context,
+            label: secondLabel,
+            icon: secondIcon,
+            isSelected: !isFirstSelected,
+            onTap: onSecondTap,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildToggleOption({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(19),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   static Widget buildConditionChip(
     BuildContext context,
     String key,
@@ -887,8 +975,6 @@ class _PresentListState extends State<PresentList> {
         return (b['present_price'] ?? 0).compareTo(a['present_price'] ?? 0);
       case SortOrder.brand:
         return (a['present_brand'] ?? '').compareTo(b['present_brand'] ?? '');
-      default:
-        return 0;
     }
   }
 
@@ -944,87 +1030,27 @@ class _PresentListState extends State<PresentList> {
   Widget _buildTypeToggle() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.greyLight,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          _buildToggleOption(
-            label: '贈った',
-            icon: Icons.card_giftcard,
-            isSelected: _showSentPresents,
-            onTap: () {
-              if (!_showSentPresents) {
-                setState(() => _showSentPresents = true);
-                _saveTabState(true);
-                _applyFiltersAndSort();
-              }
-            },
-          ),
-          _buildToggleOption(
-            label: '貰った',
-            icon: Icons.restaurant,
-            isSelected: !_showSentPresents,
-            onTap: () {
-              if (_showSentPresents) {
-                setState(() => _showSentPresents = false);
-                _saveTabState(false);
-                _applyFiltersAndSort();
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleOption({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(17),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.shadowColor,
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: CommonWidgets.buildTypeToggle(
+        context: context,
+        isFirstSelected: _showSentPresents,
+        firstLabel: '贈った',
+        firstIcon: Icons.card_giftcard,
+        onFirstTap: () {
+          if (!_showSentPresents) {
+            setState(() => _showSentPresents = true);
+            _saveTabState(true);
+            _applyFiltersAndSort();
+          }
+        },
+        secondLabel: '貰った',
+        secondIcon: Icons.restaurant,
+        onSecondTap: () {
+          if (_showSentPresents) {
+            setState(() => _showSentPresents = false);
+            _saveTabState(false);
+            _applyFiltersAndSort();
+          }
+        },
       ),
     );
   }
@@ -1265,13 +1291,13 @@ class _PresentListState extends State<PresentList> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: AppColors.shadowColor,
               spreadRadius: 0,
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -1765,10 +1791,10 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (isSelected) ...[
-                          Icon(Icons.check, size: 11, color: primary),
-                          const SizedBox(width: 3),
-                        ],
+                        SizedBox(
+                          width: 14,
+                          child: isSelected ? Icon(Icons.check, size: 11, color: primary) : null,
+                        ),
                         Text(label, style: TextStyle(fontSize: 11, color: isSelected ? AppColors.blackDark : AppColors.blackLight)),
                       ],
                     ),
@@ -2166,7 +2192,6 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
 
   void _removeImage(int index) {
     setState(() {
-      int totalImages = _existingImageUrls.length + _pickedFiles.length;
       if (index < _existingImageUrls.length) {
         // 既存画像の削除
         _existingImageUrls.removeAt(index);
@@ -2664,75 +2689,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   Widget _buildFormTypeToggle() {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
-      height: 44,
-      decoration: BoxDecoration(
-        color: AppColors.greyLight,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          _buildFormToggleOption(
-            label: '贈った',
-            icon: Icons.card_giftcard,
-            isSelected: _presentType == 'sent',
-            onTap: () => setState(() => _presentType = 'sent'),
-          ),
-          _buildFormToggleOption(
-            label: '貰った',
-            icon: Icons.restaurant,
-            isSelected: _presentType == 'received',
-            onTap: () => setState(() => _presentType = 'received'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormToggleOption({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(19),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.shadowColor,
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: CommonWidgets.buildTypeToggle(
+        context: context,
+        isFirstSelected: _presentType == 'sent',
+        firstLabel: '贈った',
+        firstIcon: Icons.card_giftcard,
+        onFirstTap: () => setState(() => _presentType = 'sent'),
+        secondLabel: '貰った',
+        secondIcon: Icons.restaurant,
+        onSecondTap: () => setState(() => _presentType = 'received'),
       ),
     );
   }

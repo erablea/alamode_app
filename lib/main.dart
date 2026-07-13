@@ -23,7 +23,7 @@ final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
   static const Color blackDark = Color(0xFF1A1A1A);
-  static const Color blackLight = Color(0xFF808080);
+  static const Color blackLight = Color(0xFF666666); // 白/淡色背景でWCAG AA(4.5:1)を満たす濃さ
   static const Color greyDark = Color(0xFFCCCCCC);
   static const Color greyMedium = Color(0xFFE6E6E6);
   static const Color greyLight = Color(0xFFF5F5F5);

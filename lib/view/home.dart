@@ -1,7 +1,6 @@
 import 'dart:async' as async;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
@@ -922,7 +921,7 @@ class ItemCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.greyDark, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(c, style: const TextStyle(fontSize: 9, color: AppColors.blackLight)),
                   )
@@ -940,17 +939,6 @@ class ItemCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNoImagePlaceholder({double height = 110}) {
-    return Container(
-      height: height,
-      color: AppColors.greyLight,
-      child: const Center(
-        child: Icon(Icons.image_not_supported_outlined,
-            size: 40, color: AppColors.greyDark),
       ),
     );
   }

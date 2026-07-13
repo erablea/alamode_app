@@ -1,7 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/home.dart';
 
@@ -14,7 +13,6 @@ class FavoriteScreen extends StatefulWidget {
 
 class _FavoriteScreenState extends State<FavoriteScreen> {
   final currencyFormat = NumberFormat('#,###');
-  late Future<List<String>> _favoriteItemsFuture;
   List<Map<String, dynamic>> _itemList = [];
   List<Map<String, dynamic>> _filteredList = [];
 
@@ -39,7 +37,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   @override
   void initState() {
     super.initState();
-    _favoriteItemsFuture = _getFavoriteItems();
     _loadFavoriteItems();
   }
 
