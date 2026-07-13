@@ -5,8 +5,8 @@ import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:alamode_app/services/favorite_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -2545,15 +2545,11 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   }
 
   Future<bool> _checkFavoriteStatus() async {
-// ローカルストレージから状態を取得
-    final prefs = await SharedPreferences.getInstance();
-    final favorite = prefs.getStringList('favorite') ?? [];
-    return favorite.contains(widget.itemId);
+    return FavoriteService.instance.isFavorite(widget.itemId);
   }
 
   Future<void> _toggleFavorite() async {
-// ローカルストレージで処理
-    await _toggleFavoriteInLocalStorage();
+    await FavoriteService.instance.toggle(widget.itemId);
     setState(() {
       _isFavoriteFuture = _checkFavoriteStatus();
     });
@@ -2578,17 +2574,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
         );
       },
     );
-  }
-
-  Future<void> _toggleFavoriteInLocalStorage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final favorite = prefs.getStringList('favorite') ?? [];
-    if (favorite.contains(widget.itemId)) {
-      favorite.remove(widget.itemId);
-    } else {
-      favorite.add(widget.itemId);
-    }
-    await prefs.setStringList('favorite', favorite);
   }
 }
 

@@ -21,6 +21,7 @@ class AuthService {
     if (response.user != null) {
       await _ensureUserRecord(response.user!.id, email.trim());
       await migrateLocalData();
+      await migrateFavorites();
     }
   }
 
@@ -37,6 +38,7 @@ class AuthService {
         'user_update': DateTime.now().toIso8601String(),
       });
       await migrateLocalData();
+      await migrateFavorites();
     }
   }
 
@@ -154,5 +156,26 @@ class AuthService {
       'event_createdate': data['present_createdate'] ?? DateTime.now().toIso8601String(),
       'event_update': DateTime.now().toIso8601String(),
     });
+  }
+
+  Future<void> migrateFavorites() async {
+    final uid = userId;
+    if (uid == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final migrated = prefs.getBool('favorites_migrated_$uid') ?? false;
+    if (migrated) return;
+
+    final localFavorites = prefs.getStringList('favorite') ?? [];
+    for (final itemId in localFavorites) {
+      try {
+        await supabase.from('favorites').upsert(
+          {'user_id': uid, 'item_id': itemId},
+          onConflict: 'user_id,item_id',
+        );
+      } catch (_) {}
+    }
+
+    await prefs.setBool('favorites_migrated_$uid', true);
   }
 }

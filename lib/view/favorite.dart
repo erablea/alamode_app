@@ -1,8 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/home.dart';
+import 'package:alamode_app/services/favorite_service.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key});
@@ -63,11 +63,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           .inFilter('item_id', favoriteIds);
 
       final fetchedIds = data.map((d) => d['item_id'].toString()).toSet();
-      final validIds = favoriteIds.where((id) => fetchedIds.contains(id)).toList();
+      final invalidIds = favoriteIds.where((id) => !fetchedIds.contains(id)).toList();
 
-      if (validIds.length != favoriteIds.length) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList('favorite', validIds);
+      if (invalidIds.isNotEmpty) {
+        await FavoriteService.instance.removeFavorites(invalidIds);
       }
 
       setState(() {
@@ -481,8 +480,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   }
 
   Future<List<String>> _getFavoriteItems() async {
-    // ローカルストレージからお気に入りを取得
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList('favorite') ?? [];
+    return FavoriteService.instance.getFavoriteIds();
   }
 }
