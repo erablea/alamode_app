@@ -97,7 +97,7 @@ class MyApp extends StatelessWidget {
         fontWeight: FontWeight.w500,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shadowColor: AppColors.shadowColor,
