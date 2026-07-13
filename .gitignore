@@ -18,6 +18,9 @@ android/app/google-services.json
 ios/.symlinks/
 ios/Pods/
 ios/Runner/GoogleService-Info.plist
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
 
 # Web
 web/firebase_app_id_file.json
