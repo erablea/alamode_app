@@ -30,7 +30,10 @@ class AuthService {
       email: email.trim(),
       password: password,
     );
-    if (response.user != null) {
+    // メール確認が必須の場合、signUp直後はセッションが無く(response.session == null)、
+    // auth.uid()がnullになるためuserテーブルへの書き込みはRLSで弾かれる。
+    // その場合はここでは何もせず、確認後の初回signIn()の_ensureUserRecord/移行処理に委ねる。
+    if (response.user != null && response.session != null) {
       await supabase.from('user').upsert({
         'user_id': response.user!.id,
         'user_name': userName.trim(),
