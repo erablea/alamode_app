@@ -34,4 +34,9 @@ web/firebase_app_id_file.json
 # OS
 .DS_Store
 Thumbs.db
-.claude/
+
+# Claude Code (ローカルの一時状態は無視するが、共有するhookは追跡する)
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/hooks/**
