@@ -55976,7 +55976,7 @@ a=k.length,j=t.N,i=t.z,h=0
 case 4:if(!(h<k.length)){s=6
 break}m=k[h]
 p=8
-g=$.cB().du("favorites")
+g=$.cB().du("favorite")
 f=A.ah(["user_id",n,"item_id",m],j,j)
 e=A.apb(null,null,j,j)
 e.O(0,g.b)
@@ -56019,7 +56019,7 @@ o=o==null?null:o.a
 o.toString
 n=J
 s=5
-return A.j(p.du("favorites").iv(0,"item_id").fB("user_id",o),$async$uL)
+return A.j(p.du("favorite").iv(0,"item_id").fB("user_id",o),$async$uL)
 case 5:o=n.jF(b,new A.akA(),t.N)
 p=A.a1(o,o.$ti.i("aF.E"))
 q=p
@@ -56057,17 +56057,17 @@ o=o==null?null:o.r
 o=o==null?null:o.a
 o.toString
 s=5
-return A.j(p.du("favorites").iv(0,"favorite_id").fB("user_id",o).fB("item_id",b).CY(),$async$r4)
+return A.j(p.du("favorite").iv(0,"favorite_id").fB("user_id",o).fB("item_id",b).CY(),$async$r4)
 case 5:n=d
 s=n!=null?6:8
 break
 case 6:s=9
-return A.j(p.du("favorites").ox(0).fB("favorite_id",J.T(n,"favorite_id")),$async$r4)
+return A.j(p.du("favorite").ox(0).fB("favorite_id",J.T(n,"favorite_id")),$async$r4)
 case 9:s=7
 break
 case 8:m=t.N
 s=10
-return A.j(p.du("favorites").il(0,A.ah(["user_id",o,"item_id",b],m,m)),$async$r4)
+return A.j(p.du("favorite").il(0,A.ah(["user_id",o,"item_id",b],m,m)),$async$r4)
 case 10:case 7:s=1
 break
 case 4:s=11
@@ -56095,7 +56095,7 @@ o=o==null?null:o.r
 o=o==null?null:o.a
 o.toString
 s=5
-return A.j(p.du("favorites").ox(0).fB("user_id",o).ab7("item_id",a),$async$yj)
+return A.j(p.du("favorite").ox(0).fB("user_id",o).ab7("item_id",a),$async$yj)
 case 5:s=1
 break
 case 4:s=6
