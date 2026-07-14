@@ -56,6 +56,13 @@ class PersonIconService {
     final all = await loadAll();
     return all[personName];
   }
+
+  /// ログインユーザー自身のアイコン(マイページで選択したもの)。
+  /// personName別のkPersonIconsマップとは別に、userIdをキーに保存されている。
+  static Future<int?> getSelfIconIndex(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_profile_icon_$userId');
+  }
 }
 
 // アバター表示ウィジェット

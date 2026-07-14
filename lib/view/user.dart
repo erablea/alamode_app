@@ -673,13 +673,32 @@ class _UserScreenState extends State<UserScreen> {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.account_circle_outlined, color: primary, size: 20),
+              FutureBuilder<int?>(
+                future: () {
+                  final uid = AuthService.instance.currentUser?.id;
+                  return uid != null ? PersonIconService.getSelfIconIndex(uid) : Future.value(null);
+                }(),
+                builder: (context, snapshot) {
+                  final iconIndex = snapshot.data;
+                  if (iconIndex != null && iconIndex >= 0 && iconIndex < kPersonIcons.length) {
+                    return Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: kPersonIcons[iconIndex].bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(kPersonIcons[iconIndex].emoji, style: const TextStyle(fontSize: 20)),
+                    );
+                  }
+                  return Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.account_circle_outlined, color: primary, size: 20),
+                  );
+                },
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -2406,15 +2425,24 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   // Gender
                   _buildSection(
                     title: '性別',
-                    child: Column(
-                      children: ['女性', '男性', '無回答'].map((g) => RadioListTile<String>(
-                        value: g,
-                        groupValue: _gender,
-                        onChanged: (v) => setState(() => _gender = v),
-                        title: Text(g, style: const TextStyle(fontSize: 14)),
-                        activeColor: primary,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
+                    child: Row(
+                      children: ['女性', '男性', '無回答'].map((g) => Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _gender = g),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Radio<String>(
+                                value: g,
+                                groupValue: _gender,
+                                onChanged: (v) => setState(() => _gender = v),
+                                activeColor: primary,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              Text(g, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
                       )).toList(),
                     ),
                   ),
