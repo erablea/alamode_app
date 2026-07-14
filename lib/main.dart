@@ -19,6 +19,7 @@ const List<Map<String, dynamic>> appThemes = [
 ];
 
 final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
@@ -61,6 +62,22 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbXRpbWdpcXRjeGltY2thZ2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NTkwNDAsImV4cCI6MjA4NTUzNTA0MH0.rolHffP2nRWabyhuJxN4Vsx7uuxaYRpaDXpcpGQ0xUw',
   );
+
+  // メール確認リンク・マジックリンクのクリックでセッションが確立した場合など、
+  // signIn()/signUp()を経由しないログイン検知にも対応するグローバルリスナー。
+  // userレコード作成・データ移行はhandleSignedIn()内で冪等に処理される。
+  AuthService.instance.authStateChanges.listen((data) {
+    if (data.session == null) return;
+    if (data.event == AuthChangeEvent.signedIn) {
+      AuthService.instance.handleSignedIn();
+      scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(content: Text('ログインが完了しました')),
+      );
+    } else if (data.event == AuthChangeEvent.initialSession) {
+      AuthService.instance.handleSignedIn();
+    }
+  });
+
   runApp(MyApp());
 }
 
@@ -137,6 +154,7 @@ class MyApp extends StatelessWidget {
         final primaryColor = appThemes[themeIndex]['color'] as Color;
         return MaterialApp(
           title: 'ア・ラ・モード a la mode',
+          scaffoldMessengerKey: scaffoldMessengerKey,
           builder: (context, child) => Overlay(
             initialEntries: [
               OverlayEntry(

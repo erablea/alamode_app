@@ -14,35 +14,35 @@ class AuthService {
   Stream<AuthState> get authStateChanges => supabase.auth.onAuthStateChange;
 
   Future<void> signIn(String email, String password) async {
-    final response = await supabase.auth.signInWithPassword(
+    await supabase.auth.signInWithPassword(
       email: email.trim(),
       password: password,
     );
-    if (response.user != null) {
-      await _ensureUserRecord(response.user!.id, email.trim());
-      await migrateLocalData();
-      await migrateFavorites();
-    }
+    await handleSignedIn();
   }
 
   Future<void> signUp(String email, String password, String userName) async {
-    final response = await supabase.auth.signUp(
+    await supabase.auth.signUp(
       email: email.trim(),
       password: password,
     );
-    // メール確認が必須の場合、signUp直後はセッションが無く(response.session == null)、
+    // メール確認が必須の場合、signUp直後はセッションが無く(session == null)、
     // auth.uid()がnullになるためuserテーブルへの書き込みはRLSで弾かれる。
-    // その場合はここでは何もせず、確認後の初回signIn()の_ensureUserRecord/移行処理に委ねる。
-    if (response.user != null && response.session != null) {
-      await supabase.from('user').upsert({
-        'user_id': response.user!.id,
-        'user_name': userName.trim(),
-        'user_createdate': DateTime.now().toIso8601String(),
-        'user_update': DateTime.now().toIso8601String(),
-      });
-      await migrateLocalData();
-      await migrateFavorites();
-    }
+    // その場合はここでは何もせず、メール内リンクをクリックした際に
+    // main.dartのauthStateChangesリスナー経由でhandleSignedIn()が呼ばれる。
+    await handleSignedIn();
+  }
+
+  /// ログイン済み状態を検知した際に必ず呼ぶ処理。
+  /// signIn()/signUp()からの呼び出しに加え、メール確認リンクや
+  /// マジックリンクのクリックでセッションが確立した場合(main.dartの
+  /// authStateChangesリスナー)にも呼ばれる。すべて冪等。
+  Future<void> handleSignedIn() async {
+    final user = currentUser;
+    if (user == null) return;
+    await _ensureUserRecord(user.id, user.email ?? '');
+    await migrateLocalData();
+    await migrateFavorites();
   }
 
   Future<void> signOut() async {
