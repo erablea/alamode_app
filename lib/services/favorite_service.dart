@@ -3,7 +3,7 @@ import 'package:alamode_app/main.dart';
 import 'package:alamode_app/services/auth_service.dart';
 
 /// お気に入りの読み書きを一元化するサービス。
-/// ログイン中はSupabaseの`favorites`テーブル、未ログイン時は端末ローカル(SharedPreferences)を使う。
+/// ログイン中はSupabaseの`favorite`テーブル、未ログイン時は端末ローカル(SharedPreferences)を使う。
 class FavoriteService {
   static final FavoriteService instance = FavoriteService._();
   FavoriteService._();
@@ -11,7 +11,7 @@ class FavoriteService {
   Future<List<String>> getFavoriteIds() async {
     if (AuthService.instance.isLoggedIn) {
       final uid = AuthService.instance.userId!;
-      final rows = await supabase.from('favorites').select('item_id').eq('user_id', uid);
+      final rows = await supabase.from('favorite').select('item_id').eq('user_id', uid);
       return rows.map((r) => r['item_id'].toString()).toList();
     }
     final prefs = await SharedPreferences.getInstance();
@@ -27,15 +27,15 @@ class FavoriteService {
     if (AuthService.instance.isLoggedIn) {
       final uid = AuthService.instance.userId!;
       final existing = await supabase
-          .from('favorites')
+          .from('favorite')
           .select('favorite_id')
           .eq('user_id', uid)
           .eq('item_id', itemId)
           .maybeSingle();
       if (existing != null) {
-        await supabase.from('favorites').delete().eq('favorite_id', existing['favorite_id']);
+        await supabase.from('favorite').delete().eq('favorite_id', existing['favorite_id']);
       } else {
-        await supabase.from('favorites').insert({'user_id': uid, 'item_id': itemId});
+        await supabase.from('favorite').insert({'user_id': uid, 'item_id': itemId});
       }
       return;
     }
@@ -56,7 +56,7 @@ class FavoriteService {
     if (AuthService.instance.isLoggedIn) {
       final uid = AuthService.instance.userId!;
       await supabase
-          .from('favorites')
+          .from('favorite')
           .delete()
           .eq('user_id', uid)
           .inFilter('item_id', itemIds);

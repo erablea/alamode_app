@@ -17,29 +17,12 @@ alter table "user"
   add column if not exists is_admin boolean not null default false;
 
 -- ----------------------------------------------------------------------------
--- 2. favorites テーブル新規作成（ログインユーザーのお気に入りをSupabaseに同期）
+-- 2. (訂正: このセクションは廃止)
+--    ここでは新規に favorites(複数形) テーブルを作成していたが、
+--    元々 favorite(単数形) テーブルが既に存在していたための誤り。
+--    0002_use_existing_favorite_table.sql で訂正している。
+--    favorites(複数形)テーブルは手動で削除済みの前提。
 -- ----------------------------------------------------------------------------
-create table if not exists favorites (
-  favorite_id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  item_id uuid not null references item (item_id) on delete cascade,
-  favorite_createdate timestamptz not null default now(),
-  unique (user_id, item_id)
-);
-
-alter table favorites enable row level security;
-
-create policy "favorites_select_own" on favorites
-  for select using (auth.uid() = user_id);
-
-create policy "favorites_insert_own" on favorites
-  for insert with check (auth.uid() = user_id);
-
-create policy "favorites_update_own" on favorites
-  for update using (auth.uid() = user_id);
-
-create policy "favorites_delete_own" on favorites
-  for delete using (auth.uid() = user_id);
 
 -- ----------------------------------------------------------------------------
 -- 3. useritem_review テーブル新規作成

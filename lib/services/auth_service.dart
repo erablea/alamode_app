@@ -172,7 +172,7 @@ class AuthService {
     final localFavorites = prefs.getStringList('favorite') ?? [];
     for (final itemId in localFavorites) {
       try {
-        await supabase.from('favorites').upsert(
+        await supabase.from('favorite').upsert(
           {'user_id': uid, 'item_id': itemId},
           onConflict: 'user_id,item_id',
         );
