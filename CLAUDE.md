@@ -7,8 +7,8 @@
 - フォント: PinyonScript, PlayfairDisplay, ZenMaruGothic, Corinthia
 
 ## Gitブランチ
-- 作業ブランチ: `claude/stoic-newton-hds27h`
-- mainブランチには直接pushしない
+- `main`に直接pushしてよい（公開中のアプリではないため、一時的にビルドが壊れても問題ない）
+- `main`へのpushで`.github/workflows/deploy.yml`が自動実行されGitHub Pagesにデプロイされる点は認識しておくこと
 
 ## Supabaseテーブル構造
 
