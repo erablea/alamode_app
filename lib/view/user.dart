@@ -1459,7 +1459,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
               DropdownMenuItem(value: 'お菓子名', child: Text('お菓子名')),
               DropdownMenuItem(value: '会社名', child: Text('会社名')),
               DropdownMenuItem(value: '画像', child: Text('画像')),
-              DropdownMenuItem(value: 'ジャンル', child: Text('ジャンル')),
+              DropdownMenuItem(value: 'カテゴリー', child: Text('カテゴリー')),
               DropdownMenuItem(value: '金額', child: Text('金額')),
               DropdownMenuItem(value: '賞味期限', child: Text('賞味期限')),
               DropdownMenuItem(value: '個包装', child: Text('個包装')),
@@ -1530,7 +1530,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         return sweetData['item_name'] ?? '不明';
       case '会社名':
         return sweetData['item_company'] ?? '不明';
-      case 'ジャンル':
+      case 'カテゴリー':
         return sweetData['item_category'] ?? '不明';
       case '金額':
         return '¥${Utils.formatCurrency(sweetData['item_price'])}';

@@ -87,7 +87,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         return false;
       }
 
-      // ジャンルフィルター
+      // カテゴリーフィルター
       if (_filterGenre.isNotEmpty) {
         final selectedGenres = _filterGenre.entries
             .where((entry) => entry.value)
@@ -153,7 +153,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         currentOnline: _filterOnline,
 /*        currentFilterRatingMin: _filterRatingMin,
         currentFilterRatingMax: _filterRatingMax, */
-        isAllTab: true, // お気に入りではジャンルフィルターを表示
+        isAllTab: true, // お気に入りではカテゴリーフィルターを表示
       ),
     );
     if (result != null) {
@@ -185,7 +185,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   Widget _buildActiveFilters() {
     List<Widget> filterChips = [];
 
-    // ジャンルフィルター
+    // カテゴリーフィルター
     _filterGenre.forEach((genre, isSelected) {
       if (isSelected) {
         filterChips.add(_buildFilterChip(

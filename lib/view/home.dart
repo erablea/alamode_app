@@ -7,6 +7,7 @@ import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/services/favorite_service.dart';
+import 'package:alamode_app/services/item_image_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {
         _tabs = ['all', ...sortedGenres];
         _isLoadingGenres = false;
-        // ジャンル読み込み完了後にコントローラーを初期化
+        // カテゴリー読み込み完了後にコントローラーを初期化
         _initializeControllers();
       });
     } catch (e) {
@@ -343,7 +344,7 @@ class _ItemListState extends State<ItemList>
     with AutomaticKeepAliveClientMixin {
   List<Map<String, dynamic>>? _cachedDocs;
   final currencyFormat = NumberFormat('#,###');
-  String _sortBy = 'item_price_low';
+  String _sortBy = 'display_order';
   static Map<String, bool> _globalFilterGenre = {};
   static double _globalFilterPriceMin = 0;
   static double _globalFilterPriceMax = 20000;
@@ -377,14 +378,18 @@ class _ItemListState extends State<ItemList>
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
     //   {'value': 'item_rating', 'label': '評価が高い順'},
+    {'value': 'display_order', 'label': 'おすすめ順'},
     {'value': 'item_price_low', 'label': '価格の安い順'},
     {'value': 'item_price_high', 'label': '価格の高い順'},
     {'value': 'brand_name', 'label': 'ブランド名順'},
   ];
 
 // ソートフィールドを取得
-  String get _sortField =>
-      _sortBy.startsWith('item_price') ? 'item_price' : _sortBy;
+  String get _sortField {
+    if (_sortBy.startsWith('item_price')) return 'item_price';
+    if (_sortBy == 'display_order') return 'item_display_order';
+    return _sortBy;
+  }
 
   bool get _sortDescending {
     switch (_sortBy) {
@@ -392,6 +397,7 @@ class _ItemListState extends State<ItemList>
         return true; // 降順
       case 'brand_name':
       case 'item_price_low':
+      case 'display_order':
         return false; // 昇順
       default:
         return true;
@@ -495,7 +501,7 @@ class _ItemListState extends State<ItemList>
       List<Map<String, dynamic>> docs) async {
     List<Map<String, dynamic>> filteredDocs = [];
     for (var item in docs) {
-// ジャンルフィルタリング（特定のジャンルタブの場合）
+// カテゴリーフィルタリング（特定のカテゴリータブの場合）
       if (widget.genre != 'all') {
         final category = item['item_category'] as String? ?? '';
         final categoryList = category.split(',').map((e) => e.trim()).toList();
@@ -504,7 +510,7 @@ class _ItemListState extends State<ItemList>
         }
       }
 
-      // 追加のジャンルフィルタリング（allタブでフィルタが適用されている場合）
+      // 追加のカテゴリーフィルタリング（allタブでフィルタが適用されている場合）
       if (widget.genre == 'all' && _filterGenre.isNotEmpty) {
         final selectedGenres = _filterGenre.entries
             .where((entry) => entry.value)
@@ -632,7 +638,7 @@ class _ItemListState extends State<ItemList>
   Widget _buildActiveFilters() {
     List<Widget> filterChips = [];
 
-    // ジャンルフィルター（allタブの時のみ表示）
+    // カテゴリーフィルター（allタブの時のみ表示）
     if (widget.genre == 'all') {
       _filterGenre.forEach((genre, isSelected) {
         if (isSelected) {
@@ -816,26 +822,6 @@ class ItemCard extends StatelessWidget {
     this.onTap,
   });
 
-  List<String> _getImageUrls(Map<String, dynamic> item) {
-    List<String> imageUrls = [];
-
-    final url1 = item['item_imageurl1'] as String?;
-    final url2 = item['item_imageurl2'] as String?;
-    final url3 = item['item_imageurl3'] as String?;
-
-    if (url1 != null && url1.isNotEmpty) {
-      imageUrls.add(url1);
-    }
-    if (url2 != null && url2.isNotEmpty) {
-      imageUrls.add(url2);
-    }
-    if (url3 != null && url3.isNotEmpty) {
-      imageUrls.add(url3);
-    }
-
-    return imageUrls;
-  }
-
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat('#,###');
@@ -863,7 +849,7 @@ class ItemCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildItemHeader(context),
-            _buildItemImages(item),
+            _buildItemImages(context, item),
             _buildItemFooter(currencyFormat, item),
           ],
         ),
@@ -943,16 +929,27 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildItemImages(Map<String, dynamic> item) {
-    final imageUrls = _getImageUrls(item);
-
-    if (imageUrls.isEmpty) {
-      return CategoryPlaceholder(
-        category: item['item_category'] as String?,
-        height: 90,
-      );
+  Widget _buildItemImages(BuildContext context, Map<String, dynamic> item) {
+    final ownImages = ItemImageService.ownImageUrls(item);
+    if (ownImages.isNotEmpty) {
+      return _buildImageRow(context, ownImages);
     }
+    return FutureBuilder<List<String>>(
+      future: ItemImageService.resolveImageUrls(item),
+      builder: (context, snapshot) {
+        final imageUrls = snapshot.data ?? [];
+        if (imageUrls.isEmpty) {
+          return CategoryPlaceholder(
+            category: item['item_category'] as String?,
+            height: 90,
+          );
+        }
+        return _buildImageRow(context, imageUrls);
+      },
+    );
+  }
 
+  Widget _buildImageRow(BuildContext context, List<String> imageUrls) {
     return Row(
       children: [
         for (int i = 0; i < imageUrls.length; i++)
@@ -1132,7 +1129,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ジャンルフィルター（allタブの時のみ表示）
+                    // カテゴリーフィルター（allタブの時のみ表示）
                     if (widget.isAllTab) ...[
                       _buildGenreFilter(),
                       const SizedBox(height: 24),
@@ -1227,7 +1224,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'ジャンル',
+              'カテゴリー',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -1563,7 +1560,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildImageSection(item),
+                  _buildImageSectionAsync(item),
                   _buildContentSection(item),
                 ],
               ),
@@ -1574,28 +1571,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  List<String> _getImageUrls(Map<String, dynamic> item) {
-    List<String> imageUrls = [];
-
-    final url1 = item['item_imageurl1'] as String?;
-    final url2 = item['item_imageurl2'] as String?;
-    final url3 = item['item_imageurl3'] as String?;
-
-    if (url1 != null && url1.isNotEmpty) {
-      imageUrls.add(url1);
-    }
-    if (url2 != null && url2.isNotEmpty) {
-      imageUrls.add(url2);
-    }
-    if (url3 != null && url3.isNotEmpty) {
-      imageUrls.add(url3);
-    }
-
-    return imageUrls;
+  Widget _buildImageSectionAsync(Map<String, dynamic> item) {
+    final ownImages = ItemImageService.ownImageUrls(item);
+    if (ownImages.isNotEmpty) return _buildImageSection(item, ownImages);
+    return FutureBuilder<List<String>>(
+      future: ItemImageService.resolveImageUrls(item),
+      builder: (context, snapshot) {
+        return _buildImageSection(item, snapshot.data ?? []);
+      },
+    );
   }
 
-  Widget _buildImageSection(Map<String, dynamic> item) {
-    final imageUrls = _getImageUrls(item);
+  Widget _buildImageSection(Map<String, dynamic> item, List<String> imageUrls) {
     final imageCount = imageUrls.length;
 
     if (imageUrls.isEmpty) {

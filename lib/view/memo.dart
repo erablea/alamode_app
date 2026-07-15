@@ -101,7 +101,7 @@ class CommonWidgets {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'ジャンル',
+          'カテゴリー',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -687,7 +687,7 @@ class PresentManagementService {
     try {
       final data = await supabase
           .from('event')
-          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_memo, useritem_image), who(who_id, who_name)')
+          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
           .eq('user_id', uid)
           .order('event_createdate', ascending: false);
       return (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
@@ -726,6 +726,8 @@ class PresentManagementService {
       '_event_id': event['event_id'],
       '_useritem_id': useritem['useritem_id'],
       '_who_id': who?['who_id'],
+      '_item_id': useritem['item_id'],
+      '_useritem_approved': useritem['useritem_approved'],
     };
   }
 
@@ -984,7 +986,7 @@ class _PresentListState extends State<PresentList> {
     if (_showSentPresents && presentType != 'sent') return false;
     if (!_showSentPresents && presentType != 'received') return false;
 
-    // ジャンルフィルタリング
+    // カテゴリーフィルタリング
     if (_filterGenre.isNotEmpty &&
         !(_filterGenre[present['present_genre']] ?? false)) {
       return false;
@@ -1141,7 +1143,7 @@ class _PresentListState extends State<PresentList> {
   Widget _buildActiveFilters() {
     List<Widget> filterChips = [];
 
-    // ジャンルフィルター
+    // カテゴリーフィルター
     _filterGenre.forEach((genre, isSelected) {
       if (isSelected) {
         filterChips.add(_buildFilterChip(
@@ -2069,12 +2071,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   int? _whoIconIndex;
   final _whoFieldController = TextEditingController();
   final _whoFocusNode = FocusNode();
+  Map<String, dynamic>? _linkedItem;
+  bool _showApprovalPrompt = false;
 
   @override
   void initState() {
     super.initState();
     _initializeForm();
     _loadAllWhoNames();
+    _loadLinkedItemIfNeeded();
     _whoFocusNode.addListener(() {
       if (_whoFocusNode.hasFocus) {
         setState(() => _showWhoSuggestions = true);
@@ -2103,6 +2108,98 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       if (who != null && who.isNotEmpty) names.add(who);
     }
     if (mounted) setState(() => _allWhoNames = names.toList()..sort());
+  }
+
+  // 管理者が昇格作業でこのuseritemにitem_idを紐づけ、まだユーザーが
+  // 確認(yes/no)していない場合、確認カードを表示するために該当itemを読み込む。
+  Future<void> _loadLinkedItemIfNeeded() async {
+    final itemId = widget.initialPresent?['_item_id'];
+    final approved = widget.initialPresent?['_useritem_approved'];
+    if (itemId == null || approved != null) return;
+    try {
+      final data = await supabase.from('item').select().eq('item_id', itemId).maybeSingle();
+      if (mounted && data != null) {
+        setState(() {
+          _linkedItem = data;
+          _showApprovalPrompt = true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _respondToApproval(bool approved) async {
+    final useritemId = widget.initialPresent?['_useritem_id'];
+    if (useritemId == null) return;
+    try {
+      await supabase.from('useritem').update({'useritem_approved': approved}).eq('useritem_id', useritemId);
+    } catch (_) {}
+    if (mounted) setState(() => _showApprovalPrompt = false);
+  }
+
+  Widget _buildApprovalPrompt() {
+    if (!_showApprovalPrompt || _linkedItem == null) return const SizedBox.shrink();
+    final imageUrl = _linkedItem!['item_imageurl1'] as String?;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(imageUrl, width: 56, height: 56, fit: BoxFit.cover),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('このお菓子じゃない？',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.blackDark)),
+                    const SizedBox(height: 4),
+                    Text(_linkedItem!['item_name'] as String? ?? '',
+                        style: const TextStyle(fontSize: 13, color: AppColors.blackDark)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '「はい」にすると公式情報に紐づけられます',
+            style: TextStyle(fontSize: 11, color: AppColors.blackLight),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _respondToApproval(false),
+                  child: const Text('いいえ'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _respondToApproval(true),
+                  child: const Text('はい'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   void _initializeForm() {
@@ -2714,6 +2811,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildApprovalPrompt(),
             _buildFormTypeToggle(),
             TextFormField(
               controller: _controllers['present_name']!,
