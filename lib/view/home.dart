@@ -2080,8 +2080,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         children: [const SizedBox(height: 8), ...rows],
       ));
     }
-    if (item['brand_description'] != null &&
-        (item['brand_description'] as String).isNotEmpty) {
+    if (item['item_description'] != null &&
+        (item['item_description'] as String).isNotEmpty) {
       if (details.isNotEmpty) {
         details.add(const SizedBox(height: 16));
       }
@@ -2099,7 +2099,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              item['brand_description'] as String? ?? '',
+              item['item_description'] as String? ?? '',
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.blackDark,

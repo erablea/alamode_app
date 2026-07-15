@@ -2743,8 +2743,6 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             const SizedBox(height: 24),
             _buildGenreSelector(),
             const SizedBox(height: 24),
-            _buildOtherConditionSelector(),
-            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -2768,6 +2766,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                             fontWeight: FontWeight.bold))),
               ],
             ),
+            const SizedBox(height: 24),
+            _buildOtherConditionSelector(),
             const SizedBox(height: 24),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
