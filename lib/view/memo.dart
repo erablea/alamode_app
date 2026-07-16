@@ -294,6 +294,7 @@ class CommonWidgets {
     String key,
     String state, {
     VoidCallback? onTap,
+    bool constrainText = false,
   }) {
     final label = conditionLabels[key]?[state] ?? key;
     final primary = Theme.of(context).primaryColor;
@@ -324,8 +325,19 @@ class CommonWidgets {
         isDashed = true;
     }
 
+    final labelText = Text(
+      label,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 13, color: textColor),
+    );
+
     // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする。
     // 高さも常に固定し、ラベルの長さで他のボタンの位置がずれないようにする。
+    // constrainText=trueの場合（Expandedなど幅が確定している文脈）はFlexibleで
+    // 実際の幅を確保してからellipsisを効かせる。Row自体が非確定幅を渡す文脈
+    // （Wrap内など）ではFlexibleを使うとRenderFlexが壊れるため使わない。
     Widget chipContent = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: SizedBox(
@@ -337,13 +349,7 @@ class CommonWidgets {
               width: 17,
               child: showIcon ? Icon(Icons.check, size: 13, color: primary) : null,
             ),
-            Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, color: textColor),
-            ),
+            constrainText ? Flexible(child: labelText) : labelText,
           ],
         ),
       ),
@@ -409,7 +415,7 @@ class CommonWidgets {
                     final state = conditionStates[key] ?? 'unknown';
                     return SizedBox(
                       width: double.infinity,
-                      child: buildConditionChip(ctx, key, state, onTap: () {
+                      child: buildConditionChip(ctx, key, state, constrainText: true, onTap: () {
                         final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
                         final newStates = Map<String, String>.from(conditionStates);
                         newStates[key] = next;
@@ -430,7 +436,7 @@ class CommonWidgets {
                     final state = conditionStates[key] ?? 'unknown';
                     return SizedBox(
                       width: double.infinity,
-                      child: buildConditionChip(ctx, key, state, onTap: () {
+                      child: buildConditionChip(ctx, key, state, constrainText: true, onTap: () {
                         final next = state == 'unknown' ? 'yes' : state == 'yes' ? 'no' : 'unknown';
                         final newStates = Map<String, String>.from(conditionStates);
                         newStates[key] = next;
