@@ -687,7 +687,7 @@ class PresentManagementService {
     try {
       final data = await supabase
           .from('event')
-          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
+          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_alcohol, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
           .eq('user_id', uid)
           .order('event_createdate', ascending: false);
       return (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
@@ -705,7 +705,7 @@ class PresentManagementService {
       '個包装': _dbVal(useritem['useritem_individualwrapping'] as String?),
       '常温': _dbVal(useritem['useritem_roomtemperature'] as String?),
       'オンライン購入': _dbVal(useritem['useritem_online'] as String?),
-      '洋酒': 'unknown',
+      '洋酒': _dbVal(useritem['useritem_alcohol'] as String?),
     };
     return {
       'present_id': event['event_id'],
@@ -748,6 +748,7 @@ class PresentManagementService {
       'useritem_roomtemperature': condStates['常温'] == 'unknown' ? null : condStates['常温'],
       'useritem_individualwrapping': condStates['個包装'] == 'unknown' ? null : condStates['個包装'],
       'useritem_online': condStates['オンライン購入'] == 'unknown' ? null : condStates['オンライン購入'],
+      'useritem_alcohol': condStates['洋酒'] == 'unknown' ? null : condStates['洋酒'],
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': data['present_imageurl'],
@@ -787,6 +788,7 @@ class PresentManagementService {
       'useritem_roomtemperature': condStates2['常温'] == 'unknown' ? null : condStates2['常温'],
       'useritem_individualwrapping': condStates2['個包装'] == 'unknown' ? null : condStates2['個包装'],
       'useritem_online': condStates2['オンライン購入'] == 'unknown' ? null : condStates2['オンライン購入'],
+      'useritem_alcohol': condStates2['洋酒'] == 'unknown' ? null : condStates2['洋酒'],
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_image': data['present_imageurl'],
       'useritem_update': DateTime.now().toIso8601String(),

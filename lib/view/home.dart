@@ -351,6 +351,7 @@ class _ItemListState extends State<ItemList>
   static bool _globalFilterIndividualWrapping = false;
   static bool _globalFilterRoomTemperature = false;
   static bool _globalFilterOnline = false;
+  static bool _globalFilterAlcohol = false;
   @override
   bool get wantKeepAlive => true;
 
@@ -374,6 +375,9 @@ class _ItemListState extends State<ItemList>
 
   bool get _filterOnline => _globalFilterOnline;
   set _filterOnline(bool value) => _globalFilterOnline = value;
+
+  bool get _filterAlcohol => _globalFilterAlcohol;
+  set _filterAlcohol(bool value) => _globalFilterAlcohol = value;
 
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
@@ -536,17 +540,22 @@ class _ItemListState extends State<ItemList>
 
       if (_filterIndividualWrapping) {
         final value = item['item_individualwrapping'];
-        if (value != "1" && value != 1) continue;
+        if (value != "1" && value != 1 && value != true) continue;
       }
 
       if (_filterRoomTemperature) {
         final value = item['item_roomtemperature'];
-        if (value != "1" && value != 1) continue;
+        if (value != "1" && value != 1 && value != true) continue;
       }
 
       if (_filterOnline) {
         final value = item['item_online'];
-        if (value != "1" && value != 1) continue;
+        if (value != "1" && value != 1 && value != true) continue;
+      }
+
+      if (_filterAlcohol) {
+        final value = item['item_alcohol'];
+        if (value != "1" && value != 1 && value != true) continue;
       }
 
       filteredDocs.add(item);
@@ -630,7 +639,10 @@ class _ItemListState extends State<ItemList>
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
     final hasOtherFilter =
-        _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
+        _filterIndividualWrapping ||
+            _filterRoomTemperature ||
+            _filterOnline ||
+            _filterAlcohol;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
@@ -681,7 +693,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterIndividualWrapping) {
       filterChips.add(_buildFilterChip(
-        label: '個包装',
+        label: CommonWidgets.conditionLabels['個包装']!['yes']!,
         onRemove: () {
           setState(() {
             _filterIndividualWrapping = false;
@@ -692,7 +704,7 @@ class _ItemListState extends State<ItemList>
 
     if (_filterRoomTemperature) {
       filterChips.add(_buildFilterChip(
-        label: '常温',
+        label: CommonWidgets.conditionLabels['常温']!['yes']!,
         onRemove: () {
           setState(() {
             _filterRoomTemperature = false;
@@ -703,10 +715,21 @@ class _ItemListState extends State<ItemList>
 
     if (_filterOnline) {
       filterChips.add(_buildFilterChip(
-        label: 'オンライン購入',
+        label: CommonWidgets.conditionLabels['オンライン購入']!['yes']!,
         onRemove: () {
           setState(() {
             _filterOnline = false;
+          });
+        },
+      ));
+    }
+
+    if (_filterAlcohol) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['洋酒']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterAlcohol = false;
           });
         },
       ));
@@ -787,6 +810,7 @@ class _ItemListState extends State<ItemList>
         currentIndividualWrapping: _filterIndividualWrapping,
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
+        currentAlcohol: _filterAlcohol,
         isAllTab: widget.genre == 'all', // allタブかどうかを新しいパラメータで渡す
       ),
     );
@@ -800,6 +824,7 @@ class _ItemListState extends State<ItemList>
         _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
+        _filterAlcohol = result['filterAlcohol'] ?? false;
         _cachedDocs = null;
       });
     }
@@ -1026,6 +1051,7 @@ class HomeFilterDialog extends StatefulWidget {
   final bool currentIndividualWrapping;
   final bool currentRoomTemperature;
   final bool currentOnline;
+  final bool currentAlcohol;
   final bool isAllTab;
 
   const HomeFilterDialog({
@@ -1037,6 +1063,7 @@ class HomeFilterDialog extends StatefulWidget {
     required this.currentIndividualWrapping,
     required this.currentRoomTemperature,
     required this.currentOnline,
+    required this.currentAlcohol,
     required this.isAllTab,
   });
 
@@ -1050,6 +1077,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempIndividualWrapping;
   late bool _tempRoomTemperature;
   late bool _tempOnline;
+  late bool _tempAlcohol;
 /*  late RangeValues _tempFilterRatingRange; */
 
   @override
@@ -1061,6 +1089,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempIndividualWrapping = widget.currentIndividualWrapping;
     _tempRoomTemperature = widget.currentRoomTemperature;
     _tempOnline = widget.currentOnline;
+    _tempAlcohol = widget.currentAlcohol;
   }
 
   @override
@@ -1186,6 +1215,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                           'filterIndividualWrapping': _tempIndividualWrapping,
                           'filterRoomTemperature': _tempRoomTemperature,
                           'filterOnline': _tempOnline,
+                          'filterAlcohol': _tempAlcohol,
                         });
                       },
                       child: Container(
@@ -1416,60 +1446,36 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           spacing: 8.0,
           runSpacing: 8.0,
           children: [
-            _buildConditionChip(
+            CommonWidgets.buildConditionChip(
               context,
               '個包装',
-              _tempIndividualWrapping,
-              (isSelected) =>
-                  setState(() => _tempIndividualWrapping = !isSelected),
+              _tempIndividualWrapping ? 'yes' : 'unknown',
+              onTap: () =>
+                  setState(() => _tempIndividualWrapping = !_tempIndividualWrapping),
             ),
-            _buildConditionChip(
+            CommonWidgets.buildConditionChip(
               context,
               '常温',
-              _tempRoomTemperature,
-              (isSelected) =>
-                  setState(() => _tempRoomTemperature = !isSelected),
+              _tempRoomTemperature ? 'yes' : 'unknown',
+              onTap: () =>
+                  setState(() => _tempRoomTemperature = !_tempRoomTemperature),
             ),
-            _buildConditionChip(
+            CommonWidgets.buildConditionChip(
               context,
               'オンライン購入',
-              _tempOnline,
-              (isSelected) => setState(() => _tempOnline = !isSelected),
+              _tempOnline ? 'yes' : 'unknown',
+              onTap: () => setState(() => _tempOnline = !_tempOnline),
+            ),
+            CommonWidgets.buildConditionChip(
+              context,
+              '洋酒',
+              _tempAlcohol ? 'yes' : 'unknown',
+              onTap: () => setState(() => _tempAlcohol = !_tempAlcohol),
             ),
           ],
         ),
         ),
       ],
-    );
-  }
-
-  Widget _buildConditionChip(
-      BuildContext context, String label, bool isSelected, Function(bool) onTap) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => onTap(isSelected),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : AppColors.greyLight,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? Theme.of(context).primaryColor : AppColors.greyLight,
-              width: 1,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Theme.of(context).primaryColor : AppColors.blackLight,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -2034,6 +2040,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       'item_individualwrapping': '個包装',
       'item_roomtemperature': '常温',
       'item_online': 'オンライン購入',
+      'item_alcohol': '洋酒',
     };
 
     final flagEntries = <MapEntry<String, String>>[];

@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/home.dart';
+import 'package:alamode_app/view/memo.dart';
 import 'package:alamode_app/services/favorite_service.dart';
 
 class FavoriteScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _filterIndividualWrapping = false;
   bool _filterRoomTemperature = false;
   bool _filterOnline = false;
+  bool _filterAlcohol = false;
   //double _filterRatingMin = 1;
   //double _filterRatingMax = 5;
   // 並び替えオプション（homeと同じ）
@@ -118,6 +120,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         if (value != "1" && value != 1 && value != true) return false;
       }
 
+      if (_filterAlcohol) {
+        final value = item['item_alcohol'];
+        if (value != "1" && value != 1 && value != true) return false;
+      }
+
       return true;
     }).toList();
 
@@ -151,6 +158,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         currentIndividualWrapping: _filterIndividualWrapping,
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
+        currentAlcohol: _filterAlcohol,
 /*        currentFilterRatingMin: _filterRatingMin,
         currentFilterRatingMax: _filterRatingMax, */
         isAllTab: true, // お気に入りではカテゴリーフィルターを表示
@@ -164,6 +172,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         _filterIndividualWrapping = result['filterIndividualWrapping'] ?? false;
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
+        _filterAlcohol = result['filterAlcohol'] ?? false;
 /*        _filterRatingMin = result['filterRatingMin'];
         _filterRatingMax = result['filterRatingMax'];*/
       });
@@ -175,8 +184,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _hasActiveFilters() {
     final hasGenreFilter = _filterGenre.values.any((selected) => selected);
     final hasPriceFilter = _filterPriceMin > 0 || _filterPriceMax < 20000;
-    final hasOtherFilter =
-        _filterIndividualWrapping || _filterRoomTemperature || _filterOnline;
+    final hasOtherFilter = _filterIndividualWrapping ||
+        _filterRoomTemperature ||
+        _filterOnline ||
+        _filterAlcohol;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
@@ -228,7 +239,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     if (_filterIndividualWrapping) {
       filterChips.add(_buildFilterChip(
-        label: '個包装',
+        label: CommonWidgets.conditionLabels['個包装']!['yes']!,
         onRemove: () {
           setState(() {
             _filterIndividualWrapping = false;
@@ -240,7 +251,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     if (_filterRoomTemperature) {
       filterChips.add(_buildFilterChip(
-        label: '常温',
+        label: CommonWidgets.conditionLabels['常温']!['yes']!,
         onRemove: () {
           setState(() {
             _filterRoomTemperature = false;
@@ -252,10 +263,22 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     if (_filterOnline) {
       filterChips.add(_buildFilterChip(
-        label: 'オンライン購入',
+        label: CommonWidgets.conditionLabels['オンライン購入']!['yes']!,
         onRemove: () {
           setState(() {
             _filterOnline = false;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterAlcohol) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['洋酒']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterAlcohol = false;
           });
           _applyFiltersAndSort();
         },

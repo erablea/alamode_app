@@ -138,6 +138,9 @@ class AuthService {
       'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
       'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
       'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
+      'useritem_alcohol': otherConditions.contains('洋酒不使用')
+          ? 'yes'
+          : (otherConditions.contains('洋酒使用') ? 'no' : null),
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': data['present_imageurl'],
