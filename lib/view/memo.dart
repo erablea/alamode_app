@@ -324,10 +324,12 @@ class CommonWidgets {
         isDashed = true;
     }
 
-    // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする
+    // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする。
+    // 高さも常に固定し、ラベルの長さで他のボタンの位置がずれないようにする。
     Widget chipContent = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Center(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: SizedBox(
+        height: 18,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -335,16 +337,24 @@ class CommonWidgets {
               width: 17,
               child: showIcon ? Icon(Icons.check, size: 13, color: primary) : null,
             ),
-            Text(label, style: TextStyle(fontSize: 13, color: textColor)),
+            Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 13, color: textColor),
+            ),
           ],
         ),
       ),
     );
 
-    // 常に同じウィジェット構造を維持してレイアウトシフトを防ぐ
+    // 常に同じウィジェット構造を維持してレイアウトシフトを防ぐ。
+    // clipBehaviorではみ出た分を切り取り、隣のチップの位置がずれないようにする。
     Widget chip = Stack(
       children: [
         Container(
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(20),
@@ -2059,7 +2069,7 @@ class PresentFormWidget extends StatefulWidget {
 class _PresentFormWidgetState extends State<PresentFormWidget> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = <String, TextEditingController>{};
-  late DateTime _selectedDate;
+  DateTime? _selectedDate;
   Set<String> _selectedGenres = {};
   Map<String, String> _conditionStates = {for (final k in CommonWidgets.conditionKeys) k: 'unknown'};
   int _presentReaction = 0;
@@ -2625,7 +2635,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_price': int.tryParse(
                 _controllers['present_price']!.text.replaceAll(',', '')) ??
             0,
-        'present_date': DateFormat('yyyy-MM-dd').format(_selectedDate),
+        'present_date': _selectedDate != null
+            ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+            : null,
         'present_who': _whoFieldController.text,
         'present_reaction': _presentReaction,
         'present_genre': _selectedGenres.join(', '),
@@ -2698,7 +2710,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
             child: SfDateRangePicker(
               view: DateRangePickerView.month,
               selectionMode: DateRangePickerSelectionMode.single,
-              initialSelectedDate: _selectedDate,
+              initialSelectedDate: _selectedDate ?? DateTime.now(),
               selectionColor: Theme.of(context).primaryColor,
               todayHighlightColor: Theme.of(context).primaryColor,
               onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
@@ -2711,6 +2723,17 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
           ),
         ),
         actions: [
+          if (_selectedDate != null)
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.errorColor,
+              ),
+              child: const Text('クリア'),
+              onPressed: () {
+                setState(() => _selectedDate = null);
+                Navigator.pop(context);
+              },
+            ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: AppColors.blackLight,
@@ -2913,15 +2936,36 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          DateFormat('yyyy-MM-dd').format(_selectedDate),
-                          style: const TextStyle(
+                          _selectedDate != null
+                              ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+                              : '未設定',
+                          style: TextStyle(
                             fontSize: 16,
-                            color: AppColors.blackDark,
+                            color: _selectedDate != null
+                                ? AppColors.blackDark
+                                : AppColors.blackLight,
                           ),
                         ),
-                        const Icon(
-                          Icons.calendar_month,
-                          color: AppColors.blackLight,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_selectedDate != null)
+                              GestureDetector(
+                                onTap: () => setState(() => _selectedDate = null),
+                                child: const Padding(
+                                  padding: EdgeInsets.only(right: 8),
+                                  child: Icon(
+                                    Icons.clear,
+                                    size: 20,
+                                    color: AppColors.blackLight,
+                                  ),
+                                ),
+                              ),
+                            const Icon(
+                              Icons.calendar_month,
+                              color: AppColors.blackLight,
+                            ),
+                          ],
                         ),
                       ],
                     ),

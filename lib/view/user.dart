@@ -2418,7 +2418,18 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         _birthday != null ? '${_birthday!.year}年${_birthday!.month}月${_birthday!.day}日' : '未設定',
                         style: TextStyle(fontSize: 14, color: _birthday != null ? AppColors.blackDark : AppColors.blackLight),
                       ),
-                      trailing: TextButton(onPressed: _pickBirthday, child: Text('設定', style: TextStyle(color: primary))),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_birthday != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear, size: 20, color: AppColors.blackLight),
+                              tooltip: 'クリア',
+                              onPressed: () => setState(() => _birthday = null),
+                            ),
+                          TextButton(onPressed: _pickBirthday, child: Text('設定', style: TextStyle(color: primary))),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
