@@ -2433,7 +2433,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 itemBuilder: (context, index) {
                   final doc = sameBrandItems[index];
                   final itemData = doc;
-                  final imageUrl = itemData['item_imageurl1'] as String? ?? '';
 
                   return GestureDetector(
                     onTap: () {
@@ -2469,30 +2468,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 topLeft: Radius.circular(8),
                                 topRight: Radius.circular(8),
                               ),
-                              child: CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: (context, url) => Container(
-                                  color: AppColors.greyLight,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: AppColors.greyLight,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      size: 20,
-                                      color: AppColors.errorColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              child: _buildSameBrandItemImage(context, itemData),
                             ),
                           ),
                           Padding(
@@ -2532,6 +2508,53 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildSameBrandItemImage(BuildContext context, Map<String, dynamic> itemData) {
+    final ownImages = ItemImageService.ownImageUrls(itemData);
+    if (ownImages.isNotEmpty) {
+      return _buildSameBrandCachedImage(ownImages.first);
+    }
+    return FutureBuilder<List<String>>(
+      future: ItemImageService.resolveImageUrls(itemData),
+      builder: (context, snapshot) {
+        final imageUrls = snapshot.data ?? [];
+        if (imageUrls.isEmpty) {
+          return CategoryPlaceholder(
+            category: itemData['item_category'] as String?,
+            height: double.infinity,
+          );
+        }
+        return _buildSameBrandCachedImage(imageUrls.first);
+      },
+    );
+  }
+
+  Widget _buildSameBrandCachedImage(String imageUrl) {
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      placeholder: (context, url) => Container(
+        color: AppColors.greyLight,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: AppColors.greyLight,
+        child: const Center(
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            size: 20,
+            color: AppColors.greyDark,
+          ),
+        ),
+      ),
     );
   }
 }
