@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alamode_app/main.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
   const Header({super.key});
@@ -8,42 +9,19 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).primaryColor;
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
       toolbarHeight: 52,
-      title: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Stack(
-          alignment: Alignment.topCenter,
-          clipBehavior: Clip.none,
-          children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 7),
-            child: Text(
-              'a la mode',
-              style: TextStyle(
-                fontFamily: 'PinyonScript',
-                fontSize: 35,
-                color: color,
-                height: 0.9,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 29),
-            child: Text(
-              'ア・ラ・モード',
-              style: TextStyle(
-                fontFamily: 'ZenMaruGothic',
-                fontSize: 9,
-                color: color,
-              ),
-            ),
-          ),
-          ],
-        ),
+      title: ValueListenableBuilder<int>(
+        valueListenable: themeNotifier,
+        builder: (context, themeIndex, _) {
+          final key = appThemes[themeIndex]['key'] as String;
+          return Image.asset(
+            'assets/images/logo/$key.png',
+            height: 36,
+          );
+        },
       ),
       centerTitle: true,
     );
