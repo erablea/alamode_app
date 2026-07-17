@@ -1078,6 +1078,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempRoomTemperature;
   late bool _tempOnline;
   late bool _tempAlcohol;
+  late Future<List<String>> _genresFuture;
 /*  late RangeValues _tempFilterRatingRange; */
 
   @override
@@ -1090,6 +1091,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempRoomTemperature = widget.currentRoomTemperature;
     _tempOnline = widget.currentOnline;
     _tempAlcohol = widget.currentAlcohol;
+    _genresFuture = _getAvailableGenres();
   }
 
   @override
@@ -1242,7 +1244,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
 
   Widget _buildGenreFilter() {
     return FutureBuilder<List<String>>(
-      future: _getAvailableGenres(),
+      future: _genresFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();

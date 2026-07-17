@@ -335,6 +335,8 @@ class CommonWidgets {
 
     // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする。
     // 高さも常に固定し、ラベルの長さで他のボタンの位置がずれないようにする。
+    // アイコン枠と同じ幅のダミー枠を右側にも置き、左右対称にすることで
+    // チェックの有無に関わらずラベル自体が常にボタン中央に来るようにする。
     // constrainText=trueの場合（Expandedなど幅が確定している文脈）はボタン自体を
     // 常に枠いっぱいの幅にし（mainAxisSize.max + 中央寄せ）、文字の長さでボタンの
     // 見た目のサイズが変わらないようにする。あわせてFlexibleで実際の幅を確保して
@@ -353,6 +355,7 @@ class CommonWidgets {
               child: showIcon ? Icon(Icons.check, size: 13, color: primary) : null,
             ),
             constrainText ? Flexible(child: labelText) : labelText,
+            const SizedBox(width: 17),
           ],
         ),
       ),
