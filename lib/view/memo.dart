@@ -335,15 +335,18 @@ class CommonWidgets {
 
     // アイコン分の幅を状態によらず常に確保し、ラベルの位置がずれないようにする。
     // 高さも常に固定し、ラベルの長さで他のボタンの位置がずれないようにする。
-    // constrainText=trueの場合（Expandedなど幅が確定している文脈）はFlexibleで
-    // 実際の幅を確保してからellipsisを効かせる。Row自体が非確定幅を渡す文脈
-    // （Wrap内など）ではFlexibleを使うとRenderFlexが壊れるため使わない。
+    // constrainText=trueの場合（Expandedなど幅が確定している文脈）はボタン自体を
+    // 常に枠いっぱいの幅にし（mainAxisSize.max + 中央寄せ）、文字の長さでボタンの
+    // 見た目のサイズが変わらないようにする。あわせてFlexibleで実際の幅を確保して
+    // からellipsisを効かせる。Row自体が非確定幅を渡す文脈（Wrap内など）では
+    // Flexibleや幅いっぱい指定を使うとRenderFlexが壊れるため使わない。
     Widget chipContent = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: SizedBox(
         height: 18,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: constrainText ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
               width: 17,
@@ -357,23 +360,25 @@ class CommonWidgets {
 
     // 常に同じウィジェット構造を維持してレイアウトシフトを防ぐ。
     // clipBehaviorではみ出た分を切り取り、隣のチップの位置がずれないようにする。
+    // 枠線はBoxDecoration.borderではなく常にCustomPaintで描画する。
+    // BoxDecoration.borderを使うと状態によって（実線あり/なしで）Containerの
+    // 暗黙のpaddingが変わり、タップのたびにボタンの高さがガクッと変わってしまうため。
     Widget chip = Stack(
       children: [
         Container(
+          width: constrainText ? double.infinity : null,
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(20),
-            border: isDashed ? null : Border.all(color: borderColor, width: 1),
           ),
           child: chipContent,
         ),
-        if (isDashed)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _DashedBorderPainter(color: borderColor, radius: 20),
-            ),
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _DashedBorderPainter(color: borderColor, radius: 20, dashed: isDashed),
           ),
+        ),
       ],
     );
 
@@ -543,7 +548,8 @@ enum SearchType { name, brand }
 class _DashedBorderPainter extends CustomPainter {
   final Color color;
   final double radius;
-  const _DashedBorderPainter({required this.color, required this.radius});
+  final bool dashed;
+  const _DashedBorderPainter({required this.color, required this.radius, this.dashed = true});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -551,12 +557,16 @@ class _DashedBorderPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
-    const dashLen = 4.0;
-    const gapLen = 3.0;
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
       Radius.circular(radius),
     );
+    if (!dashed) {
+      canvas.drawRRect(rrect, paint);
+      return;
+    }
+    const dashLen = 4.0;
+    const gapLen = 3.0;
     final path = Path()..addRRect(rrect);
     final metrics = path.computeMetrics();
     for (final metric in metrics) {
@@ -569,7 +579,7 @@ class _DashedBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
+  bool shouldRepaint(_DashedBorderPainter old) => old.color != color || old.dashed != dashed;
 }
 
 class PresentManagementService {
