@@ -1442,38 +1442,59 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
         ),
         const SizedBox(height: 12),
         Builder(
-          builder: (context) => Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: [
-            CommonWidgets.buildConditionChip(
-              context,
-              '個包装',
-              _tempIndividualWrapping ? 'yes' : 'unknown',
-              onTap: () =>
-                  setState(() => _tempIndividualWrapping = !_tempIndividualWrapping),
-            ),
-            CommonWidgets.buildConditionChip(
-              context,
-              '常温',
-              _tempRoomTemperature ? 'yes' : 'unknown',
-              onTap: () =>
-                  setState(() => _tempRoomTemperature = !_tempRoomTemperature),
-            ),
-            CommonWidgets.buildConditionChip(
-              context,
-              'オンライン購入',
-              _tempOnline ? 'yes' : 'unknown',
-              onTap: () => setState(() => _tempOnline = !_tempOnline),
-            ),
-            CommonWidgets.buildConditionChip(
-              context,
-              '洋酒',
-              _tempAlcohol ? 'yes' : 'unknown',
-              onTap: () => setState(() => _tempAlcohol = !_tempAlcohol),
-            ),
-          ],
-        ),
+          builder: (context) => Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '個包装',
+                      _tempIndividualWrapping ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(
+                          () => _tempIndividualWrapping = !_tempIndividualWrapping),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '常温',
+                      _tempRoomTemperature ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(
+                          () => _tempRoomTemperature = !_tempRoomTemperature),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      'オンライン購入',
+                      _tempOnline ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempOnline = !_tempOnline),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '洋酒',
+                      _tempAlcohol ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempAlcohol = !_tempAlcohol),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
