@@ -2170,7 +2170,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildFlagChip(BuildContext context, String condKey, String state) {
-    return CommonWidgets.buildConditionChip(context, condKey, state);
+    return CommonWidgets.buildConditionChip(context, condKey, state, constrainText: true);
   }
 
   Widget _buildExternalLinkButton(Map<String, dynamic> item) {
