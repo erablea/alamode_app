@@ -204,7 +204,7 @@ Widget buildStarRating(BuildContext context, num rating, {double size = 20}) {
         size: size,
         color: index < rating
             ? AppColors.starColor
-            : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
       );
     }),
   );
@@ -230,12 +230,12 @@ class AdUtils {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       height: 80,
       decoration: BoxDecoration(
-        color: AppColors.greyMedium.withOpacity(0.8),
+        color: AppColors.greyMedium.withValues(alpha: 0.8),
         border: Border.all(color: AppColors.greyMedium, width: 1),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.greyMedium.withOpacity(0.8),
+            color: AppColors.greyMedium.withValues(alpha: 0.8),
             spreadRadius: 0,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -343,11 +343,11 @@ class _MainAppState extends State<MainApp> {
           color: Colors.white,
           border: Border(
             top: BorderSide(
-                color: AppColors.greyMedium.withOpacity(0.6), width: 0.5),
+                color: AppColors.greyMedium.withValues(alpha: 0.6), width: 0.5),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -376,7 +376,7 @@ class _MainAppState extends State<MainApp> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? primary.withOpacity(0.06) : Colors.transparent,
+          color: isSelected ? primary.withValues(alpha: 0.06) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -386,7 +386,7 @@ class _MainAppState extends State<MainApp> {
               icon,
               size: 25,
               color:
-                  isSelected ? primary : AppColors.blackLight.withOpacity(0.6),
+                  isSelected ? primary : AppColors.blackLight.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 0),
             Text(
@@ -396,7 +396,7 @@ class _MainAppState extends State<MainApp> {
                 fontSize: 22,
                 color: isSelected
                     ? primary
-                    : AppColors.blackLight.withOpacity(0.6),
+                    : AppColors.blackLight.withValues(alpha: 0.6),
               ),
             ),
           ],

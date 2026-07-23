@@ -86,7 +86,7 @@ class _UserScreenState extends State<UserScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -149,14 +149,14 @@ class _UserScreenState extends State<UserScreen> {
                               Icon(
                                 Icons.card_giftcard_outlined,
                                 size: 48,
-                                color: AppColors.blackLight.withOpacity(0.5),
+                                color: AppColors.blackLight.withValues(alpha: 0.5),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'まだプレゼントの記録がありません',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.blackLight.withOpacity(0.7),
+                                  color: AppColors.blackLight.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -324,7 +324,7 @@ class _UserScreenState extends State<UserScreen> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -426,7 +426,7 @@ class _UserScreenState extends State<UserScreen> {
                     margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? color.withOpacity(0.08) : AppColors.greyLight,
+                      color: isSelected ? color.withValues(alpha: 0.08) : AppColors.greyLight,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
                     ),
@@ -478,7 +478,7 @@ class _UserScreenState extends State<UserScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -536,13 +536,13 @@ class _UserScreenState extends State<UserScreen> {
                             Icon(
                               Icons.person_add_outlined,
                               size: 48,
-                              color: AppColors.blackLight.withOpacity(0.5),
+                              color: AppColors.blackLight.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'まだ記録がありません',
                               style: TextStyle(
-                                color: AppColors.blackLight.withOpacity(0.7),
+                                color: AppColors.blackLight.withValues(alpha: 0.7),
                                 fontSize: 14,
                               ),
                             ),
@@ -550,7 +550,7 @@ class _UserScreenState extends State<UserScreen> {
                             Text(
                               'Memoタブからお菓子を記録すると、ここに表示されます',
                               style: TextStyle(
-                                color: AppColors.blackLight.withOpacity(0.5),
+                                color: AppColors.blackLight.withValues(alpha: 0.5),
                                 fontSize: 12,
                               ),
                               textAlign: TextAlign.center,
@@ -693,7 +693,7 @@ class _UserScreenState extends State<UserScreen> {
                   return Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: primary.withOpacity(0.1),
+                      color: primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(Icons.account_circle_outlined, color: primary, size: 20),
@@ -741,7 +741,7 @@ class _UserScreenState extends State<UserScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(0.1),
+                  color: primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.login, color: AppColors.blackDark, size: 20),
@@ -880,7 +880,7 @@ class _UserScreenState extends State<UserScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -1073,7 +1073,7 @@ class _UserScreenState extends State<UserScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1245,7 +1245,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -1363,7 +1363,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.greyLight.withOpacity(0.5),
+        color: AppColors.greyLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.greyMedium),
       ),
@@ -1720,7 +1720,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.greyLight.withOpacity(0.5),
+        color: AppColors.greyLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.greyMedium),
       ),
@@ -2342,7 +2342,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               )
                             : CircleAvatar(
                                 radius: 36,
-                                backgroundColor: primary.withOpacity(0.15),
+                                backgroundColor: primary.withValues(alpha: 0.15),
                                 child: Text(
                                   _nameCtrl.text.isNotEmpty ? _nameCtrl.text[0] : '?',
                                   style: TextStyle(fontSize: 28, color: primary, fontWeight: FontWeight.bold),
@@ -2353,7 +2353,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           right: -6,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.blackDark.withOpacity(0.65), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: AppColors.blackDark.withValues(alpha: 0.65), borderRadius: BorderRadius.circular(8)),
                             child: const Text('変更', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500)),
                           ),
                         ),

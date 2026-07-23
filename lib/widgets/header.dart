@@ -11,6 +11,8 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       elevation: 0,
       toolbarHeight: 52,
       title: ValueListenableBuilder<int>(
@@ -19,7 +21,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
           final key = appThemes[themeIndex]['key'] as String;
           return Image.asset(
             'assets/images/logo/$key.png',
-            height: 36,
+            height: 44,
           );
         },
       ),

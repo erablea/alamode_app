@@ -1282,7 +1282,7 @@ class _PresentListState extends State<PresentList> {
       {required String label, required VoidCallback onRemove}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.greyLight.withOpacity(0.8),
+        color: AppColors.greyLight.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.greyLight),
       ),
@@ -1636,7 +1636,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -1985,9 +1985,9 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.greyLight.withOpacity(0.3),
+            color: AppColors.greyLight.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.greyLight.withOpacity(0.5)),
+            border: Border.all(color: AppColors.greyLight.withValues(alpha: 0.5)),
           ),
           child: Column(
             children: [
@@ -2043,7 +2043,7 @@ class _PresentFilterDialogState extends State<PresentFilterDialog> {
                 data: SliderThemeData(
                   activeTrackColor: Theme.of(context).primaryColor,
                   thumbColor: Theme.of(context).primaryColor,
-                  overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                  overlayColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                   inactiveTrackColor: AppColors.greyLight,
                   trackHeight: 4,
                   thumbShape:
@@ -2176,7 +2176,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       decoration: BoxDecoration(
         color: AppColors.greyLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2571,7 +2571,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       children: [
         CircleAvatar(
           radius: 20,
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
           child: Text(
             name.isNotEmpty ? name[0] : '?',
             style: TextStyle(
@@ -2592,7 +2592,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        color: AppColors.blackDark.withOpacity(0.65),
+        color: AppColors.blackDark.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(6),
       ),
       child: const Text('編集', style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w500)),

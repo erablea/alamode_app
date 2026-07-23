@@ -327,7 +327,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       {required String label, required VoidCallback onRemove}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.greyLight.withOpacity(0.8),
+        color: AppColors.greyLight.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.greyLight),
       ),

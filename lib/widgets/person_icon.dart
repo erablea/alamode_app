@@ -111,7 +111,7 @@ class _PersonAvatarState extends State<PersonAvatar> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
-              color: AppColors.blackDark.withOpacity(0.65),
+              color: AppColors.blackDark.withValues(alpha: 0.65),
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Text(
@@ -137,7 +137,7 @@ class _PersonAvatarState extends State<PersonAvatar> {
       );
     }
     return CircleAvatar(
-      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
+      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
       radius: widget.radius,
       child: Text(
         widget.personName.isNotEmpty ? widget.personName[0] : '?',
@@ -220,7 +220,7 @@ class _PersonIconPickerDialogState extends State<PersonIconPickerDialog> {
                         width: 3,
                       ),
                       boxShadow: isSelected
-                          ? [BoxShadow(color: primary.withOpacity(0.3), blurRadius: 6)]
+                          ? [BoxShadow(color: primary.withValues(alpha: 0.3), blurRadius: 6)]
                           : null,
                     ),
                     child: Center(

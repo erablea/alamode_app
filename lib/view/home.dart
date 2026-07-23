@@ -203,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen>
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.greyMedium.withOpacity(0.3),
+                  color: AppColors.greyMedium.withValues(alpha: 0.3),
                   spreadRadius: 0,
                   blurRadius: 2,
                   offset: const Offset(0, 1),
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen>
           alignment: Alignment.center,
           child: Icon(
             isLeft ? Icons.arrow_circle_left : Icons.arrow_circle_right,
-            color: AppColors.blackLight.withOpacity(0.7),
+            color: AppColors.blackLight.withValues(alpha: 0.7),
             size: 24,
           ),
         ),
@@ -753,7 +753,7 @@ class _ItemListState extends State<ItemList>
       {required String label, required VoidCallback onRemove}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.greyLight.withOpacity(0.8),
+        color: AppColors.greyLight.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.greyLight),
       ),
@@ -863,7 +863,7 @@ class ItemCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.greyMedium.withOpacity(0.8),
+              color: AppColors.greyMedium.withValues(alpha: 0.8),
               spreadRadius: 0,
               blurRadius: 4,
               offset: const Offset(0, 2),
@@ -1105,7 +1105,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.blackDark.withOpacity(0.15),
+              color: AppColors.blackDark.withValues(alpha: 0.15),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -1405,7 +1405,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                 data: SliderThemeData(
                   activeTrackColor: Theme.of(context).primaryColor,
                   thumbColor: Theme.of(context).primaryColor,
-                  overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                  overlayColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                   inactiveTrackColor: AppColors.greyLight,
                   trackHeight: 4,
                   thumbShape:
@@ -1736,11 +1736,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.blackLight.withOpacity(0.5),
+                              color: AppColors.blackLight.withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.blackLight.withOpacity(0.2),
+                                  color: AppColors.blackLight.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1779,11 +1779,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.blackLight.withOpacity(0.5),
+                              color: AppColors.blackLight.withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.blackLight.withOpacity(0.2),
+                                  color: AppColors.blackLight.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1813,7 +1813,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.blackDark.withOpacity(0.3),
+                      color: AppColors.blackDark.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1844,13 +1844,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             border: Border.all(
                               color: _currentImageIndex == i
                                   ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
+                                  : Colors.white.withValues(alpha: 0.5),
                               width: _currentImageIndex == i ? 2.5 : 2,
                             ),
                             boxShadow: _currentImageIndex == i
                                 ? [
                                     BoxShadow(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       blurRadius: 6,
                                       spreadRadius: 1,
                                     ),
@@ -1863,7 +1863,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                               imageUrl: imageUrls[i],
                               fit: BoxFit.cover,
                               placeholder: (context, url) => Container(
-                                color: AppColors.greyLight.withOpacity(0.8),
+                                color: AppColors.greyLight.withValues(alpha: 0.8),
                                 child: const Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 1,
@@ -1872,7 +1872,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                color: AppColors.greyLight.withOpacity(0.8),
+                                color: AppColors.greyLight.withValues(alpha: 0.8),
                                 child: const Center(
                                   child: Icon(
                                     Icons.error_outline,
@@ -1898,7 +1898,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.blackDark.withOpacity(0.5),
+                  color: AppColors.blackDark.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -2150,7 +2150,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 '※情報は正確ではない場合がございます。必ず公式サイトや店舗にてご確認ください。',
                 style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.blackLight.withOpacity(0.8),
+                  color: AppColors.blackLight.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
               ),
@@ -2455,7 +2455,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         border: Border.all(color: AppColors.greyMedium),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.greyMedium.withOpacity(0.3),
+                            color: AppColors.greyMedium.withValues(alpha: 0.3),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
