@@ -1577,13 +1577,11 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: 'お名前 *',
           controller: _otherNameController,
-          hintText: 'お名前を入力してください',
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _otherEmailController,
-          hintText: 'メールアドレスを入力してください',
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
@@ -1610,19 +1608,16 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: '会社名 *',
           controller: _businessCompanyController,
-          hintText: '会社名を入力してください',
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'ご担当者名 *',
           controller: _businessNameController,
-          hintText: 'ご担当者名を入力してください',
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _businessEmailController,
-          hintText: 'メールアドレスを入力してください',
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
@@ -1671,7 +1666,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
   Widget _buildLabeledField({
     required String label,
     required TextEditingController controller,
-    required String hintText,
+    String? hintText,
     int maxLines = 1,
     int? minLines,
     TextInputType? keyboardType,
@@ -1693,6 +1688,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           keyboardType: keyboardType,
           maxLines: maxLines,
           minLines: minLines,
+          style: const TextStyle(color: AppColors.blackLight),
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

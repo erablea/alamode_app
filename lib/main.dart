@@ -90,6 +90,8 @@ class MyApp extends StatelessWidget {
     scaffoldBackgroundColor: const Color(0xFFFAF9F7),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       elevation: 0,
       iconTheme: IconThemeData(color: AppColors.blackDark),
       titleTextStyle: TextStyle(
