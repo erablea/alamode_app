@@ -19,9 +19,12 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         valueListenable: themeNotifier,
         builder: (context, themeIndex, _) {
           final key = appThemes[themeIndex]['key'] as String;
-          return Image.asset(
-            'assets/images/logo/$key.png',
-            height: 44,
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Image.asset(
+              'assets/images/logo/$key.png',
+              height: 32,
+            ),
           );
         },
       ),
