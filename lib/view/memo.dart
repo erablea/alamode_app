@@ -170,6 +170,9 @@ class CommonWidgets {
     '常温':         {'unknown': '常温',         'yes': '常温保存',       'no': '要冷蔵・冷凍'},
     'オンライン購入': {'unknown': 'オンライン購入', 'yes': 'オンライン購入可', 'no': 'オンライン購入不可'},
     '洋酒':         {'unknown': '洋酒',         'yes': '洋酒不使用',     'no': '洋酒使用'},
+    // 以下2つはitemテーブルのみ（管理者が設定）の項目で、useritemの条件選択には含まれない
+    '限定':         {'unknown': '限定',         'yes': '数量・期間限定',  'no': '通常販売'},
+    '実店舗':       {'unknown': '実店舗',       'yes': '実店舗あり',     'no': 'オンライン限定'},
   };
 
   static Map<String, String> parseConditionString(String? raw) {
@@ -2776,7 +2779,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         _controllers['present_name']!.text = result['item_name'] ?? '';
         _controllers['present_brand']!.text = result['item_brand'] ?? '';
         _controllers['present_price']!.text =
-            Utils.formatCurrency(result['item_price']);
+            Utils.formatCurrency(result['item_price10percent']);
         String? genre = result['item_category'];
         if (genre != null && genre.isNotEmpty) {
           _selectedGenres = {genre};
@@ -3391,7 +3394,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            '¥${Utils.formatCurrency(item['item_price'])}',
+                                            '¥${Utils.formatCurrency(item['item_price10percent'])}',
                                             style: const TextStyle(
                                               color: AppColors.blackDark,
                                               fontSize: 12,

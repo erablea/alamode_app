@@ -84,7 +84,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   void _applyFiltersAndSort() {
     _filteredList = _itemList.where((item) {
       // 価格フィルター
-      final price = (item['item_price'] as num?)?.toDouble() ?? 0;
+      final price = (item['item_price10percent'] as num?)?.toDouble() ?? 0;
       if (price < _filterPriceMin || price > _filterPriceMax) {
         return false;
       }
@@ -134,9 +134,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 /*        case 'item_rating':
           return (b['item_rating'] ?? 0).compareTo(a['item_rating'] ?? 0);*/
         case 'item_price_low':
-          return (a['item_price'] ?? 0).compareTo(b['item_price'] ?? 0);
+          return (a['item_price10percent'] ?? 0).compareTo(b['item_price10percent'] ?? 0);
         case 'item_price_high':
-          return (b['item_price'] ?? 0).compareTo(a['item_price'] ?? 0);
+          return (b['item_price10percent'] ?? 0).compareTo(a['item_price10percent'] ?? 0);
         case 'item_brand':
           return (a['item_name'] ?? '').compareTo(b['item_name'] ?? '');
         default:

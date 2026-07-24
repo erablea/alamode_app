@@ -390,7 +390,7 @@ class _ItemListState extends State<ItemList>
 
 // ソートフィールドを取得
   String get _sortField {
-    if (_sortBy.startsWith('item_price')) return 'item_price';
+    if (_sortBy.startsWith('item_price')) return 'item_price10percent';
     if (_sortBy == 'display_order') return 'item_display_order';
     return _sortBy;
   }
@@ -533,7 +533,7 @@ class _ItemListState extends State<ItemList>
       }
 
       // 価格フィルター
-      final price = (item['item_price'] as num?)?.toDouble() ?? 0;
+      final price = (item['item_price10percent'] as num?)?.toDouble() ?? 0;
       if (price < _filterPriceMin || price > _filterPriceMax) {
         continue;
       }
@@ -792,6 +792,7 @@ class _ItemListState extends State<ItemList>
     final data = await supabase
         .from('item')
         .select()
+        .eq('item_show_on_home', true)
         .order(_sortField, ascending: !_sortDescending);
     return data;
   }
@@ -1012,7 +1013,7 @@ class ItemCard extends StatelessWidget {
 
   Widget _buildItemFooter(
       NumberFormat currencyFormat, Map<String, dynamic> item) {
-    final price = item['item_price'] as num?;
+    final price = item['item_price10percent'] as num?;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: Row(
@@ -1958,97 +1959,26 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             const SizedBox(height: 16),
             _buildBrandSection(item),
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.greyLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.greyMedium),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '価格',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.blackLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Icon(
-                            Icons.currency_yen,
-                            size: 20,
-                            color: AppColors.blackDark,
-                          ),
-                          Text(
-                            currencyFormat
-                                .format(item['item_price'] as num? ?? 0),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.blackDark,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            '（税込）',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.blackLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-/*                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        '評価',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.blackLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          buildStarRating(
-                              context, item['item_rating'] as num? ?? 0),
-                          const SizedBox(width: 4),
-                          Text(
-                            (item['item_rating'] as num?)?.toStringAsFixed(1) ??
-                                'new',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.blackDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ), */
-                ],
-              ),
-            ),
+            _buildPriceSection(item, currencyFormat),
             const SizedBox(height: 20),
             _buildProductDetails(item),
             _buildExternalLinkButton(item),
             _buildSameBrandProducts(item),
+            _buildUpdatedAt(item),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUpdatedAt(Map<String, dynamic> item) {
+    final updatedAt = DateTime.tryParse(item['item_update']?.toString() ?? '');
+    if (updatedAt == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Text(
+        '最終更新: ${DateFormat('yyyy/MM/dd').format(updatedAt)}',
+        style: const TextStyle(fontSize: 11, color: AppColors.blackLight),
       ),
     );
   }
@@ -2064,6 +1994,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       'item_roomtemperature': '常温',
       'item_online': 'オンライン購入',
       'item_alcohol': '洋酒',
+      'item_limited': '限定',
+      'item_physicalstore': '実店舗',
     };
 
     final flagEntries = <MapEntry<String, String>>[];
@@ -2294,6 +2226,75 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
+  Widget _buildPriceSection(Map<String, dynamic> item, NumberFormat currencyFormat) {
+    final price10Percent = item['item_price10percent'] as num?;
+    final priceExTax = item['item_price'] as num?;
+    if (price10Percent == null && priceExTax == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.greyMedium),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (price10Percent != null) ...[
+            const Text(
+              '価格',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.blackLight,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Icon(
+                  Icons.currency_yen,
+                  size: 20,
+                  color: AppColors.blackDark,
+                ),
+                Text(
+                  currencyFormat.format(price10Percent),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.blackDark,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  '（税込）',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.blackLight,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (priceExTax != null) ...[
+            if (price10Percent != null) const SizedBox(height: 6),
+            Text(
+              '税抜 ¥${currencyFormat.format(priceExTax)}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.blackLight,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildBrandSection(Map<String, dynamic> item) {
     final brandId = item['brand_id']?.toString();
 
@@ -2490,7 +2491,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '¥${NumberFormat('#,###').format(itemData['item_price'] as num? ?? 0)}',
+                                  '¥${NumberFormat('#,###').format(itemData['item_price10percent'] as num? ?? 0)}',
                                   style: const TextStyle(
                                     fontSize: 9,
                                     color: AppColors.blackLight,
