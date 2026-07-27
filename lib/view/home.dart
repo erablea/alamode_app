@@ -352,6 +352,8 @@ class _ItemListState extends State<ItemList>
   static bool _globalFilterRoomTemperature = false;
   static bool _globalFilterOnline = false;
   static bool _globalFilterAlcohol = false;
+  static bool _globalFilterLimited = false;
+  static bool _globalFilterPhysicalStore = false;
   @override
   bool get wantKeepAlive => true;
 
@@ -378,6 +380,12 @@ class _ItemListState extends State<ItemList>
 
   bool get _filterAlcohol => _globalFilterAlcohol;
   set _filterAlcohol(bool value) => _globalFilterAlcohol = value;
+
+  bool get _filterLimited => _globalFilterLimited;
+  set _filterLimited(bool value) => _globalFilterLimited = value;
+
+  bool get _filterPhysicalStore => _globalFilterPhysicalStore;
+  set _filterPhysicalStore(bool value) => _globalFilterPhysicalStore = value;
 
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
@@ -558,6 +566,16 @@ class _ItemListState extends State<ItemList>
         if (value != "1" && value != 1 && value != true) continue;
       }
 
+      if (_filterLimited) {
+        final value = item['item_limited'];
+        if (value != "1" && value != 1 && value != true) continue;
+      }
+
+      if (_filterPhysicalStore) {
+        final value = item['item_physicalstore'];
+        if (value != "1" && value != 1 && value != true) continue;
+      }
+
       filteredDocs.add(item);
     }
 
@@ -642,7 +660,9 @@ class _ItemListState extends State<ItemList>
         _filterIndividualWrapping ||
             _filterRoomTemperature ||
             _filterOnline ||
-            _filterAlcohol;
+            _filterAlcohol ||
+            _filterLimited ||
+            _filterPhysicalStore;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
@@ -735,6 +755,28 @@ class _ItemListState extends State<ItemList>
       ));
     }
 
+    if (_filterLimited) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['限定']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterLimited = false;
+          });
+        },
+      ));
+    }
+
+    if (_filterPhysicalStore) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['実店舗']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterPhysicalStore = false;
+          });
+        },
+      ));
+    }
+
     return SizedBox(
       height: 32,
       child: ListView(
@@ -812,6 +854,8 @@ class _ItemListState extends State<ItemList>
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
         currentAlcohol: _filterAlcohol,
+        currentLimited: _filterLimited,
+        currentPhysicalStore: _filterPhysicalStore,
         isAllTab: widget.genre == 'all', // allタブかどうかを新しいパラメータで渡す
       ),
     );
@@ -826,6 +870,8 @@ class _ItemListState extends State<ItemList>
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
         _filterAlcohol = result['filterAlcohol'] ?? false;
+        _filterLimited = result['filterLimited'] ?? false;
+        _filterPhysicalStore = result['filterPhysicalStore'] ?? false;
         _cachedDocs = null;
       });
     }
@@ -1053,6 +1099,8 @@ class HomeFilterDialog extends StatefulWidget {
   final bool currentRoomTemperature;
   final bool currentOnline;
   final bool currentAlcohol;
+  final bool currentLimited;
+  final bool currentPhysicalStore;
   final bool isAllTab;
 
   const HomeFilterDialog({
@@ -1065,6 +1113,8 @@ class HomeFilterDialog extends StatefulWidget {
     required this.currentRoomTemperature,
     required this.currentOnline,
     required this.currentAlcohol,
+    required this.currentLimited,
+    required this.currentPhysicalStore,
     required this.isAllTab,
   });
 
@@ -1079,6 +1129,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempRoomTemperature;
   late bool _tempOnline;
   late bool _tempAlcohol;
+  late bool _tempLimited;
+  late bool _tempPhysicalStore;
   late Future<List<String>> _genresFuture;
 /*  late RangeValues _tempFilterRatingRange; */
 
@@ -1092,6 +1144,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempRoomTemperature = widget.currentRoomTemperature;
     _tempOnline = widget.currentOnline;
     _tempAlcohol = widget.currentAlcohol;
+    _tempLimited = widget.currentLimited;
+    _tempPhysicalStore = widget.currentPhysicalStore;
     _genresFuture = _getAvailableGenres();
   }
 
@@ -1219,6 +1273,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                           'filterRoomTemperature': _tempRoomTemperature,
                           'filterOnline': _tempOnline,
                           'filterAlcohol': _tempAlcohol,
+                          'filterLimited': _tempLimited,
+                          'filterPhysicalStore': _tempPhysicalStore,
                         });
                       },
                       child: Container(
@@ -1492,6 +1548,30 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                       _tempAlcohol ? 'yes' : 'unknown',
                       constrainText: true,
                       onTap: () => setState(() => _tempAlcohol = !_tempAlcohol),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '限定',
+                      _tempLimited ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempLimited = !_tempLimited),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '実店舗',
+                      _tempPhysicalStore ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempPhysicalStore = !_tempPhysicalStore),
                     ),
                   ),
                 ],

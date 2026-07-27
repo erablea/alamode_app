@@ -26,6 +26,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   bool _filterRoomTemperature = false;
   bool _filterOnline = false;
   bool _filterAlcohol = false;
+  bool _filterLimited = false;
+  bool _filterPhysicalStore = false;
   //double _filterRatingMin = 1;
   //double _filterRatingMax = 5;
   // 並び替えオプション（homeと同じ）
@@ -125,6 +127,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         if (value != "1" && value != 1 && value != true) return false;
       }
 
+      if (_filterLimited) {
+        final value = item['item_limited'];
+        if (value != "1" && value != 1 && value != true) return false;
+      }
+
+      if (_filterPhysicalStore) {
+        final value = item['item_physicalstore'];
+        if (value != "1" && value != 1 && value != true) return false;
+      }
+
       return true;
     }).toList();
 
@@ -159,6 +171,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
         currentAlcohol: _filterAlcohol,
+        currentLimited: _filterLimited,
+        currentPhysicalStore: _filterPhysicalStore,
 /*        currentFilterRatingMin: _filterRatingMin,
         currentFilterRatingMax: _filterRatingMax, */
         isAllTab: true, // お気に入りではカテゴリーフィルターを表示
@@ -173,6 +187,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
         _filterAlcohol = result['filterAlcohol'] ?? false;
+        _filterLimited = result['filterLimited'] ?? false;
+        _filterPhysicalStore = result['filterPhysicalStore'] ?? false;
 /*        _filterRatingMin = result['filterRatingMin'];
         _filterRatingMax = result['filterRatingMax'];*/
       });
@@ -187,7 +203,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     final hasOtherFilter = _filterIndividualWrapping ||
         _filterRoomTemperature ||
         _filterOnline ||
-        _filterAlcohol;
+        _filterAlcohol ||
+        _filterLimited ||
+        _filterPhysicalStore;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
@@ -279,6 +297,30 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         onRemove: () {
           setState(() {
             _filterAlcohol = false;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterLimited) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['限定']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterLimited = false;
+          });
+          _applyFiltersAndSort();
+        },
+      ));
+    }
+
+    if (_filterPhysicalStore) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['実店舗']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterPhysicalStore = false;
           });
           _applyFiltersAndSort();
         },

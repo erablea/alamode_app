@@ -420,57 +420,70 @@ class _LoginPromptDialogState extends State<LoginPromptDialog> {
     return Dialog(
       backgroundColor: AppColors.dialogBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Image.asset(
-                'assets/images/others.png',
-                height: 100,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () => _dismiss(goLogin: true),
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-              child: const Text('ログイン / 新規登録', style: TextStyle(color: Colors.white)),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => _dismiss(),
-              child: const Text('あとで', style: TextStyle(color: AppColors.blackLight, fontSize: 13)),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。',
-              style: TextStyle(fontSize: 11, color: AppColors.blackLight, height: 1.5),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: Checkbox(
-                    value: _neverShow,
-                    onChanged: (v) => setState(() => _neverShow = v ?? false),
-                    activeColor: primary,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Center(
+                  child: Image.asset(
+                    'assets/images/others.png',
+                    height: 100,
+                    fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Text('今後表示しない', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => _dismiss(goLogin: true),
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                  child: const Text('ログイン / 新規登録', style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => _dismiss(),
+                  child: const Text('あとで', style: TextStyle(color: AppColors.blackLight, fontSize: 13)),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。',
+                  style: TextStyle(fontSize: 11, color: AppColors.blackLight, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _neverShow,
+                        onChanged: (v) => setState(() => _neverShow = v ?? false),
+                        activeColor: primary,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('今後表示しない', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                  ],
+                ),
+                const SizedBox(height: 4),
               ],
             ),
-            const SizedBox(height: 4),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IconButton(
+              icon: const Icon(Icons.close, size: 20, color: AppColors.blackLight),
+              onPressed: () => _dismiss(),
+              tooltip: '閉じる',
+            ),
+          ),
+        ],
       ),
     );
   }
