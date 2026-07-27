@@ -2447,29 +2447,66 @@ class _MyPageScreenState extends State<MyPageScreen> {
   bool _isDeletingAccount = false;
 
   Future<void> _deleteAccount() async {
+    final confirmCtrl = TextEditingController();
+    const confirmWord = '削除';
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('アカウント削除'),
-        content: const Text(
-          'アカウントを削除すると、登録したお菓子の記録・お気に入り・プロフィール情報がすべて削除されます。この操作は取り消せません。\n\n'
-          'なお、ログイン情報（メールアドレスとパスワード）自体の削除には運営側の対応が必要なため、完了までに数日いただく場合があります。その間に同じメールアドレスで再ログインした場合、データが無い状態であらためて利用を開始する形になります。\n\n'
-          '本当に削除しますか？',
-          style: TextStyle(fontSize: 13, height: 1.6),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('キャンセル')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('削除する',
-                style: TextStyle(color: AppColors.errorColor)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('アカウント削除', style: TextStyle(color: AppColors.errorColor)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'アカウントを削除すると、登録したお菓子の記録・お気に入り・プロフィール情報がすべて削除されます。この操作は取り消せません。',
+                  style: TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'ログイン情報（メールアドレスとパスワード）自体の削除には運営側の対応が必要なため、完了までに数日いただきます。その間に同じメールアドレス・パスワードで再ログインすると、データが無い状態で利用が再開されますが、その後運営側が削除を完了すると、その間に新しく作成したデータも一緒に削除されますのでご注意ください。',
+                  style: TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 16),
+                Text('確認のため「$confirmWord」と入力してください',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.blackLight)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: confirmCtrl,
+                  onChanged: (_) => setS(() {}),
+                  decoration: InputDecoration(
+                    hintText: confirmWord,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('キャンセル')),
+            ElevatedButton(
+              onPressed: confirmCtrl.text == confirmWord
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    AppColors.errorColor.withValues(alpha: 0.3),
+              ),
+              child: const Text('完全に削除する'),
+            ),
+          ],
+        ),
       ),
     );
+    confirmCtrl.dispose();
     if (confirmed != true) return;
 
     setState(() => _isDeletingAccount = true);
