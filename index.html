@@ -18,20 +18,44 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="贈った・もらったお菓子を記録して、お気に入りのお菓子を検索できるアプリ「a la mode（ア・ラ・モード）」">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="alamode_app">
+  <meta name="apple-mobile-web-app-title" content="a la mode">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>alamode_app</title>
+  <title>a la mode（ア・ラ・モード） | お菓子の記録・検索</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- OGP / Twitter Card（たたき。実際の公開URLに差し替えてください） -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="a la mode（ア・ラ・モード） | お菓子の記録・検索">
+  <meta property="og:description" content="贈った・もらったお菓子を記録して、お気に入りのお菓子を検索できるアプリ「a la mode（ア・ラ・モード）」">
+  <meta property="og:url" content="https://erablea.github.io/alamode_app/">
+  <meta property="og:image" content="https://erablea.github.io/alamode_app/icons/Icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="a la mode（ア・ラ・モード） | お菓子の記録・検索">
+  <meta name="twitter:description" content="贈った・もらったお菓子を記録して、お気に入りのお菓子を検索できるアプリ「a la mode（ア・ラ・モード）」">
+  <meta name="twitter:image" content="https://erablea.github.io/alamode_app/icons/Icon-512.png">
+
+  <!--
+    広告(Google AdSense)について:
+    このアプリはFlutter Web専用のため、モバイル専用SDKのGoogle Mobile Ads(AdMob)は
+    使えない。Web版で実際に広告を出すにはGoogle AdSenseの審査通過が必要
+    （審査にはサイトが実際に公開されている必要があるため、鶏と卵の関係になる）。
+    審査に通ったら、以下のコメントを外して自分のpublisher IDに置き換え、
+    ドメイン直下にads.txt（"google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0"）
+    を追加すること。lib/main.dartのAdUtils.buildAdBanner()は現状プレースホルダーの
+    ダミー枠なので、実際の広告枠(<ins class="adsbygoogle">)をHtmlElementView経由で
+    埋め込む実装に差し替える必要がある。
+  -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
