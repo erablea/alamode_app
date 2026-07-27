@@ -220,15 +220,11 @@ lib/
 - itemに画像が無い商品のフォールバックとして、他ユーザーが登録したuseritemの画像（本人が承認済みのもの）を表示する機能がある。これは意図的に他ユーザーの`useritem`データを一部参照する唯一の箇所。
 - `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`item_id`/`useritem_image`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする（`0007_inquiry_table.sql`内で定義）。
 
-### 要確認事項（このセッションからはSupabaseへ直接接続できないため、DBの現状を目視確認できていない）
-`who`/`useritem`/`event`/`user`テーブルの基本RLS（本人の行のみselect/insert/update/delete可）は、`supabase/migrations/`配下のファイルより前、プロジェクト初期に手動でSupabaseダッシュボード上で設定された想定で、その正確な定義がこのリポジトリ内に記録されていない。念のため、Supabase SQL Editorで以下を実行し、結果を確認することを推奨する（本人以外の行が見える・書き換えられるポリシーが無いか）。
-```sql
-select schemaname, tablename, policyname, cmd, qual, with_check
-from pg_policies
-where tablename in ('user', 'who', 'useritem', 'event', 'favorite', 'inquiry')
-order by tablename, cmd;
-```
-このアプリのクエリは全て「本人の`user_id`のみ」を前提に書かれているため、上記ポリシーが本人以外の行も許可する内容になっていないか（特にselect/update/delete）を確認してほしい。もし想定外に緩いポリシーが見つかった場合は、都度個別に修正のSQLを用意する。
+### RLS現状（2026年に`pg_policies`で確認済み）
+`user`/`who`/`useritem`/`event`/`favorite`はいずれも`《table》_own`という名前の`FOR ALL USING (auth.uid() = user_id)`ポリシー1本で保護されている。`with_check`列がnullでも問題ない: PostgreSQLの仕様上、ALL/UPDATE/INSERTポリシーで`WITH CHECK`を明示しない場合は`USING`句がそのまま`WITH CHECK`としても使われるため、insert/updateも実質的に「本人の`user_id`のみ」に制限されている。
+`useritem`には上記に加えて管理者用の`useritem_admin_select_all`（SELECT）・`useritem_admin_update_item_id`（UPDATE、いずれも`is_admin`ユーザーのみ）が追加されているが、一般ユーザーの権限を広げるものではない。
+このため、`item_image_service.dart`が以前直接`useritem`テーブルをクロスユーザーでselectしていた実装は、実際には**このRLSに阻まれて他ユーザーの承認済み画像を一件も取得できていなかった**（漏洩ではなく機能不全）。`useritem_approved_image`ビュー（postgresオーナー権限で実行されRLSの対象外）に切り替えたことで、意図通り機能するようになった。
+`inquiry`は`inquiry_insert_anyone`（INSERT, with_check=true）のみで、select系ポリシーが無いことも確認済み。
 
 ### その他、把握しているリスクと対応状況
 - **共有端末での残留データ**: 未ログイン（ゲスト）状態のMemo・お気に入りはブラウザのSharedPreferences（localStorage相当）にそのまま保存される。ログアウトしても自動では消えない（そもそもゲストデータはログイン状態と紐付いていないため）。共有PCで複数人が同じブラウザを使う場合、前の利用者のゲストデータが残る可能性がある。これは一般的なWebアプリのlocalStorageの性質上の制約であり、「新しい利用者」を検知する手段が無いため今回は対応していない。気になる場合は共有端末の利用者に「利用後はブラウザのデータを消去する」よう案内するのが現実的。
