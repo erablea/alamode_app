@@ -2166,8 +2166,14 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     if (useritemId == null) return;
     try {
       await supabase.from('useritem').update({'useritem_approved': approved}).eq('useritem_id', useritemId);
-    } catch (_) {}
-    if (mounted) setState(() => _showApprovalPrompt = false);
+      if (mounted) setState(() => _showApprovalPrompt = false);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('通信エラーのため反映できませんでした。もう一度お試しください。')),
+        );
+      }
+    }
   }
 
   Widget _buildApprovalPrompt() {
@@ -2777,16 +2783,16 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     if (result != null) {
       setState(() {
         _controllers['present_name']!.text = result['item_name'] ?? '';
-        _controllers['present_brand']!.text = result['item_brand'] ?? '';
+        _controllers['present_brand']!.text = result['_brandName'] ?? '';
         _controllers['present_price']!.text =
             Utils.formatCurrency(result['item_price10percent']);
         String? genre = result['item_category'];
         if (genre != null && genre.isNotEmpty) {
           _selectedGenres = {genre};
         }
-        if (result['item_imageurl'] != null &&
-            result['item_imageurl'].toString().isNotEmpty) {
-          _existingImageUrls = [result['item_imageurl']];
+        if (result['item_imageurl1'] != null &&
+            result['item_imageurl1'].toString().isNotEmpty) {
+          _existingImageUrls = [result['item_imageurl1']];
           _pickedFiles.clear();
           _webImages.clear();
         }
@@ -3192,17 +3198,31 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
       _isLoading = true;
     });
     try {
-      String searchField =
-          widget.searchType == SearchType.name ? 'item_name' : 'item_brand';
-      final allItems = await Supabase.instance.client
-          .from('item')
-          .select()
-          .limit(5000);
+      final results = await Future.wait([
+        Supabase.instance.client.from('item').select().limit(5000),
+        Supabase.instance.client.from('brand').select(),
+      ]);
+      final allItems = results[0];
+      final brands = results[1];
+      final brandById = {
+        for (final b in brands)
+          if (b['brand_id'] != null) b['brand_id'].toString(): b,
+      };
       final normalizedQuery = Utils.normalizeString(query);
 
       final filteredResults = List<Map<String, dynamic>>.from(allItems)
+          .map((data) {
+            final brand = brandById[data['brand_id']?.toString()];
+            return {
+              ...data,
+              '_brandName': brand?['brand_name'],
+              '_brandCompany': brand?['brand_company'],
+            };
+          })
           .where((data) {
-            final targetField = data[searchField];
+            final targetField = widget.searchType == SearchType.name
+                ? data['item_name']
+                : (data['_brandName'] ?? data['_brandCompany']);
             if (targetField == null) return false;
 
             final normalizedTarget =
@@ -3328,12 +3348,12 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                   ),
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.all(12),
-                                    leading: item['item_imageurl'] != null
+                                    leading: item['item_imageurl1'] != null
                                         ? ClipRRect(
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                             child: Image.network(
-                                              item['item_imageurl'],
+                                              item['item_imageurl1'],
                                               width: 60,
                                               height: 60,
                                               fit: BoxFit.cover,
@@ -3386,7 +3406,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            item['item_brand'] ?? '',
+                                            item['_brandName'] ?? '',
                                             style: const TextStyle(
                                               color: AppColors.blackLight,
                                               fontSize: 12,
@@ -3401,12 +3421,12 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          if (item['item_company'] != null &&
-                                              item['item_company']
+                                          if (item['_brandCompany'] != null &&
+                                              item['_brandCompany']
                                                   .toString()
                                                   .isNotEmpty)
                                             Text(
-                                              item['item_company'],
+                                              item['_brandCompany'],
                                               style: const TextStyle(
                                                 color: AppColors.blackLight,
                                                 fontSize: 11,

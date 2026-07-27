@@ -830,23 +830,26 @@ class _ItemListState extends State<ItemList>
     );
   }
 
+  // フィルター・並び替えは取得済みの全件に対してクライアント側で行っているため、
+  // 現状は真のページングではなく安全のための上限のみ設定している
+  // （価格帯フィルターの上下限や利用可能なカテゴリー一覧などをクライアント側で
+  // 算出しているため、サーバー側ページングにするには設計変更が必要）。
+  static const int _maxItemsFetched = 1000;
+
   async.Future<List<Map<String, dynamic>>> _getFilteredQuery() async {
     final data = await supabase
         .from('item')
         .select()
         .eq('item_show_on_home', true)
-        .order(_sortField, ascending: !_sortDescending);
+        .order(_sortField, ascending: !_sortDescending)
+        .limit(_maxItemsFetched);
     return data;
   }
 
   async.Future<void> _openFilterDialog() async {
-    // Supabaseからデータ取得
-    final data = await supabase.from('item').select();
-
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => HomeFilterDialog(
-        itemList: data,
         currentFilterGenre: _filterGenre, // 常に現在のフィルター状態を渡す
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
@@ -1091,7 +1094,6 @@ class ItemCard extends StatelessWidget {
 }
 
 class HomeFilterDialog extends StatefulWidget {
-  final List<Map<String, dynamic>> itemList;
   final Map<String, bool> currentFilterGenre;
   final double currentPriceMin;
   final double currentPriceMax;
@@ -1105,7 +1107,6 @@ class HomeFilterDialog extends StatefulWidget {
 
   const HomeFilterDialog({
     super.key,
-    required this.itemList,
     required this.currentFilterGenre,
     required this.currentPriceMin,
     required this.currentPriceMax,
@@ -2488,6 +2489,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               .from('item')
               .select()
               .eq('brand_id', brandId)
+              .eq('item_show_on_home', true)
               .limit(10),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {

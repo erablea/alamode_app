@@ -1603,19 +1603,20 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       case 'お菓子名':
         return sweetData['item_name'] ?? '不明';
       case '会社名':
-        return sweetData['item_company'] ?? '不明';
+        return sweetData['_brandCompany'] ?? '不明';
       case 'カテゴリー':
         return sweetData['item_category'] ?? '不明';
       case '金額':
         return '¥${Utils.formatCurrency(sweetData['item_price10percent'])}';
       case '賞味期限':
-        return sweetData['item_expiry'] ?? '不明';
+        final expiry = sweetData['item_expirydate'];
+        return expiry != null ? '$expiry日' : '不明';
       case '個包装':
-        return sweetData['item_individual_packaging'] == 1 ? 'あり' : 'なし';
+        return sweetData['item_individualwrapping'] == true ? 'あり' : 'なし';
       case '常温':
-        return sweetData['item_room_temperature'] == 1 ? '常温保存可能' : '要冷蔵・冷凍';
+        return sweetData['item_roomtemperature'] == true ? '常温保存可能' : '要冷蔵・冷凍';
       case 'オンライン購入':
-        return sweetData['item_online_purchase'] == 1 ? '購入可能' : '購入不可';
+        return sweetData['item_online'] == true ? '購入可能' : '購入不可';
       case '商品説明':
         return sweetData['item_description'] ?? '説明なし';
       case 'URLリンク':
@@ -2166,6 +2167,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   final _nameCtrl = TextEditingController();
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _loadFailed = false;
   String? _email;
   String? _gender;
   DateTime? _birthday;
@@ -2198,7 +2200,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
       _gender = profile?['user_gender'];
       final bday = profile?['user_birthday'];
       if (bday != null) _birthday = DateTime.tryParse(bday);
-    } catch (_) {}
+    } catch (_) {
+      // 読み込みに失敗した場合、空欄のまま保存できてしまうと既存データを
+      // 空で上書きしてしまうため、保存ボタンを無効化してユーザーに知らせる。
+      _loadFailed = true;
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('プロフィールの読み込みに失敗しました。再度開き直してください。')),
+            );
+          }
+        });
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     _iconIndex = prefs.getInt('user_profile_icon_${_userId}');
     if (mounted) setState(() => _isLoading = false);
@@ -2629,7 +2644,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _save,
+                      onPressed: (_isSaving || _loadFailed) ? null : _save,
                       style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14)),
                       child: _isSaving

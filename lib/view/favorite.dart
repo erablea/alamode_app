@@ -163,7 +163,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => HomeFilterDialog(
-        itemList: _itemList,
         currentFilterGenre: _filterGenre,
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,

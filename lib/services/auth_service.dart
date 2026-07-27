@@ -110,15 +110,31 @@ class AuthService {
     final migrated = prefs.getBool('data_migrated_$uid') ?? false;
     if (migrated) return;
 
+    // どのpresent_idまで移行済みかを記録し、失敗した分だけ次回再試行できる
+    // ようにする（_migratePresentItemは毎回insertするだけで重複チェックを
+    // しないため、成功済みの項目まで再送すると重複登録になってしまう）。
+    final migratedIdsKey = 'migrated_present_ids_$uid';
+    final migratedIds = (prefs.getStringList(migratedIdsKey) ?? []).toSet();
     final presentList = prefs.getStringList('present_list') ?? [];
+    var hadError = false;
     for (final item in presentList) {
       try {
         final data = Map<String, dynamic>.from(jsonDecode(item));
+        final presentId = data['present_id'] as String?;
+        if (presentId != null && migratedIds.contains(presentId)) continue;
         await _migratePresentItem(uid, data);
-      } catch (_) {}
+        if (presentId != null) migratedIds.add(presentId);
+      } catch (_) {
+        hadError = true;
+      }
     }
+    await prefs.setStringList(migratedIdsKey, migratedIds.toList());
 
-    await prefs.setBool('data_migrated_$uid', true);
+    // 1件でも移行に失敗していたら「移行済み」フラグを立てず、次回ログイン時に
+    // 再試行できるようにする（失敗分がサーバーに一切残らないまま消えるのを防ぐ）。
+    if (!hadError) {
+      await prefs.setBool('data_migrated_$uid', true);
+    }
   }
 
   Future<void> _migratePresentItem(String uid, Map<String, dynamic> data) async {
@@ -173,15 +189,22 @@ class AuthService {
     if (migrated) return;
 
     final localFavorites = prefs.getStringList('favorite') ?? [];
+    var hadError = false;
     for (final itemId in localFavorites) {
       try {
         await supabase.from('favorite').upsert(
           {'user_id': uid, 'item_id': itemId},
           onConflict: 'user_id,item_id',
         );
-      } catch (_) {}
+      } catch (_) {
+        hadError = true;
+      }
     }
 
-    await prefs.setBool('favorites_migrated_$uid', true);
+    // upsertなので次回再試行しても重複しない。1件でも失敗していたら
+    // フラグを立てず次回ログイン時に再試行する。
+    if (!hadError) {
+      await prefs.setBool('favorites_migrated_$uid', true);
+    }
   }
 }
