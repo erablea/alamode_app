@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:alamode_app/main.dart';
@@ -1592,6 +1593,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
             hintText: '正しい内容を入力してください',
             maxLines: 3,
             minLines: 2,
+            maxLength: 500,
           ),
         ],
       ),
@@ -1637,6 +1639,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: '不具合の詳細を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 24),
         _buildSendButton(() => _sendBugReport()),
@@ -1652,12 +1655,14 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: 'お名前 *',
           controller: _otherNameController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _otherEmailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: 100,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
@@ -1666,6 +1671,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: 'お問い合わせ内容を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 16),
         _buildContactDisclaimer(),
@@ -1683,17 +1689,20 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: '会社名 *',
           controller: _businessCompanyController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'ご担当者名 *',
           controller: _businessNameController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _businessEmailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: 100,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
@@ -1702,6 +1711,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: '企業様からの商品情報提供や宣伝のご活用お待ちしております。内容を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 16),
         _buildContactDisclaimer(),
@@ -1745,6 +1755,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     int maxLines = 1,
     int? minLines,
     TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1763,6 +1774,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           keyboardType: keyboardType,
           maxLines: maxLines,
           minLines: minLines,
+          maxLength: maxLength,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           style: const TextStyle(color: AppColors.blackLight),
           decoration: InputDecoration(
             border: OutlineInputBorder(
@@ -2512,6 +2525,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     title: 'ユーザー名',
                     child: TextField(
                       controller: _nameCtrl,
+                      maxLength: 30,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       decoration: InputDecoration(
                         hintText: 'ユーザー名',
                         border: OutlineInputBorder(

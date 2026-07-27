@@ -26,6 +26,9 @@ class Constants {
   static const int targetImageWidth = 1024;
   static const int memoMaxLength = 200;
   static const double maxPriceFilter = 20000;
+  static const int nameMaxLength = 40;
+  static const int brandMaxLength = 30;
+  static const int maxPrice = 9999999;
 }
 
 class Utils {
@@ -2520,7 +2523,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 controller: _whoFieldController,
                 focusNode: _whoFocusNode,
                 decoration: CommonWidgets.buildInputDecoration(label, context: context),
-                validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
+                maxLength: Constants.brandMaxLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return '必須項目です';
+                  if (value.characters.length > Constants.brandMaxLength) {
+                    return '${Constants.brandMaxLength}文字以内にしてください';
+                  }
+                  return null;
+                },
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -2876,7 +2887,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 context: context,
               ),
-              validator: (value) => value!.isEmpty ? '必須項目です' : null,
+              maxLength: Constants.nameMaxLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              validator: (value) {
+                if (value!.isEmpty) return '必須項目です';
+                if (value.characters.length > Constants.nameMaxLength) {
+                  return '${Constants.nameMaxLength}文字以内にしてください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 24),
             TextFormField(
@@ -2889,7 +2908,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 context: context,
               ),
-              validator: (value) => value!.isEmpty ? '必須項目です' : null,
+              maxLength: Constants.brandMaxLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              validator: (value) {
+                if (value!.isEmpty) return '必須項目です';
+                if (value.characters.length > Constants.brandMaxLength) {
+                  return '${Constants.brandMaxLength}文字以内にしてください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 24),
             _buildGenreSelector(),
@@ -2906,6 +2933,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       FilteringTextInputFormatter.digitsOnly,
                       _ThousandsSeparatorInputFormatter(),
                     ],
+                    validator: (value) {
+                      final raw = int.tryParse((value ?? '').replaceAll(',', ''));
+                      if (raw != null && raw > Constants.maxPrice) {
+                        return '¥${Utils.formatCurrency(Constants.maxPrice)}以下にしてください';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const Padding(
