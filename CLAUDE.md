@@ -109,6 +109,20 @@
 | `favorite_createdate` | データ作成日時 |
 | `favorite_update` | データ更新日時 |
 
+### `inquiry` テーブル（お問い合わせ、`0007_inquiry_table.sql`）
+| カラム名 | 内容 |
+|---|---|
+| `inquiry_id` | お問い合わせID (PK) |
+| `user_id` | ユーザーID (FK→auth.users, nullable。未ログインでも送信可) |
+| `inquiry_type` | `error_report` / `bug_report` / `other` / `business` |
+| `inquiry_name` | お名前（error_report/bug_reportはnull）|
+| `inquiry_email` | メールアドレス（error_report/bug_reportはnull）|
+| `inquiry_company` | 会社名（businessのみ）|
+| `inquiry_content` | お問い合わせ内容 |
+| `inquiry_createdate` | データ作成日時 |
+
+**重要**: insertのみ許可（`with check (true)`）、selectポリシーは一切無い。送信者自身を含めクライアントからは読み返せない設計にしている（お問い合わせ内容が他ユーザーへ漏れる経路自体を無くすため）。管理者はSupabaseダッシュボード（サービスロール）から直接確認する。
+
 ## ローカルストレージ (SharedPreferences) のキー
 ※現在の実装はSupabaseのfavoriteテーブルを使わずSharedPreferencesで管理している（暫定）
 
@@ -191,6 +205,33 @@ lib/
 - Favoriteタブも同様に、favorite登録商品の取得成功時に`favorite_items_cache`へ保存し、失敗時は現在お気に入り登録されているIDに絞ってキャッシュから表示する。
 - どちらもキャッシュが無い場合（初回起動でオフラインなど）は素直にエラー表示のままとする（無理にダミーデータを出さない）。
 
-### ログイン・新規登録（`lib/view/auth.dart`）
-- `_parseError()`に`_isNetworkError()`判定を追加し、通信エラー（`SocketException`/`Failed to fetch`/`ClientException`/`TimeoutException`等を含む場合）は「ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。」という明確な案内を表示する。
-- お問い合わせフォーム（`user.dart`）は`mailto:`リンクでユーザーのメールアプリを起動する方式のため、Supabase等への直接の通信は発生しない。そのためオフライン専用の案内は追加していない（`canLaunchUrl`が失敗した場合の既存メッセージのみ）。
+### ログイン・新規登録・お問い合わせ（`lib/view/auth.dart` / `lib/view/user.dart`）
+- `_parseError()`（auth.dart）・`_submitInquiry()`（user.dart）双方に`_isNetworkError()`判定を実装し、通信エラー（`SocketException`/`Failed to fetch`/`ClientException`/`TimeoutException`等を含む場合）は「ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。」という明確な案内を表示する。
+- お問い合わせフォームは以前`mailto:`リンクでメールアプリを起動する方式だったが、`inquiry`テーブルへ直接insertする方式に変更した（メールアプリが無い環境でも送信できるようにするため）。
+
+## セキュリティ・プライバシー（他ユーザーの情報が漏れないための対策）
+
+### クライアント側の多重防御（RLSに加えて、アプリ自身も他人の行を操作できないようにする）
+以下は本来Supabase側のRLS（Row Level Security）で保証されるべきだが、RLSの設定不備があった場合の保険として、Dartコード側でも明示的に`user_id`で絞り込んでいる。
+- `memo.dart`の`_updatePresentInSupabase`/`_deletePresentFromSupabase`/`_respondToApproval`: `useritem`/`event`のupdate・deleteに`.eq('user_id', uid)`を必ず付与。
+- `favorite_service.dart`の`toggle()`: `favorite`のdeleteに`.eq('user_id', uid)`を必ず付与。
+
+### `useritem_approved_image`ビュー（`item_image_service.dart`が使用）
+- itemに画像が無い商品のフォールバックとして、他ユーザーが登録したuseritemの画像（本人が承認済みのもの）を表示する機能がある。これは意図的に他ユーザーの`useritem`データを一部参照する唯一の箇所。
+- `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`item_id`/`useritem_image`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする（`0007_inquiry_table.sql`内で定義）。
+
+### 要確認事項（このセッションからはSupabaseへ直接接続できないため、DBの現状を目視確認できていない）
+`who`/`useritem`/`event`/`user`テーブルの基本RLS（本人の行のみselect/insert/update/delete可）は、`supabase/migrations/`配下のファイルより前、プロジェクト初期に手動でSupabaseダッシュボード上で設定された想定で、その正確な定義がこのリポジトリ内に記録されていない。念のため、Supabase SQL Editorで以下を実行し、結果を確認することを推奨する（本人以外の行が見える・書き換えられるポリシーが無いか）。
+```sql
+select schemaname, tablename, policyname, cmd, qual, with_check
+from pg_policies
+where tablename in ('user', 'who', 'useritem', 'event', 'favorite', 'inquiry')
+order by tablename, cmd;
+```
+このアプリのクエリは全て「本人の`user_id`のみ」を前提に書かれているため、上記ポリシーが本人以外の行も許可する内容になっていないか（特にselect/update/delete）を確認してほしい。もし想定外に緩いポリシーが見つかった場合は、都度個別に修正のSQLを用意する。
+
+### その他、把握しているリスクと対応状況
+- **共有端末での残留データ**: 未ログイン（ゲスト）状態のMemo・お気に入りはブラウザのSharedPreferences（localStorage相当）にそのまま保存される。ログアウトしても自動では消えない（そもそもゲストデータはログイン状態と紐付いていないため）。共有PCで複数人が同じブラウザを使う場合、前の利用者のゲストデータが残る可能性がある。これは一般的なWebアプリのlocalStorageの性質上の制約であり、「新しい利用者」を検知する手段が無いため今回は対応していない。気になる場合は共有端末の利用者に「利用後はブラウザのデータを消去する」よう案内するのが現実的。
+- **画像はクロスデバイス同期されない**: 画像は実際にはSupabase Storage等にアップロードされておらず、ブラウザのSharedPreferences内にBase64で保存され、そのローカルキー文字列だけが`useritem_image`としてサーバーに保存されている。そのため別端末・別ブラウザからは同じ画像が見えない（漏洩ではなく、逆に「見えなさすぎる」機能不足）。将来的に画像を本当に共有・同期したい場合はSupabase Storageへの実アップロードに変更する必要がある。
+- **`user_name`のデフォルト値がメールアドレス**: 新規登録直後、プロフィール名を編集するまでは`user.user_name`にメールアドレスがそのまま入る（`auth_service.dart`の`_ensureUserRecord`）。この値は本人のMyPageScreen以外には一切表示されないコードになっているため現状漏洩経路は無いが、`user`テーブルのRLSが正しく本人限定になっていることが前提となる（上記の要確認事項を参照）。
+- **admin_app側のRLS**: item/brand/useritemへの管理者権限（is_admin）による書き込み・全件参照は`admin_app`側の関心事のため今回のセッションでは対象外。ただしalamode_app側の`useritem`テーブルに対する管理者向けポリシー（`useritem_admin_select_all`等、`0001_admin_and_favorites.sql`）と、今回追加した`useritem_approved_image`ビューは独立しているため、互いに干渉しない。

@@ -970,7 +970,7 @@ class PresentManagementService {
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_image': data['present_imageurl'],
       'useritem_update': DateTime.now().toIso8601String(),
-    }).eq('useritem_id', useritemId);
+    }).eq('useritem_id', useritemId).eq('user_id', uid);
     await supabase.from('event').update({
       'event_how': data['present_type'] == 'received' ? 'treat' : 'present',
       'event_reaction_rating': data['present_reaction'] ?? 0,
@@ -978,22 +978,27 @@ class PresentManagementService {
       'who_id': whoId,
       'event_date': data['present_date'],
       'event_update': DateTime.now().toIso8601String(),
-    }).eq('event_id', eventId);
+    }).eq('event_id', eventId).eq('user_id', uid);
   }
 
+  // user_idでの絞り込みはRLSに加えたクライアント側の多重防御。
+  // RLSの設定に不備があっても、このアプリ自身が他ユーザーの行を
+  // 更新・削除できないようにする。
   Future<void> _deletePresentFromSupabase(String presentId) async {
+    final uid = AuthService.instance.userId!;
     final eventData = await supabase
         .from('event')
         .select('useritem_id')
         .eq('event_id', presentId)
+        .eq('user_id', uid)
         .maybeSingle();
-    await supabase.from('event').delete().eq('event_id', presentId);
+    await supabase.from('event').delete().eq('event_id', presentId).eq('user_id', uid);
     if (eventData != null) {
       final useritemId = eventData['useritem_id'];
       if (useritemId != null) {
         final others = await supabase.from('event').select('event_id').eq('useritem_id', useritemId);
         if ((others as List).isEmpty) {
-          await supabase.from('useritem').delete().eq('useritem_id', useritemId);
+          await supabase.from('useritem').delete().eq('useritem_id', useritemId).eq('user_id', uid);
         }
       }
     }
@@ -2318,7 +2323,12 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     final useritemId = widget.initialPresent?['_useritem_id'];
     if (useritemId == null) return;
     try {
-      await supabase.from('useritem').update({'useritem_approved': approved}).eq('useritem_id', useritemId);
+      final uid = AuthService.instance.userId!;
+      await supabase
+          .from('useritem')
+          .update({'useritem_approved': approved})
+          .eq('useritem_id', useritemId)
+          .eq('user_id', uid);
       if (mounted) setState(() => _showApprovalPrompt = false);
     } catch (_) {
       if (mounted) {

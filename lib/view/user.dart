@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
@@ -1871,9 +1870,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】情報の間違い報告',
-        body: _buildErrorReportEmailBody(),
+      await _submitInquiry(
+        type: 'error_report',
+        content: _buildErrorReportEmailBody(),
       );
     }
   }
@@ -1890,9 +1889,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】不具合報告',
-        body: '不具合の内容：\n${_bugReportController.text}',
+      await _submitInquiry(
+        type: 'bug_report',
+        content: '不具合の内容：\n${_bugReportController.text}',
       );
     }
   }
@@ -1919,10 +1918,11 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】その他問い合わせ',
-        body:
-            'お名前：${_otherNameController.text}\nメールアドレス：${_otherEmailController.text}\nお問い合わせ内容：\n${_otherInquiryController.text}',
+      await _submitInquiry(
+        type: 'other',
+        name: _otherNameController.text,
+        email: _otherEmailController.text,
+        content: _otherInquiryController.text,
       );
     }
   }
@@ -1951,10 +1951,12 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】企業様からのお問い合わせ',
-        body:
-            '会社名：${_businessCompanyController.text}\nご担当者名：${_businessNameController.text}\nメールアドレス：${_businessEmailController.text}\nお問い合わせ内容：\n${_businessController.text}',
+      await _submitInquiry(
+        type: 'business',
+        company: _businessCompanyController.text,
+        name: _businessNameController.text,
+        email: _businessEmailController.text,
+        content: _businessController.text,
       );
     }
   }
@@ -2061,37 +2063,56 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
   }
 
-  static const String _contactEmail = 'alamode.jpn@gmail.com';
+  bool _isNetworkError(String error) {
+    const patterns = [
+      'SocketException',
+      'Failed to fetch',
+      'ClientException',
+      'Connection failed',
+      'Connection refused',
+      'Failed host lookup',
+      'Network is unreachable',
+      'TimeoutException',
+      'XMLHttpRequest',
+    ];
+    return patterns.any((p) => error.contains(p));
+  }
 
-  Future<void> _sendEmail(
-      {required String subject, required String body}) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: _contactEmail,
-      query: Uri(queryParameters: {'subject': subject, 'body': body}).query,
-    );
+  Future<void> _submitInquiry({
+    required String type,
+    required String content,
+    String? name,
+    String? email,
+    String? company,
+  }) async {
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メールアプリを起動しました。内容をご確認のうえ送信してください。'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _clearForm();
-        setState(() => _expandedSection = -1);
-      } else {
-        if (!mounted) return;
-        _showValidationError('メールアプリを起動できませんでした');
-      }
-    } catch (e) {
+      await supabase.from('inquiry').insert({
+        'inquiry_type': type,
+        'inquiry_name': name,
+        'inquiry_email': email,
+        'inquiry_company': company,
+        'inquiry_content': content,
+        'user_id':
+            AuthService.instance.isLoggedIn ? AuthService.instance.userId : null,
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('送信しました。内容によっては返信が届かない場合がございます。'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _clearForm();
+      setState(() => _expandedSection = -1);
+    } catch (e) {
+      if (!mounted) return;
+      final message = _isNetworkError(e.toString())
+          ? 'ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。'
+          : '送信に失敗しました: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('送信に失敗しました: $e'),
+          content: Text(message),
           backgroundColor: AppColors.errorColor,
           behavior: SnackBarBehavior.floating,
         ),
