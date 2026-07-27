@@ -117,6 +117,8 @@
 | `favorite` | StringList | お気に入りitem_idの一覧 |
 | `present_list` | StringList | Memoタブの記録（JSONエンコード）|
 | `memo_show_sent` | bool | Memoタブの最後のタブ状態（贈った/貰った）|
+| `pending_sync_presents` | StringList | ログイン中ユーザーがオフライン等でSupabase保存に失敗した際の再送信待ちキュー（JSONエンコード）。保存・一覧取得のたびに自動フラッシュされる |
+| `presents_cache_$uid` | String(JSON) | ログイン中ユーザーの最後に取得成功したMemo一覧のキャッシュ（オフライン時のフォールバック表示用）|
 
 ## ファイル構成
 ```
@@ -140,3 +142,42 @@ lib/
 - Supabase Realtimeの`.stream()`は使わず`.select()`+FutureBuilderを使う
 - Flutter webでhot reload（r）ではフォントが反映されないことがある → フルリスタート（R）
 - `flutter clean && flutter pub get && flutter run -d chrome` でクリーンビルド
+
+## 文字数・数値の上限（管理者向け情報。アプリ内UIには一切表示しない）
+入力欄にはそれぞれ`maxLength`（`MaxLengthEnforcement.enforced`でハード制限）または金額・日数の上限バリデーションを設定している。制限値を変更する際は、下表と実装（`Constants`クラスや各フォームのバリデータ）の両方を必ず同期させること。
+
+### alamode_app（`lib/view/memo.dart` / `lib/view/user.dart`）
+| 画面・欄 | 上限 | 実装場所 |
+|---|---|---|
+| お菓子の名前（present_name） | 40文字 | `Constants.nameMaxLength` |
+| ブランド・会社名（present_brand） | 30文字 | `Constants.brandMaxLength` |
+| 相手の名前（who） | 30文字 | `Constants.brandMaxLength`（共用）|
+| 金額（present_price） | ¥9,999,999 | `Constants.maxPrice` |
+| メモ（present_memo） | 200文字 | `Constants.memoMaxLength` |
+| プロフィール名（MyPageScreen） | 30文字 | `user.dart`内リテラル |
+| お問い合わせ：お名前 | 30文字 | `user.dart`内リテラル |
+| お問い合わせ：メールアドレス | 100文字 | `user.dart`内リテラル |
+| お問い合わせ：お問い合わせ内容／正しい内容／不具合の内容 | 500文字 | `user.dart`内リテラル |
+| 企業向け問い合わせ：会社名／ご担当者名 | 30文字 | `user.dart`内リテラル |
+| 企業向け問い合わせ：メールアドレス | 100文字 | `user.dart`内リテラル |
+| 企業向け問い合わせ：お問い合わせ内容 | 500文字 | `user.dart`内リテラル |
+
+### admin_app（`lib/view/item/item_form_screen.dart` / `lib/view/brand/brand_form_screen.dart` / `lib/widgets/common_widgets.dart`）
+| 画面・欄 | 上限 | 実装場所 |
+|---|---|---|
+| 商品名（item_name） | 40文字 | `item_form_screen.dart`内リテラル |
+| ブランド・会社名（Autocomplete入力欄） | 30文字 | `item_form_screen.dart`内リテラル |
+| 価格（税抜／税込10%） | ¥9,999,999 | `item_form_screen.dart`内バリデータ |
+| 賞味期限（item_expirydate） | 999日 | `item_form_screen.dart`内バリデータ |
+| 商品説明（item_description） | 300文字 | `item_form_screen.dart`内リテラル |
+| コピーライト表記（item_copyright） | 150文字 | `item_form_screen.dart`内リテラル |
+| ブランド名（brand_name） | 30文字 | `brand_form_screen.dart`内リテラル |
+| 会社名（brand_company） | 30文字 | `brand_form_screen.dart`内リテラル |
+| 公式サイトURL系（`UrlInputField`共通ウィジェット、brand/item両方で使用） | 500文字 | `common_widgets.dart`の`UrlInputField` |
+
+## オフライン時のデータ保護（Memoタブ）
+- ログイン中ユーザーがMemoを新規保存しようとした際にSupabaseへの通信が失敗した場合、`PresentManagementService.savePresent()`は例外を投げる代わりに`pending_sync_presents`（SharedPreferences）へキューイングし、`true`（オフライン保留）を返す。データは消えない。
+- キューは「保存時」「一覧取得時」など通信の機会があるたびに`syncPendingPresents()`で自動フラッシュを試みる（`connectivity_plus`等の追加パッケージには依存しない、日和見的な同期）。
+- 一覧取得（`_getAllPresentsFromSupabase`）がオフライン等で失敗した場合は、直近成功時にキャッシュした`presents_cache_$uid`を表示にフォールバックする（何も出ない状態を避けるため）。
+- 保留中のMemoはカードのヘッダーに雲に斜線のアイコン（オフライン保存中）で示される。
+- 更新（updatePresent）・削除（deletePresent）の失敗時は現状フォームを閉じない（入力内容は保持される）のみで、上記のような自動キュー・再送信の対象にはしていない（新規保存のみ対応）。

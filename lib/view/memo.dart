@@ -22,6 +22,7 @@ final presentLogger = Logger('PresentManagement');
 
 class Constants {
   static const String presentListKey = 'present_list';
+  static const String pendingSyncPresentsKey = 'pending_sync_presents';
   static const int maxImageSize = 1024 * 1024; // 1MB
   static const int targetImageWidth = 1024;
   static const int memoMaxLength = 200;
@@ -638,10 +639,19 @@ class PresentManagementService {
     }
   }
 
-  Future<void> savePresent(Map<String, dynamic> presentData) async {
+  /// 戻り値はtrueの場合、通信エラーのためオフラインキューに保存したことを示す
+  /// （データ自体は失われておらず、次回オンライン時に自動で同期される）。
+  Future<bool> savePresent(Map<String, dynamic> presentData) async {
     if (AuthService.instance.isLoggedIn) {
-      await _savePresentToSupabase(presentData);
-      return;
+      try {
+        await _savePresentToSupabase(presentData);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('保存に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingPresent(presentData);
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -650,9 +660,50 @@ class PresentManagementService {
       presentData['present_createdate'] ??= DateTime.now().toIso8601String();
       presentList.add(jsonEncode(presentData));
       await prefs.setStringList(Constants.presentListKey, presentList);
+      return false;
     } catch (e) {
       throw Exception('保存に失敗しました: $e');
     }
+  }
+
+  Future<void> _queuePendingPresent(Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    data['present_id'] ??= Utils.generateUniqueId();
+    data['present_createdate'] ??= DateTime.now().toIso8601String();
+    pending.add(jsonEncode(data));
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, pending);
+  }
+
+  /// オフラインキューに溜まった未同期データをSupabaseへ反映する。
+  /// 保存や一覧取得のたびに（＝通信の機会があるたびに）呼び出すことで、
+  /// connectivity_plus等の追加パッケージなしに「オンライン復帰時の自動同期」を実現する。
+  Future<void> syncPendingPresents() async {
+    if (!AuthService.instance.isLoggedIn) return;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    if (pending.isEmpty) return;
+    final remaining = <String>[];
+    for (final raw in pending) {
+      try {
+        final data = Map<String, dynamic>.from(jsonDecode(raw));
+        await _savePresentToSupabase(data);
+      } catch (e) {
+        presentLogger.warning('保留中データの同期に失敗しました: $e');
+        remaining.add(raw);
+      }
+    }
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, remaining);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPendingPresentsAsDisplayItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    return pending.map((raw) {
+      final data = Map<String, dynamic>.from(jsonDecode(raw));
+      data['_pendingSync'] = true;
+      return data;
+    }).toList();
   }
 
   Future<void> updatePresent(Map<String, dynamic> presentData) async {
@@ -703,6 +754,7 @@ class PresentManagementService {
 
   Future<List<Map<String, dynamic>>> getAllPresents() async {
     if (AuthService.instance.isLoggedIn) {
+      await syncPendingPresents();
       return _getAllPresentsFromSupabase();
     }
     try {
@@ -719,17 +771,29 @@ class PresentManagementService {
 
   Future<List<Map<String, dynamic>>> _getAllPresentsFromSupabase() async {
     final uid = AuthService.instance.userId!;
+    final cacheKey = 'presents_cache_$uid';
+    final prefs = await SharedPreferences.getInstance();
+    List<Map<String, dynamic>> results;
     try {
       final data = await supabase
           .from('event')
           .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_alcohol, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
           .eq('user_id', uid)
           .order('event_createdate', ascending: false);
-      return (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
+      results = (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
+      // 次回オフライン時に表示するためのローカルキャッシュ。
+      await prefs.setString(cacheKey, jsonEncode(results));
     } catch (e) {
-      presentLogger.warning('Supabaseからの読み込みに失敗: $e');
-      return [];
+      presentLogger.warning('Supabaseからの読み込みに失敗。ローカルキャッシュを表示します: $e');
+      final cached = prefs.getString(cacheKey);
+      results = cached == null
+          ? []
+          : (jsonDecode(cached) as List)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
     }
+    final pendingItems = await _loadPendingPresentsAsDisplayItems();
+    return [...pendingItems, ...results];
   }
 
   static Map<String, dynamic> _supabaseToPresent(Map<String, dynamic> event) {
@@ -1412,6 +1476,13 @@ class _PresentListState extends State<PresentList> {
                 present['present_date'] ?? '',
                 style: const TextStyle(fontSize: 12, color: AppColors.blackLight),
               ),
+              if (present['_pendingSync'] == true) ...[
+                const SizedBox(width: 6),
+                const Tooltip(
+                  message: 'オフライン保存中（オンラインになると自動で同期されます）',
+                  child: Icon(Icons.cloud_off, size: 13, color: AppColors.blackLight),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 3),
@@ -2684,10 +2755,18 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_memo': _controllers['present_memo']!.text,
       };
 
+      bool wasQueuedOffline = false;
       if (widget.initialPresent != null) {
         await widget.presentService.updatePresent(presentData);
       } else {
-        await widget.presentService.savePresent(presentData);
+        wasQueuedOffline = await widget.presentService.savePresent(presentData);
+      }
+      if (wasQueuedOffline && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('オフラインのため保存を保留しました。オンラインになると自動で反映されます。'),
+          ),
+        );
       }
       Navigator.pop(context, true);
     } catch (e) {
