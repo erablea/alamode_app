@@ -86,7 +86,8 @@ class _UserScreenState extends State<UserScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    color:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -96,7 +97,8 @@ class _UserScreenState extends State<UserScreen> {
                     children: [
                       GestureDetector(
                         onTap: () async {
-                          final currentIndex = await PersonIconService.getIconIndex(person);
+                          final currentIndex =
+                              await PersonIconService.getIconIndex(person);
                           final result = await showDialog<int>(
                             context: context,
                             builder: (_) => PersonIconPickerDialog(
@@ -105,11 +107,15 @@ class _UserScreenState extends State<UserScreen> {
                             ),
                           );
                           if (result != null) {
-                            await PersonIconService.saveIconIndex(person, result);
+                            await PersonIconService.saveIconIndex(
+                                person, result);
                             setState(() {});
                           }
                         },
-                        child: PersonAvatar(personName: person, radius: 22, showEditBadge: true),
+                        child: PersonAvatar(
+                            personName: person,
+                            radius: 22,
+                            showEditBadge: true),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -149,14 +155,16 @@ class _UserScreenState extends State<UserScreen> {
                               Icon(
                                 Icons.card_giftcard_outlined,
                                 size: 48,
-                                color: AppColors.blackLight.withValues(alpha: 0.5),
+                                color:
+                                    AppColors.blackLight.withValues(alpha: 0.5),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'まだプレゼントの記録がありません',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.blackLight.withValues(alpha: 0.7),
+                                  color: AppColors.blackLight
+                                      .withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -203,9 +211,11 @@ class _UserScreenState extends State<UserScreen> {
                                               ),
                                             )
                                           : ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               child: CategoryPlaceholder(
-                                                category: present['present_genre'],
+                                                category:
+                                                    present['present_genre'],
                                                 height: 60,
                                               ),
                                             ),
@@ -324,7 +334,8 @@ class _UserScreenState extends State<UserScreen> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      backgroundColor:
+                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -404,12 +415,19 @@ class _UserScreenState extends State<UserScreen> {
             children: [
               Center(
                 child: Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(color: AppColors.greyDark, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.greyDark,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-              const Text('テーマカラー', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blackDark)),
+              const Text('テーマカラー',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blackDark)),
               const SizedBox(height: 16),
               ...List.generate(appThemes.length, (i) {
                 final theme = appThemes[i];
@@ -423,29 +441,42 @@ class _UserScreenState extends State<UserScreen> {
                     setState(() {});
                   },
                   child: Container(
-                    margin: EdgeInsets.only(bottom: i < appThemes.length - 1 ? 10 : 0),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    margin: EdgeInsets.only(
+                        bottom: i < appThemes.length - 1 ? 10 : 0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? color.withValues(alpha: 0.08) : AppColors.greyLight,
+                      color: isSelected
+                          ? color.withValues(alpha: 0.08)
+                          : AppColors.greyLight,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
+                      border: Border.all(
+                          color: isSelected ? color : Colors.transparent,
+                          width: 1.5),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 28, height: 20,
-                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+                          width: 28,
+                          height: 20,
+                          decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(4)),
                         ),
                         const SizedBox(width: 14),
-                        Expanded(child: Text(
+                        Expanded(
+                            child: Text(
                           theme['name'] as String,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                             color: isSelected ? color : AppColors.blackDark,
                           ),
                         )),
-                        if (isSelected) Icon(Icons.check_circle, color: color, size: 18),
+                        if (isSelected)
+                          Icon(Icons.check_circle, color: color, size: 18),
                       ],
                     ),
                   ),
@@ -522,8 +553,8 @@ class _UserScreenState extends State<UserScreen> {
                   height: 120,
                   child: Center(
                     child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor),
                     ),
                   ),
                 )
@@ -536,13 +567,15 @@ class _UserScreenState extends State<UserScreen> {
                             Icon(
                               Icons.person_add_outlined,
                               size: 48,
-                              color: AppColors.blackLight.withValues(alpha: 0.5),
+                              color:
+                                  AppColors.blackLight.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'まだ記録がありません',
                               style: TextStyle(
-                                color: AppColors.blackLight.withValues(alpha: 0.7),
+                                color:
+                                    AppColors.blackLight.withValues(alpha: 0.7),
                                 fontSize: 14,
                               ),
                             ),
@@ -550,7 +583,8 @@ class _UserScreenState extends State<UserScreen> {
                             Text(
                               'Memoタブからお菓子を記録すると、ここに表示されます',
                               style: TextStyle(
-                                color: AppColors.blackLight.withValues(alpha: 0.5),
+                                color:
+                                    AppColors.blackLight.withValues(alpha: 0.5),
                                 fontSize: 12,
                               ),
                               textAlign: TextAlign.center,
@@ -592,7 +626,8 @@ class _UserScreenState extends State<UserScreen> {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
-                                    PersonAvatar(personName: person, radius: 22),
+                                    PersonAvatar(
+                                        personName: person, radius: 22),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
@@ -653,10 +688,15 @@ class _UserScreenState extends State<UserScreen> {
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(color: AppColors.shadowColor, blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(
+              color: AppColors.shadowColor,
+              blurRadius: 12,
+              offset: Offset(0, 4)),
         ],
       ),
-      child: isLoggedIn ? _buildLoggedInTile(primary) : _buildLoggedOutTile(primary),
+      child: isLoggedIn
+          ? _buildLoggedInTile(primary)
+          : _buildLoggedOutTile(primary),
     );
   }
 
@@ -666,7 +706,8 @@ class _UserScreenState extends State<UserScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () async {
-          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyPageScreen()));
+          await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const MyPageScreen()));
           setState(() {});
         },
         child: Padding(
@@ -676,18 +717,23 @@ class _UserScreenState extends State<UserScreen> {
               FutureBuilder<int?>(
                 future: () {
                   final uid = AuthService.instance.currentUser?.id;
-                  return uid != null ? PersonIconService.getSelfIconIndex(uid) : Future.value(null);
+                  return uid != null
+                      ? PersonIconService.getSelfIconIndex(uid)
+                      : Future.value(null);
                 }(),
                 builder: (context, snapshot) {
                   final iconIndex = snapshot.data;
-                  if (iconIndex != null && iconIndex >= 0 && iconIndex < kPersonIcons.length) {
+                  if (iconIndex != null &&
+                      iconIndex >= 0 &&
+                      iconIndex < kPersonIcons.length) {
                     return Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: kPersonIcons[iconIndex].bgColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(kPersonIcons[iconIndex].emoji, style: const TextStyle(fontSize: 20)),
+                      child: Text(kPersonIcons[iconIndex].emoji,
+                          style: const TextStyle(fontSize: 20)),
                     );
                   }
                   return Container(
@@ -696,7 +742,8 @@ class _UserScreenState extends State<UserScreen> {
                       color: primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.account_circle_outlined, color: primary, size: 20),
+                    child: Icon(Icons.account_circle_outlined,
+                        color: primary, size: 20),
                   );
                 },
               ),
@@ -705,12 +752,19 @@ class _UserScreenState extends State<UserScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('ログイン中', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                    const Text('ログイン中',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.blackLight)),
                     FutureBuilder<String?>(
                       future: AuthService.instance.getUserName(),
                       builder: (context, snap) => Text(
-                        snap.data ?? AuthService.instance.currentUser?.email ?? '',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.blackDark),
+                        snap.data ??
+                            AuthService.instance.currentUser?.email ??
+                            '',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.blackDark),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -719,7 +773,9 @@ class _UserScreenState extends State<UserScreen> {
               ),
               TextButton(
                 onPressed: _logout,
-                child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor, fontSize: 13)),
+                child: const Text('ログアウト',
+                    style:
+                        TextStyle(color: AppColors.errorColor, fontSize: 13)),
               ),
             ],
           ),
@@ -751,16 +807,25 @@ class _UserScreenState extends State<UserScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ログイン / 新規登録', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.blackDark)),
+                    Text('ログイン / 新規登録',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.blackDark)),
                     SizedBox(height: 2),
-                    Text('記録を端末間で引き継ぐことができます', style: TextStyle(fontSize: 12, color: AppColors.blackLight)),
+                    Text('記録を端末間で引き継ぐことができます',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.blackLight)),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(6)),
-                child: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.blackLight),
+                decoration: BoxDecoration(
+                    color: AppColors.greyLight,
+                    borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.arrow_forward_ios,
+                    size: 14, color: AppColors.blackLight),
               ),
             ],
           ),
@@ -787,10 +852,13 @@ class _UserScreenState extends State<UserScreen> {
         title: const Text('ログアウト'),
         content: const Text('ログアウトしますか？\nログアウト後もローカルのデータは引き続き閲覧できます。'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('キャンセル')),
+          TextButton(
+              onPressed: () => Navigator.pop(_, false),
+              child: const Text('キャンセル')),
           TextButton(
             onPressed: () => Navigator.pop(_, true),
-            child: const Text('ログアウト', style: TextStyle(color: AppColors.errorColor)),
+            child: const Text('ログアウト',
+                style: TextStyle(color: AppColors.errorColor)),
           ),
         ],
       ),
@@ -880,7 +948,9 @@ class _UserScreenState extends State<UserScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -951,10 +1021,12 @@ class _UserScreenState extends State<UserScreen> {
         screen = _buildContactScreen();
         break;
       case '運営会社・利用規約':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsScreen()));
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const TermsScreen()));
         return;
       case 'プライバシーポリシー':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+        Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
         return;
       default:
         screen = Scaffold(
@@ -1024,17 +1096,17 @@ class _UserScreenState extends State<UserScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: const Text(
-          '「今年の帰省は何のお土産を持って行こう？ 前回は何を贈ったのだったっけ？」「この前食べたあのお菓子、とっても美味しかったけど、似たお菓子を開拓したいなぁ」\n\n'
-          'このアプリは、大切な人への贈り物や、自分にとってのご褒美を記録するために作られました。\n\n'
-          '「ア・ラ・モード」は、フランス語で「流行の」「おしゃれな」という意味。日本では「プリン・ア・ラ・モード」を思い浮かべる人が多いと思います。\n'
-          'たくさんのキラキラしたお菓子を、一つのお皿にギュッと詰め込んだアプリにしたいという想いから名前をつけました。\n\n'
-          'これからも皆様に使いやすく気に入っていただけるアプリになるよう、アップデートして参ります。',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.blackDark,
-            height: 1.7,
+            '「今年の帰省は何のお土産を持って行こう？ 前回は何を贈ったのだったっけ？」「この前食べたあのお菓子、とっても美味しかったけど、似たお菓子を開拓したいなぁ」\n\n'
+            'このアプリは、大切な人への贈り物や、自分にとってのご褒美を記録するために作られました。\n\n'
+            '「ア・ラ・モード」は、フランス語で「流行の」「おしゃれな」という意味。日本では「プリン・ア・ラ・モード」を思い浮かべる人が多いと思います。\n'
+            'たくさんのキラキラしたお菓子を、一つのお皿にギュッと詰め込んだアプリにしたいという想いから名前をつけました。\n\n'
+            'これからも皆様に使いやすく気に入っていただけるアプリになるよう、アップデートして参ります。',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.blackDark,
+              height: 1.7,
+            ),
           ),
-        ),
         ),
         const SizedBox(height: 24),
         // イラスト挿入予定
@@ -1057,9 +1129,9 @@ class _UserScreenState extends State<UserScreen> {
         ),
         const SizedBox(height: 16),
         _buildFeatureItem(context, Icons.search, '商品検索',
-            'おすすめ商品を編集部が随時更新しています。お気に入りをして贈り物やご褒美の参考にしよう'),
-        _buildFeatureItem(context, Icons.star_outline, '反応や評価を記録',
-            'Memoタブから贈った時の反応や自己評価を5段階で記録できます'),
+            'おすすめ商品を編集部が随時更新しています。お気に入りをして、贈り物やご褒美の参考にできます'),
+        _buildFeatureItem(
+            context, Icons.edit, '反応や評価を記録', 'Memoタブから贈った時の反応や自己評価を5段階で記録できます'),
         _buildFeatureItem(context, Icons.people_outline, '人別管理',
             'Memoタブで記録すると、贈った人・貰った人ごとに履歴を管理できます'),
       ],
@@ -1245,7 +1317,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -2030,7 +2104,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
   }
 }
 
-Widget _buildFeatureItem(BuildContext context, IconData icon, String title, String description) {
+Widget _buildFeatureItem(
+    BuildContext context, IconData icon, String title, String description) {
   return Container(
     margin: const EdgeInsets.only(bottom: 16),
     padding: const EdgeInsets.all(16),
@@ -2111,7 +2186,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<void> _load() async {
     final user = AuthService.instance.currentUser;
-    if (user == null) { setState(() => _isLoading = false); return; }
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
     _userId = user.id;
     _email = user.email;
     try {
@@ -2138,13 +2216,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
       }).eq('user_id', uid);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存しました'), behavior: SnackBarBehavior.floating),
+          const SnackBar(
+              content: Text('保存しました'), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('保存に失敗しました: $e'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
         );
       }
     } finally {
@@ -2154,13 +2236,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<bool> _checkDailyLimit(String key) async {
     final today = DateTime.now();
-    final dateStr = '${today.year}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}';
+    final dateStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final prefs = await SharedPreferences.getInstance();
     final count = prefs.getInt('${key}_$dateStr') ?? 0;
     if (count >= 3) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('本日の変更上限（3回）に達しました'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+          const SnackBar(
+              content: Text('本日の変更上限（3回）に達しました'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
         );
       }
       return false;
@@ -2184,12 +2270,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
           decoration: InputDecoration(
             labelText: '新しいメールアドレス',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(_), child: const Text('キャンセル')),
-          ElevatedButton(onPressed: () => Navigator.pop(_, ctrl.text.trim()), child: const Text('変更')),
+          TextButton(
+              onPressed: () => Navigator.pop(_), child: const Text('キャンセル')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(_, ctrl.text.trim()),
+              child: const Text('変更')),
         ],
       ),
     );
@@ -2199,13 +2290,18 @@ class _MyPageScreenState extends State<MyPageScreen> {
       await supabase.auth.updateUser(UserAttributes(email: newEmail));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('確認メールを送信しました'), behavior: SnackBarBehavior.floating),
+          const SnackBar(
+              content: Text('確認メールを送信しました'),
+              behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('変更に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('変更に失敗しました: $e'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -2226,41 +2322,53 @@ class _MyPageScreenState extends State<MyPageScreen> {
     String? error;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('パスワード変更'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: newCtrl,
-              obscureText: true,
-              decoration: dialogFieldDecoration('新しいパスワード（10文字以上）'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmCtrl,
-              obscureText: true,
-              decoration: dialogFieldDecoration('パスワード（確認）'),
-            ),
-            if (error != null) ...[
-              const SizedBox(height: 8),
-              Text(error!, style: const TextStyle(color: AppColors.errorColor, fontSize: 13)),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
-          ElevatedButton(
-            onPressed: () {
-              if (newCtrl.text.length < 10) { setS(() => error = 'パスワードは10文字以上で入力してください'); return; }
-              if (newCtrl.text != confirmCtrl.text) { setS(() => error = 'パスワードが一致しません'); return; }
-              Navigator.pop(ctx, true);
-            },
-            child: const Text('変更'),
-          ),
-        ],
-      )),
+      builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setS) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                title: const Text('パスワード変更'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: newCtrl,
+                      obscureText: true,
+                      decoration: dialogFieldDecoration('新しいパスワード（10文字以上）'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: confirmCtrl,
+                      obscureText: true,
+                      decoration: dialogFieldDecoration('パスワード（確認）'),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 8),
+                      Text(error!,
+                          style: const TextStyle(
+                              color: AppColors.errorColor, fontSize: 13)),
+                    ],
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('キャンセル')),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (newCtrl.text.length < 10) {
+                        setS(() => error = 'パスワードは10文字以上で入力してください');
+                        return;
+                      }
+                      if (newCtrl.text != confirmCtrl.text) {
+                        setS(() => error = 'パスワードが一致しません');
+                        return;
+                      }
+                      Navigator.pop(ctx, true);
+                    },
+                    child: const Text('変更'),
+                  ),
+                ],
+              )),
     );
     final newPass = newCtrl.text;
     newCtrl.dispose();
@@ -2270,13 +2378,18 @@ class _MyPageScreenState extends State<MyPageScreen> {
       await supabase.auth.updateUser(UserAttributes(password: newPass));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('パスワードを変更しました'), behavior: SnackBarBehavior.floating),
+          const SnackBar(
+              content: Text('パスワードを変更しました'),
+              behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('変更に失敗しました: $e'), backgroundColor: AppColors.errorColor, behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('変更に失敗しました: $e'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -2290,7 +2403,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(colorScheme: ColorScheme.light(primary: primary)),
+        data: Theme.of(ctx)
+            .copyWith(colorScheme: ColorScheme.light(primary: primary)),
         child: child!,
       ),
     );
@@ -2317,40 +2431,61 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       final result = await showDialog<int>(
                         context: context,
                         builder: (_) => PersonIconPickerDialog(
-                          personName: _nameCtrl.text.isNotEmpty ? _nameCtrl.text : 'ユーザー',
+                          personName: _nameCtrl.text.isNotEmpty
+                              ? _nameCtrl.text
+                              : 'ユーザー',
                           currentIndex: _iconIndex,
                         ),
                       );
                       if (result != null && _userId != null) {
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.setInt('user_profile_icon_$_userId', result);
+                        await prefs.setInt(
+                            'user_profile_icon_$_userId', result);
                         setState(() => _iconIndex = result);
                       }
                     },
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        _iconIndex != null && _iconIndex! >= 0 && _iconIndex! < kPersonIcons.length
+                        _iconIndex != null &&
+                                _iconIndex! >= 0 &&
+                                _iconIndex! < kPersonIcons.length
                             ? CircleAvatar(
                                 radius: 36,
-                                backgroundColor: kPersonIcons[_iconIndex!].bgColor,
-                                child: Text(kPersonIcons[_iconIndex!].emoji, style: const TextStyle(fontSize: 30)),
+                                backgroundColor:
+                                    kPersonIcons[_iconIndex!].bgColor,
+                                child: Text(kPersonIcons[_iconIndex!].emoji,
+                                    style: const TextStyle(fontSize: 30)),
                               )
                             : CircleAvatar(
                                 radius: 36,
-                                backgroundColor: primary.withValues(alpha: 0.15),
+                                backgroundColor:
+                                    primary.withValues(alpha: 0.15),
                                 child: Text(
-                                  _nameCtrl.text.isNotEmpty ? _nameCtrl.text[0] : '?',
-                                  style: TextStyle(fontSize: 28, color: primary, fontWeight: FontWeight.bold),
+                                  _nameCtrl.text.isNotEmpty
+                                      ? _nameCtrl.text[0]
+                                      : '?',
+                                  style: TextStyle(
+                                      fontSize: 28,
+                                      color: primary,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
                         Positioned(
                           bottom: -2,
                           right: -6,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.blackDark.withValues(alpha: 0.65), borderRadius: BorderRadius.circular(8)),
-                            child: const Text('変更', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                                color:
+                                    AppColors.blackDark.withValues(alpha: 0.65),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: const Text('変更',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500)),
                           ),
                         ),
                       ],
@@ -2364,9 +2499,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       controller: _nameCtrl,
                       decoration: InputDecoration(
                         hintText: 'ユーザー名',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorderColor)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorderColor)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary, width: 2)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                                color: AppColors.inputBorderColor)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                                color: AppColors.inputBorderColor)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: primary, width: 2)),
                         filled: true,
                         fillColor: Colors.white,
                       ),
@@ -2381,10 +2524,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(_email ?? '', style: const TextStyle(fontSize: 14, color: AppColors.blackDark)),
-                          trailing: TextButton(onPressed: _changeEmail, child: Text('変更', style: TextStyle(color: primary))),
+                          title: Text(_email ?? '',
+                              style: const TextStyle(
+                                  fontSize: 14, color: AppColors.blackDark)),
+                          trailing: TextButton(
+                              onPressed: _changeEmail,
+                              child:
+                                  Text('変更', style: TextStyle(color: primary))),
                         ),
-                        const Text('1日3回まで変更可能です', style: TextStyle(fontSize: 11, color: AppColors.blackLight)),
+                        const Text('1日3回まで変更可能です',
+                            style: TextStyle(
+                                fontSize: 11, color: AppColors.blackLight)),
                       ],
                     ),
                   ),
@@ -2397,10 +2547,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('••••••••••', style: TextStyle(fontSize: 14, color: AppColors.blackLight)),
-                          trailing: TextButton(onPressed: _changePassword, child: Text('変更', style: TextStyle(color: primary))),
+                          title: const Text('••••••••••',
+                              style: TextStyle(
+                                  fontSize: 14, color: AppColors.blackLight)),
+                          trailing: TextButton(
+                              onPressed: _changePassword,
+                              child:
+                                  Text('変更', style: TextStyle(color: primary))),
                         ),
-                        const Text('1日3回まで変更可能です', style: TextStyle(fontSize: 11, color: AppColors.blackLight)),
+                        const Text('1日3回まで変更可能です',
+                            style: TextStyle(
+                                fontSize: 11, color: AppColors.blackLight)),
                       ],
                     ),
                   ),
@@ -2411,19 +2568,29 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                        _birthday != null ? '${_birthday!.year}年${_birthday!.month}月${_birthday!.day}日' : '未設定',
-                        style: TextStyle(fontSize: 14, color: _birthday != null ? AppColors.blackDark : AppColors.blackLight),
+                        _birthday != null
+                            ? '${_birthday!.year}年${_birthday!.month}月${_birthday!.day}日'
+                            : '未設定',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: _birthday != null
+                                ? AppColors.blackDark
+                                : AppColors.blackLight),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (_birthday != null)
                             IconButton(
-                              icon: const Icon(Icons.clear, size: 20, color: AppColors.blackLight),
+                              icon: const Icon(Icons.clear,
+                                  size: 20, color: AppColors.blackLight),
                               tooltip: 'クリア',
                               onPressed: () => setState(() => _birthday = null),
                             ),
-                          TextButton(onPressed: _pickBirthday, child: Text('設定', style: TextStyle(color: primary))),
+                          TextButton(
+                              onPressed: _pickBirthday,
+                              child:
+                                  Text('設定', style: TextStyle(color: primary))),
                         ],
                       ),
                     ),
@@ -2433,24 +2600,29 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   _buildSection(
                     title: '性別',
                     child: Row(
-                      children: ['女性', '男性', '無回答'].map((g) => Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _gender = g),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Radio<String>(
-                                value: g,
-                                groupValue: _gender,
-                                onChanged: (v) => setState(() => _gender = v),
-                                activeColor: primary,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              Text(g, style: const TextStyle(fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                      )).toList(),
+                      children: ['女性', '男性', '無回答']
+                          .map((g) => Expanded(
+                                child: InkWell(
+                                  onTap: () => setState(() => _gender = g),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Radio<String>(
+                                        value: g,
+                                        groupValue: _gender,
+                                        onChanged: (v) =>
+                                            setState(() => _gender = v),
+                                        activeColor: primary,
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      Text(g,
+                                          style: const TextStyle(fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
+                              ))
+                          .toList(),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -2458,10 +2630,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _save,
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                      style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14)),
                       child: _isSaving
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('保存', style: TextStyle(fontSize: 16, color: Colors.white)),
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('保存',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -2477,12 +2656,19 @@ class _MyPageScreenState extends State<MyPageScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: AppColors.shadowColor, blurRadius: 8, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(
+              color: AppColors.shadowColor, blurRadius: 8, offset: Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: AppColors.blackLight, fontWeight: FontWeight.w500)),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.blackLight,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
           child,
         ],
@@ -2490,4 +2676,3 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 }
-
