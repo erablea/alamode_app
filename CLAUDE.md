@@ -117,8 +117,10 @@
 | `favorite` | StringList | お気に入りitem_idの一覧 |
 | `present_list` | StringList | Memoタブの記録（JSONエンコード）|
 | `memo_show_sent` | bool | Memoタブの最後のタブ状態（贈った/貰った）|
-| `pending_sync_presents` | StringList | ログイン中ユーザーがオフライン等でSupabase保存に失敗した際の再送信待ちキュー（JSONエンコード）。保存・一覧取得のたびに自動フラッシュされる |
+| `pending_sync_presents` | StringList | ログイン中ユーザーがオフライン等でSupabase保存・更新・削除に失敗した際の再送信待ちキュー（JSONエンコード、`_op`が`create`/`update`/`delete`）。保存・更新・削除・一覧取得のたびに自動フラッシュされる |
 | `presents_cache_$uid` | String(JSON) | ログイン中ユーザーの最後に取得成功したMemo一覧のキャッシュ（オフライン時のフォールバック表示用）|
+| `home_items_cache` / `home_items_cache_fetched_at` | String(JSON) / int(ms) | Homeの商品一覧の最後に取得成功した結果とその取得時刻（オフライン時のフォールバック表示用）|
+| `favorite_items_cache` | String(JSON) | お気に入り登録商品の最後に取得成功した商品データのキャッシュ（オフライン時のフォールバック表示用）|
 
 ## ファイル構成
 ```
@@ -175,9 +177,20 @@ lib/
 | 会社名（brand_company） | 30文字 | `brand_form_screen.dart`内リテラル |
 | 公式サイトURL系（`UrlInputField`共通ウィジェット、brand/item両方で使用） | 500文字 | `common_widgets.dart`の`UrlInputField` |
 
-## オフライン時のデータ保護（Memoタブ）
-- ログイン中ユーザーがMemoを新規保存しようとした際にSupabaseへの通信が失敗した場合、`PresentManagementService.savePresent()`は例外を投げる代わりに`pending_sync_presents`（SharedPreferences）へキューイングし、`true`（オフライン保留）を返す。データは消えない。
-- キューは「保存時」「一覧取得時」など通信の機会があるたびに`syncPendingPresents()`で自動フラッシュを試みる（`connectivity_plus`等の追加パッケージには依存しない、日和見的な同期）。
-- 一覧取得（`_getAllPresentsFromSupabase`）がオフライン等で失敗した場合は、直近成功時にキャッシュした`presents_cache_$uid`を表示にフォールバックする（何も出ない状態を避けるため）。
-- 保留中のMemoはカードのヘッダーに雲に斜線のアイコン（オフライン保存中）で示される。
-- 更新（updatePresent）・削除（deletePresent）の失敗時は現状フォームを閉じない（入力内容は保持される）のみで、上記のような自動キュー・再送信の対象にはしていない（新規保存のみ対応）。
+## オフライン時のデータ保護・キャッシュ表示
+
+### Memoタブ（`PresentManagementService`, `lib/view/memo.dart`）
+- ログイン中ユーザーがMemoの新規保存・更新・削除を行おうとした際にSupabaseへの通信が失敗した場合、それぞれ例外を投げる代わりに`pending_sync_presents`（SharedPreferences、`_op`が`create`/`update`/`delete`のJSONエントリ）へキューイングし、`true`（オフライン保留）を返す。データは消えない。
+- 未同期の`create`エントリ自体をオフライン中に再度編集・削除しようとした場合（サーバーにまだ行が存在しないためupdate/delete APIが使えない）は、`_mutatePendingCreate()`がキュー内のcreateエントリ自体を書き換える・取り除くことで対応する。
+- キューは「保存・更新・削除時」「一覧取得時」など通信の機会があるたびに`syncPendingPresents()`で自動フラッシュを試みる（`connectivity_plus`等の追加パッケージには依存しない、日和見的な同期）。
+- 一覧取得（`_getAllPresentsFromSupabase`）では、未同期の`delete`対象は結果から除外し、未同期の`update`内容は該当行に上書き反映してから表示する（オフライン中の編集・削除がすぐに一覧へ反映されるようにするため）。取得自体がオフライン等で失敗した場合は、直近成功時にキャッシュした`presents_cache_$uid`を表示にフォールバックする（何も出ない状態を避けるため）。
+- 保留中のMemo（未同期の新規登録・自分自身がキューに残っている更新後データ）はカードのヘッダーに雲に斜線のアイコン（オフライン保存中）で示される。
+
+### Home / Favoriteタブ（`lib/view/home.dart` / `lib/view/favorite.dart`）
+- Homeの商品一覧（`_ItemListState._getFilteredQuery`）は取得成功のたびに`home_items_cache`（SharedPreferences）へ結果を保存し、取得失敗時はそのキャッシュを現在の並び替え条件で並び替え直してフォールバック表示する。フォールバック中は一覧上部に「最終取得: M/d HH:mm」を添えた小さな注意バナーを表示する。
+- Favoriteタブも同様に、favorite登録商品の取得成功時に`favorite_items_cache`へ保存し、失敗時は現在お気に入り登録されているIDに絞ってキャッシュから表示する。
+- どちらもキャッシュが無い場合（初回起動でオフラインなど）は素直にエラー表示のままとする（無理にダミーデータを出さない）。
+
+### ログイン・新規登録（`lib/view/auth.dart`）
+- `_parseError()`に`_isNetworkError()`判定を追加し、通信エラー（`SocketException`/`Failed to fetch`/`ClientException`/`TimeoutException`等を含む場合）は「ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。」という明確な案内を表示する。
+- お問い合わせフォーム（`user.dart`）は`mailto:`リンクでユーザーのメールアプリを起動する方式のため、Supabase等への直接の通信は発生しない。そのためオフライン専用の案内は追加していない（`canLaunchUrl`が失敗した場合の既存メッセージのみ）。

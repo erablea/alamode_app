@@ -649,7 +649,7 @@ class PresentManagementService {
         return false;
       } catch (e) {
         presentLogger.warning('保存に失敗したためオフラインキューに保存します: $e');
-        await _queuePendingPresent(presentData);
+        await _queuePendingOperation('create', presentData);
         return true;
       }
     }
@@ -666,13 +666,40 @@ class PresentManagementService {
     }
   }
 
-  Future<void> _queuePendingPresent(Map<String, dynamic> data) async {
+  Future<void> _queuePendingOperation(String op, Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
-    data['present_id'] ??= Utils.generateUniqueId();
-    data['present_createdate'] ??= DateTime.now().toIso8601String();
-    pending.add(jsonEncode(data));
+    final entry = {'_op': op, ...data};
+    entry['present_id'] ??= Utils.generateUniqueId();
+    if (op == 'create') {
+      entry['present_createdate'] ??= DateTime.now().toIso8601String();
+    }
+    pending.add(jsonEncode(entry));
     await prefs.setStringList(Constants.pendingSyncPresentsKey, pending);
+  }
+
+  /// まだ同期されていない新規作成（create）データ自体を編集・削除しようとした場合、
+  /// サーバー側にまだ行が存在しないため通常のupdate/delete APIは使えない。
+  /// このような場合はキュー内のcreateエントリ自体を書き換える／取り除く。
+  /// newDataがnullなら削除、そうでなければ内容を差し替える。該当エントリが
+  /// 見つからなかった場合はfalseを返す（＝通常のupdate/delete処理を続行してよい）。
+  Future<bool> _mutatePendingCreate(
+      String presentId, Map<String, dynamic>? newData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    final idx = pending.indexWhere((raw) {
+      final data = Map<String, dynamic>.from(jsonDecode(raw));
+      final op = data['_op'] as String? ?? 'create';
+      return op == 'create' && data['present_id']?.toString() == presentId;
+    });
+    if (idx == -1) return false;
+    if (newData == null) {
+      pending.removeAt(idx);
+    } else {
+      pending[idx] = jsonEncode({'_op': 'create', ...newData});
+    }
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, pending);
+    return true;
   }
 
   /// オフラインキューに溜まった未同期データをSupabaseへ反映する。
@@ -687,7 +714,16 @@ class PresentManagementService {
     for (final raw in pending) {
       try {
         final data = Map<String, dynamic>.from(jsonDecode(raw));
-        await _savePresentToSupabase(data);
+        switch (data['_op'] as String? ?? 'create') {
+          case 'update':
+            await _updatePresentInSupabase(data);
+            break;
+          case 'delete':
+            await _deletePresentFromSupabase(data['present_id'].toString());
+            break;
+          default:
+            await _savePresentToSupabase(data);
+        }
       } catch (e) {
         presentLogger.warning('保留中データの同期に失敗しました: $e');
         remaining.add(raw);
@@ -696,20 +732,27 @@ class PresentManagementService {
     await prefs.setStringList(Constants.pendingSyncPresentsKey, remaining);
   }
 
-  Future<List<Map<String, dynamic>>> _loadPendingPresentsAsDisplayItems() async {
+  Future<List<Map<String, dynamic>>> _loadPendingQueueEntries() async {
     final prefs = await SharedPreferences.getInstance();
     final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
-    return pending.map((raw) {
-      final data = Map<String, dynamic>.from(jsonDecode(raw));
-      data['_pendingSync'] = true;
-      return data;
-    }).toList();
+    return pending.map((raw) => Map<String, dynamic>.from(jsonDecode(raw))).toList();
   }
 
-  Future<void> updatePresent(Map<String, dynamic> presentData) async {
+  Future<bool> updatePresent(Map<String, dynamic> presentData) async {
     if (AuthService.instance.isLoggedIn) {
-      await _updatePresentInSupabase(presentData);
-      return;
+      final presentId = presentData['present_id']?.toString();
+      if (presentId != null && await _mutatePendingCreate(presentId, presentData)) {
+        return true;
+      }
+      try {
+        await _updatePresentInSupabase(presentData);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('更新に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingOperation('update', presentData);
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -725,16 +768,27 @@ class PresentManagementService {
         presentList[index] = jsonEncode(presentData);
         await prefs.setStringList(Constants.presentListKey, presentList);
       }
+      return false;
     } catch (e) {
       presentLogger.warning('更新に失敗しました: $e');
       rethrow;
     }
   }
 
-  Future<void> deletePresent(String presentId) async {
+  Future<bool> deletePresent(String presentId) async {
     if (AuthService.instance.isLoggedIn) {
-      await _deletePresentFromSupabase(presentId);
-      return;
+      if (await _mutatePendingCreate(presentId, null)) {
+        return false; // 未同期のまま削除したためサーバー側には何も残っていない
+      }
+      try {
+        await _deletePresentFromSupabase(presentId);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('削除に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingOperation('delete', {'present_id': presentId});
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -746,6 +800,7 @@ class PresentManagementService {
       });
 
       await prefs.setStringList(Constants.presentListKey, presentList);
+      return false;
     } catch (e) {
       presentLogger.warning('削除に失敗しました: $e');
       rethrow;
@@ -792,8 +847,32 @@ class PresentManagementService {
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
     }
-    final pendingItems = await _loadPendingPresentsAsDisplayItems();
-    return [...pendingItems, ...results];
+    final pendingEntries = await _loadPendingQueueEntries();
+    final pendingCreates = pendingEntries.where((e) => (e['_op'] as String? ?? 'create') == 'create');
+    final pendingUpdatesById = <String, Map<String, dynamic>>{
+      for (final e in pendingEntries.where((e) => e['_op'] == 'update'))
+        e['present_id'].toString(): e,
+    };
+    final pendingDeleteIds = pendingEntries
+        .where((e) => e['_op'] == 'delete')
+        .map((e) => e['present_id'].toString())
+        .toSet();
+
+    // 未同期の削除・更新をサーバーから取得した一覧にも反映する
+    // （そうしないとオフライン中に削除/編集したはずのデータが元のまま表示され続けてしまう）。
+    final merged = results
+        .where((p) => !pendingDeleteIds.contains(p['present_id']?.toString()))
+        .map((p) {
+          final override = pendingUpdatesById[p['present_id']?.toString()];
+          if (override == null) return p;
+          return {...p, ...override, '_pendingSync': true};
+        })
+        .toList();
+
+    return [
+      ...pendingCreates.map((e) => {...e, '_pendingSync': true}),
+      ...merged,
+    ];
   }
 
   static Map<String, dynamic> _supabaseToPresent(Map<String, dynamic> event) {
@@ -2755,9 +2834,9 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_memo': _controllers['present_memo']!.text,
       };
 
-      bool wasQueuedOffline = false;
+      bool wasQueuedOffline;
       if (widget.initialPresent != null) {
-        await widget.presentService.updatePresent(presentData);
+        wasQueuedOffline = await widget.presentService.updatePresent(presentData);
       } else {
         wasQueuedOffline = await widget.presentService.savePresent(presentData);
       }
@@ -2796,8 +2875,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     );
     if (confirmed == true) {
       try {
-        await widget.presentService
+        final wasQueuedOffline = await widget.presentService
             .deletePresent(widget.initialPresent!['present_id']);
+        if (wasQueuedOffline && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('オフラインのため削除を保留しました。オンラインになると自動で反映されます。'),
+            ),
+          );
+        }
         Navigator.pop(context, true);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/memo.dart';
@@ -16,6 +18,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   final currencyFormat = NumberFormat('#,###');
   List<Map<String, dynamic>> _itemList = [];
   List<Map<String, dynamic>> _filteredList = [];
+  bool _isOfflineFallback = false;
+  static const String _favoriteItemsCacheKey = 'favorite_items_cache';
 
   // フィルター・ソート用の変数（homeと同じ）
   String _sortBy = 'item_price_low';
@@ -73,12 +77,33 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         await FavoriteService.instance.removeFavorites(invalidIds);
       }
 
+      final items = List<Map<String, dynamic>>.from(data);
       setState(() {
-        _itemList = List<Map<String, dynamic>>.from(data);
+        _itemList = items;
+        _isOfflineFallback = false;
         _applyFiltersAndSort();
       });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_favoriteItemsCacheKey, jsonEncode(items));
     } catch (e) {
-      // keep existing list on error
+      // オフライン等で取得できない場合、直近成功時にキャッシュした商品データの
+      // うち現在お気に入り登録されているものだけを表示にフォールバックする。
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(_favoriteItemsCacheKey);
+      if (cached != null) {
+        final cachedItems = (jsonDecode(cached) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .where((item) => favoriteIds.contains(item['item_id']?.toString()))
+            .toList();
+        if (cachedItems.isNotEmpty) {
+          setState(() {
+            _itemList = cachedItems;
+            _isOfflineFallback = true;
+            _applyFiltersAndSort();
+          });
+        }
+      }
+      // キャッシュも無い場合は既存の表示（前回ロード分）を維持する
     }
     _isLoading = false;
   }
@@ -432,6 +457,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (_isOfflineFallback)
+              Container(
+                width: double.infinity,
+                color: AppColors.greyLight,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: const Text(
+                  'オフラインのため最新の情報を取得できません。前回表示時のデータを表示しています。',
+                  style: TextStyle(fontSize: 11, color: AppColors.blackLight),
+                ),
+              ),
             // フィルター・ソート行（homeから借用）
             if (_itemList.isNotEmpty) ...[
               Container(

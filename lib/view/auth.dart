@@ -203,12 +203,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  bool _isNetworkError(String error) {
+    const patterns = [
+      'SocketException',
+      'Failed to fetch',
+      'ClientException',
+      'Connection failed',
+      'Connection refused',
+      'Failed host lookup',
+      'Network is unreachable',
+      'TimeoutException',
+      'XMLHttpRequest',
+    ];
+    return patterns.any((p) => error.contains(p));
+  }
+
   String _parseError(String error) {
     if (error.contains('Invalid login credentials')) return 'メールアドレスまたはパスワードが正しくありません';
     if (error.contains('Email not confirmed')) return 'メールアドレスの確認が完了していません';
     if (error.contains('User already registered')) return 'このメールアドレスはすでに登録されています';
     if (error.contains('Password should be')) return 'パスワードは10文字以上で入力してください';
     if (error.contains('rate limit')) return 'しばらく時間をおいてから再試行してください';
+    if (_isNetworkError(error)) return 'ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。';
     return 'エラーが発生しました。もう一度お試しください。';
   }
 

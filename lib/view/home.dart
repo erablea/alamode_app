@@ -1,4 +1,5 @@
 import 'dart:async' as async;
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
@@ -8,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/services/favorite_service.dart';
 import 'package:alamode_app/services/item_image_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -343,6 +345,8 @@ class ItemList extends StatefulWidget {
 class _ItemListState extends State<ItemList>
     with AutomaticKeepAliveClientMixin {
   List<Map<String, dynamic>>? _cachedDocs;
+  bool _isOfflineFallback = false;
+  DateTime? _offlineFallbackFetchedAt;
   final currencyFormat = NumberFormat('#,###');
   String _sortBy = 'display_order';
   static Map<String, bool> _globalFilterGenre = {};
@@ -440,10 +444,20 @@ class _ItemListState extends State<ItemList>
                       }
 
                       _cachedDocs = snapshot.data!;
-                      return _buildItemList(_cachedDocs!);
+                      return Column(
+                        children: [
+                          _buildOfflineFallbackBanner(),
+                          Expanded(child: _buildItemList(_cachedDocs!)),
+                        ],
+                      );
                     },
                   )
-                : _buildItemList(_cachedDocs!),
+                : Column(
+                    children: [
+                      _buildOfflineFallbackBanner(),
+                      Expanded(child: _buildItemList(_cachedDocs!)),
+                    ],
+                  ),
           ),
         ),
       ],
@@ -836,14 +850,78 @@ class _ItemListState extends State<ItemList>
   // 算出しているため、サーバー側ページングにするには設計変更が必要）。
   static const int _maxItemsFetched = 1000;
 
+  // Home一覧はジャンル・タブに関わらず同じ「表示対象の全件」を取得し、
+  // ジャンル絞り込みは_applyClientSideFiltersでクライアント側に行っているため、
+  // オフラインキャッシュもタブごとに分けず単一のキーで共有する。
+  static const String _itemsCacheKey = 'home_items_cache';
+  static const String _itemsCacheFetchedAtKey = 'home_items_cache_fetched_at';
+
+  int _compareForCache(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final field = _sortField;
+    final av = a[field];
+    final bv = b[field];
+    int cmp;
+    if (av == null && bv == null) {
+      cmp = 0;
+    } else if (av == null) {
+      cmp = -1;
+    } else if (bv == null) {
+      cmp = 1;
+    } else if (av is num && bv is num) {
+      cmp = av.compareTo(bv);
+    } else {
+      cmp = av.toString().compareTo(bv.toString());
+    }
+    return _sortDescending ? -cmp : cmp;
+  }
+
   async.Future<List<Map<String, dynamic>>> _getFilteredQuery() async {
-    final data = await supabase
-        .from('item')
-        .select()
-        .eq('item_show_on_home', true)
-        .order(_sortField, ascending: !_sortDescending)
-        .limit(_maxItemsFetched);
-    return data;
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final data = await supabase
+          .from('item')
+          .select()
+          .eq('item_show_on_home', true)
+          .order(_sortField, ascending: !_sortDescending)
+          .limit(_maxItemsFetched);
+      final result = List<Map<String, dynamic>>.from(data);
+      _isOfflineFallback = false;
+      await prefs.setString(_itemsCacheKey, jsonEncode(result));
+      await prefs.setInt(
+          _itemsCacheFetchedAtKey, DateTime.now().millisecondsSinceEpoch);
+      return result;
+    } catch (e) {
+      final cached = prefs.getString(_itemsCacheKey);
+      if (cached == null) rethrow;
+      final list = (jsonDecode(cached) as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      list.sort(_compareForCache);
+      _isOfflineFallback = true;
+      final fetchedAtMs = prefs.getInt(_itemsCacheFetchedAtKey);
+      _offlineFallbackFetchedAt = fetchedAtMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(fetchedAtMs);
+      return list;
+    }
+  }
+
+  Widget _buildOfflineFallbackBanner() {
+    if (!_isOfflineFallback) return const SizedBox.shrink();
+    final fetchedAt = _offlineFallbackFetchedAt;
+    final label = fetchedAt == null
+        ? 'オフラインのため最新の情報を取得できません。'
+        : 'オフラインのため最新の情報を取得できません（最終取得: '
+            '${DateFormat('M/d HH:mm').format(fetchedAt)}）。';
+    return Container(
+      width: double.infinity,
+      color: AppColors.greyLight,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: AppColors.blackLight),
+      ),
+    );
   }
 
   async.Future<void> _openFilterDialog() async {
