@@ -5,6 +5,7 @@
 - Supabase (バックエンド・DB)
 - SharedPreferences (ローカルストレージ)
 - フォント: PinyonScript, PlayfairDisplay, ZenMaruGothic, Corinthia
+- **配布形態はWebサイト（GitHub Pages）のみ**。`ios/`・`android/`フォルダは`flutter create`時のデフォルト雛形が残っているだけで、実際にビルド・実機確認・ストア申請をした実績は無い。iPhone/Androidの実アプリ（App Store/Google Play配布）にするには、証明書発行・ストア登録・審査対応など別途まとまった作業が必要。
 
 ## Gitブランチ
 - `main`に直接pushしてよい（公開中のアプリではないため、一時的にビルドが壊れても問題ない）
