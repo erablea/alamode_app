@@ -1,6 +1,7 @@
 import 'dart:async' as async;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/memo.dart';
@@ -10,6 +11,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/services/favorite_service.dart';
 import 'package:alamode_app/services/item_image_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+final homeLogger = Logger('Home');
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen>
         _initializeControllers();
       });
     } catch (e) {
-      print('Error loading genres: $e');
+      homeLogger.warning('Error loading genres: $e');
       setState(() {
         _isLoadingGenres = false;
         _initializeControllers();
@@ -1462,7 +1465,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
 
       return genres.toList()..sort();
     } catch (e) {
-      print('Error getting available genres: $e');
+      homeLogger.warning('Error getting available genres: $e');
       return [];
     }
   }
@@ -1847,8 +1850,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                         ),
                         errorWidget: (context, url, error) {
-                          print('Image loading error for URL: $url');
-                          print('Error details: $error');
+                          homeLogger.warning('Image loading error for URL: $url');
+                          homeLogger.warning('Error details: $error');
                           return Container(
                             color: AppColors.greyLight,
                             child: Column(

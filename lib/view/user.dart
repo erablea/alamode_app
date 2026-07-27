@@ -2444,6 +2444,83 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
+  bool _isDeletingAccount = false;
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('アカウント削除'),
+        content: const Text(
+          'アカウントを削除すると、登録したお菓子の記録・お気に入り・プロフィール情報がすべて削除されます。この操作は取り消せません。\n\n'
+          'なお、ログイン情報（メールアドレスとパスワード）自体の削除には運営側の対応が必要なため、完了までに数日いただく場合があります。その間に同じメールアドレスで再ログインした場合、データが無い状態であらためて利用を開始する形になります。\n\n'
+          '本当に削除しますか？',
+          style: TextStyle(fontSize: 13, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('キャンセル')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('削除する',
+                style: TextStyle(color: AppColors.errorColor)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isDeletingAccount = true);
+    try {
+      final uid = _userId;
+      if (uid != null) {
+        // ログイン情報(auth.users)自体の削除にはサービスロールが必要なため
+        // クライアントからは行えない。先に依頼をinquiryとして記録しておく
+        // （これが無いと、データを消した後は運営側が削除依頼の存在に気づく手段が無くなる）。
+        await supabase.from('inquiry').insert({
+          'inquiry_type': 'account_deletion',
+          'inquiry_email': _email,
+          'inquiry_content': 'アカウント削除リクエスト（user_id: $uid）。データはアプリ側で削除済みのため、認証情報(auth.users)の削除をお願いします。',
+          'user_id': uid,
+        });
+        // FKの参照方向に沿って、参照している側から先に削除する。
+        await supabase.from('event').delete().eq('user_id', uid);
+        await supabase.from('useritem').delete().eq('user_id', uid);
+        await supabase.from('who').delete().eq('user_id', uid);
+        await supabase.from('favorite').delete().eq('user_id', uid);
+        await supabase.from('user').delete().eq('user_id', uid);
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('data_migrated_$uid');
+        await prefs.remove('migrated_present_ids_$uid');
+        await prefs.remove('favorites_migrated_$uid');
+        await prefs.remove('presents_cache_$uid');
+        await prefs.remove('user_profile_icon_$uid');
+        await prefs.remove(Constants.pendingSyncPresentsKey);
+      }
+      await AuthService.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('アカウントを削除しました。ご利用ありがとうございました。')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('削除に失敗しました: $e'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDeletingAccount = false);
+    }
+  }
+
   Future<void> _pickBirthday() async {
     final primary = Theme.of(context).primaryColor;
     final picked = await showDatePicker(
@@ -2692,6 +2769,26 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           : const Text('保存',
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _isDeletingAccount ? null : _deleteAccount,
+                      icon: _isDeletingAccount
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.errorColor))
+                          : const Icon(Icons.delete_forever,
+                              color: AppColors.errorColor, size: 18),
+                      label: const Text('アカウントを削除する',
+                          style: TextStyle(color: AppColors.errorColor)),
                     ),
                   ),
                 ],

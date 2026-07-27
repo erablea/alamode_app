@@ -114,7 +114,7 @@
 |---|---|
 | `inquiry_id` | お問い合わせID (PK) |
 | `user_id` | ユーザーID (FK→auth.users, nullable。未ログインでも送信可) |
-| `inquiry_type` | `error_report` / `bug_report` / `other` / `business` |
+| `inquiry_type` | `error_report` / `bug_report` / `other` / `business` / `account_deletion` |
 | `inquiry_name` | お名前（error_report/bug_reportはnull）|
 | `inquiry_email` | メールアドレス（error_report/bug_reportはnull）|
 | `inquiry_company` | 会社名（businessのみ）|
@@ -231,3 +231,29 @@ lib/
 - **画像はクロスデバイス同期されない**: 画像は実際にはSupabase Storage等にアップロードされておらず、ブラウザのSharedPreferences内にBase64で保存され、そのローカルキー文字列だけが`useritem_image`としてサーバーに保存されている。そのため別端末・別ブラウザからは同じ画像が見えない（漏洩ではなく、逆に「見えなさすぎる」機能不足）。将来的に画像を本当に共有・同期したい場合はSupabase Storageへの実アップロードに変更する必要がある。
 - **`user_name`のデフォルト値がメールアドレス**: 新規登録直後、プロフィール名を編集するまでは`user.user_name`にメールアドレスがそのまま入る（`auth_service.dart`の`_ensureUserRecord`）。この値は本人のMyPageScreen以外には一切表示されないコードになっているため現状漏洩経路は無いが、`user`テーブルのRLSが正しく本人限定になっていることが前提となる（上記の要確認事項を参照）。
 - **admin_app側のRLS**: item/brand/useritemへの管理者権限（is_admin）による書き込み・全件参照は`admin_app`側の関心事のため今回のセッションでは対象外。ただしalamode_app側の`useritem`テーブルに対する管理者向けポリシー（`useritem_admin_select_all`等、`0001_admin_and_favorites.sql`）と、今回追加した`useritem_approved_image`ビューは独立しているため、互いに干渉しない。
+
+## リリース前対応状況
+
+### アカウント削除（`user.dart`の`MyPageScreen._deleteAccount()`）
+- クライアントからは`event`/`useritem`/`who`/`favorite`/`user`の本人の行をRLS(own-row)の範囲でその場で削除し、ローカルの関連SharedPreferencesキー（`data_migrated_$uid`等、`pending_sync_presents`）も削除する。
+- `auth.users`（ログイン用の認証情報自体）の削除はサービスロールが必要でクライアントからはできないため、削除実行前に`inquiry`テーブルへ`inquiry_type: 'account_deletion'`で依頼を記録し、運営者がSupabaseダッシュボードから手動で認証ユーザーを削除する運用とする。
+- そのため、運営側が認証情報を削除するまでの間に同じメールアドレス・パスワードで再ログインした場合、データが無い状態で利用が再開される点をユーザーに確認ダイアログ内で明示している。
+
+### テスト・静的解析
+- `analysis_options.yaml`が存在しておらず、`flutter_lints`（pubspecに記載済み）が実質有効になっていなかった（`flutter analyze`は常にDartデフォルトの最小ルールのみで実行されていた）ため追加した。有効化後に新たに顕在化した60件はほぼ`info`レベルのスタイル系（`prefer_const_constructors`/`library_private_types_in_public_api`等）と`use_build_context_synchronously`（非同期処理を挟んだ後のBuildContext使用、`mounted`チェックの徹底を推奨）で、緊急の修正は不要だが今後まとめて手を入れる価値がある。
+- `home.dart`に残っていた本番用途外の`print()`4箇所は`homeLogger`（loggingパッケージ）経由に変更。`logging`パッケージはこれまで推移的依存に頼っていたため`pubspec.yaml`に直接依存として追加した。
+- `test/`ディレクトリを新設し、ロジックが独立している箇所（`Utils.formatCurrency`/`normalizeString`/`generateUniqueId`、`AdUtils`の広告差し込みインデックス計算、`CommonWidgets`の条件文字列パース/組み立て）の単体テストを追加（`flutter test`で16件全て通過）。Supabase等の外部通信を伴う箇所は今回のテスト対象に含めていない。
+
+### エラーの可視化
+- `main.dart`で`Logger.root`にリスナーを設定していなかったため、`presentLogger`等の`.warning()`呼び出しがこれまでコンソールにすら出力されていなかった。`Logger.root.onRecord.listen(...)`を追加し、あわせて`FlutterError.onError`/`PlatformDispatcher.instance.onError`で捕捉されない例外もログに残すようにした。外部のクラッシュ収集サービス（Sentry等）は未導入。導入する場合はこのリスナー内から送信を追加すればよい。
+
+### 広告（AdMob不可・AdSense前提の下地のみ）
+- 本アプリはFlutter Web専用のため、モバイル専用SDKのGoogle Mobile Ads(AdMob)は利用できない。Web版で実際に広告を表示するにはGoogle AdSenseの審査通過（サイトが実際に公開されている必要がある）が必要なため、このセッションでは実際の広告配信は実装していない。
+- `web/index.html`にAdSenseスクリプトタグの雛形をコメントアウトで用意した。審査通過後、コメントを外してpublisher IDに置き換え、ドメイン直下に`ads.txt`を追加し、`lib/main.dart`の`AdUtils.buildAdBanner()`（現状ダミー枠）を実際の広告枠に差し替える必要がある。
+
+### `inquiry`テーブルのスパム対策（未実装・提案のみ）
+`inquiry_insert_anyone`は未ログインでも誰でもinsertできる設計のため、荒らし投稿のリスクがある。対策候補（優先度順）:
+1. クライアント側の簡易クールダウン（例: 前回送信から一定時間は送信ボタンを無効化）とハニーポット項目（人には見えない隠しフィールドを用意し、値が入っていたら送信を握りつぶす）。実装コストが低く、簡単なボットには有効。
+2. Supabaseのトリガー/関数でIPアドレスや時間帯あたりの件数を制限する（Edge Functionが必要になる可能性が高い）。
+3. reCAPTCHA等のCAPTCHA導入（外部サービスの登録が必要）。
+実際に荒らしが発生してから1を追加するのが費用対効果として妥当と考えられる。
