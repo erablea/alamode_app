@@ -3,7 +3,7 @@
     "short_name": "a la mode",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#1C6ECD",
+    "background_color": "#FFFFFF",
     "theme_color": "#1C6ECD",
     "description": "贈った・もらったお菓子を記録して、お気に入りのお菓子を検索できるアプリ「a la mode」",
     "orientation": "portrait-primary",
