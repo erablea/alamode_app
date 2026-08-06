@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/widgets/category_placeholder.dart';
 import 'package:alamode_app/widgets/person_icon.dart';
@@ -1592,6 +1592,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
             hintText: '正しい内容を入力してください',
             maxLines: 3,
             minLines: 2,
+            maxLength: 500,
           ),
         ],
       ),
@@ -1603,19 +1604,20 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       case 'お菓子名':
         return sweetData['item_name'] ?? '不明';
       case '会社名':
-        return sweetData['item_company'] ?? '不明';
+        return sweetData['_brandCompany'] ?? '不明';
       case 'カテゴリー':
         return sweetData['item_category'] ?? '不明';
       case '金額':
         return '¥${Utils.formatCurrency(sweetData['item_price10percent'])}';
       case '賞味期限':
-        return sweetData['item_expiry'] ?? '不明';
+        final expiry = sweetData['item_expirydate'];
+        return expiry != null ? '$expiry日' : '不明';
       case '個包装':
-        return sweetData['item_individual_packaging'] == 1 ? 'あり' : 'なし';
+        return sweetData['item_individualwrapping'] == true ? 'あり' : 'なし';
       case '常温':
-        return sweetData['item_room_temperature'] == 1 ? '常温保存可能' : '要冷蔵・冷凍';
+        return sweetData['item_roomtemperature'] == true ? '常温保存可能' : '要冷蔵・冷凍';
       case 'オンライン購入':
-        return sweetData['item_online_purchase'] == 1 ? '購入可能' : '購入不可';
+        return sweetData['item_online'] == true ? '購入可能' : '購入不可';
       case '商品説明':
         return sweetData['item_description'] ?? '説明なし';
       case 'URLリンク':
@@ -1636,6 +1638,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: '不具合の詳細を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 24),
         _buildSendButton(() => _sendBugReport()),
@@ -1651,12 +1654,14 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: 'お名前 *',
           controller: _otherNameController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _otherEmailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: 100,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
@@ -1665,6 +1670,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: 'お問い合わせ内容を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 16),
         _buildContactDisclaimer(),
@@ -1682,17 +1688,20 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         _buildLabeledField(
           label: '会社名 *',
           controller: _businessCompanyController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'ご担当者名 *',
           controller: _businessNameController,
+          maxLength: 30,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
           label: 'メールアドレス *',
           controller: _businessEmailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: 100,
         ),
         const SizedBox(height: 16),
         _buildLabeledField(
@@ -1701,6 +1710,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           hintText: '企業様からの商品情報提供や宣伝のご活用お待ちしております。内容を入力してください',
           maxLines: 5,
           minLines: 3,
+          maxLength: 500,
         ),
         const SizedBox(height: 16),
         _buildContactDisclaimer(),
@@ -1744,6 +1754,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     int maxLines = 1,
     int? minLines,
     TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1762,6 +1773,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           keyboardType: keyboardType,
           maxLines: maxLines,
           minLines: minLines,
+          maxLength: maxLength,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           style: const TextStyle(color: AppColors.blackLight),
           decoration: InputDecoration(
             border: OutlineInputBorder(
@@ -1857,9 +1870,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】情報の間違い報告',
-        body: _buildErrorReportEmailBody(),
+      await _submitInquiry(
+        type: 'error_report',
+        content: _buildErrorReportEmailBody(),
       );
     }
   }
@@ -1876,9 +1889,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】不具合報告',
-        body: '不具合の内容：\n${_bugReportController.text}',
+      await _submitInquiry(
+        type: 'bug_report',
+        content: '不具合の内容：\n${_bugReportController.text}',
       );
     }
   }
@@ -1905,10 +1918,11 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】その他問い合わせ',
-        body:
-            'お名前：${_otherNameController.text}\nメールアドレス：${_otherEmailController.text}\nお問い合わせ内容：\n${_otherInquiryController.text}',
+      await _submitInquiry(
+        type: 'other',
+        name: _otherNameController.text,
+        email: _otherEmailController.text,
+        content: _otherInquiryController.text,
       );
     }
   }
@@ -1937,10 +1951,12 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
 
     if (confirmed) {
-      await _sendEmail(
-        subject: '【アプリ】企業様からのお問い合わせ',
-        body:
-            '会社名：${_businessCompanyController.text}\nご担当者名：${_businessNameController.text}\nメールアドレス：${_businessEmailController.text}\nお問い合わせ内容：\n${_businessController.text}',
+      await _submitInquiry(
+        type: 'business',
+        company: _businessCompanyController.text,
+        name: _businessNameController.text,
+        email: _businessEmailController.text,
+        content: _businessController.text,
       );
     }
   }
@@ -2047,37 +2063,56 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     );
   }
 
-  static const String _contactEmail = 'alamode.jpn@gmail.com';
+  bool _isNetworkError(String error) {
+    const patterns = [
+      'SocketException',
+      'Failed to fetch',
+      'ClientException',
+      'Connection failed',
+      'Connection refused',
+      'Failed host lookup',
+      'Network is unreachable',
+      'TimeoutException',
+      'XMLHttpRequest',
+    ];
+    return patterns.any((p) => error.contains(p));
+  }
 
-  Future<void> _sendEmail(
-      {required String subject, required String body}) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: _contactEmail,
-      query: Uri(queryParameters: {'subject': subject, 'body': body}).query,
-    );
+  Future<void> _submitInquiry({
+    required String type,
+    required String content,
+    String? name,
+    String? email,
+    String? company,
+  }) async {
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メールアプリを起動しました。内容をご確認のうえ送信してください。'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _clearForm();
-        setState(() => _expandedSection = -1);
-      } else {
-        if (!mounted) return;
-        _showValidationError('メールアプリを起動できませんでした');
-      }
-    } catch (e) {
+      await supabase.from('inquiry').insert({
+        'inquiry_type': type,
+        'inquiry_name': name,
+        'inquiry_email': email,
+        'inquiry_company': company,
+        'inquiry_content': content,
+        'user_id':
+            AuthService.instance.isLoggedIn ? AuthService.instance.userId : null,
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('送信しました。内容によっては返信が届かない場合がございます。'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _clearForm();
+      setState(() => _expandedSection = -1);
+    } catch (e) {
+      if (!mounted) return;
+      final message = _isNetworkError(e.toString())
+          ? 'ネットワークに接続できません。通信環境をご確認のうえ、もう一度お試しください。'
+          : '送信に失敗しました: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('送信に失敗しました: $e'),
+          content: Text(message),
           backgroundColor: AppColors.errorColor,
           behavior: SnackBarBehavior.floating,
         ),
@@ -2166,6 +2201,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   final _nameCtrl = TextEditingController();
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _loadFailed = false;
   String? _email;
   String? _gender;
   DateTime? _birthday;
@@ -2198,7 +2234,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
       _gender = profile?['user_gender'];
       final bday = profile?['user_birthday'];
       if (bday != null) _birthday = DateTime.tryParse(bday);
-    } catch (_) {}
+    } catch (_) {
+      // 読み込みに失敗した場合、空欄のまま保存できてしまうと既存データを
+      // 空で上書きしてしまうため、保存ボタンを無効化してユーザーに知らせる。
+      _loadFailed = true;
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('プロフィールの読み込みに失敗しました。再度開き直してください。')),
+            );
+          }
+        });
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     _iconIndex = prefs.getInt('user_profile_icon_${_userId}');
     if (mounted) setState(() => _isLoading = false);
@@ -2395,6 +2444,120 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
+  bool _isDeletingAccount = false;
+
+  Future<void> _deleteAccount() async {
+    final confirmCtrl = TextEditingController();
+    const confirmWord = '削除';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('アカウント削除', style: TextStyle(color: AppColors.errorColor)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'アカウントを削除すると、登録したお菓子の記録・お気に入り・プロフィール情報がすべて削除されます。この操作は取り消せません。',
+                  style: TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'ログイン情報（メールアドレスとパスワード）自体の削除には運営側の対応が必要なため、完了までに数日いただきます。その間に同じメールアドレス・パスワードで再ログインすると、データが無い状態で利用が再開されますが、その後運営側が削除を完了すると、その間に新しく作成したデータも一緒に削除されますのでご注意ください。',
+                  style: TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 16),
+                Text('確認のため「$confirmWord」と入力してください',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.blackLight)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: confirmCtrl,
+                  onChanged: (_) => setS(() {}),
+                  decoration: InputDecoration(
+                    hintText: confirmWord,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('キャンセル')),
+            ElevatedButton(
+              onPressed: confirmCtrl.text == confirmWord
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    AppColors.errorColor.withValues(alpha: 0.3),
+              ),
+              child: const Text('完全に削除する'),
+            ),
+          ],
+        ),
+      ),
+    );
+    confirmCtrl.dispose();
+    if (confirmed != true) return;
+
+    setState(() => _isDeletingAccount = true);
+    try {
+      final uid = _userId;
+      if (uid != null) {
+        // ログイン情報(auth.users)自体の削除にはサービスロールが必要なため
+        // クライアントからは行えない。先に依頼をinquiryとして記録しておく
+        // （これが無いと、データを消した後は運営側が削除依頼の存在に気づく手段が無くなる）。
+        await supabase.from('inquiry').insert({
+          'inquiry_type': 'account_deletion',
+          'inquiry_email': _email,
+          'inquiry_content': 'アカウント削除リクエスト（user_id: $uid）。データはアプリ側で削除済みのため、認証情報(auth.users)の削除をお願いします。',
+          'user_id': uid,
+        });
+        // FKの参照方向に沿って、参照している側から先に削除する。
+        await supabase.from('event').delete().eq('user_id', uid);
+        await supabase.from('useritem').delete().eq('user_id', uid);
+        await supabase.from('who').delete().eq('user_id', uid);
+        await supabase.from('favorite').delete().eq('user_id', uid);
+        await supabase.from('user').delete().eq('user_id', uid);
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('data_migrated_$uid');
+        await prefs.remove('migrated_present_ids_$uid');
+        await prefs.remove('favorites_migrated_$uid');
+        await prefs.remove('presents_cache_$uid');
+        await prefs.remove('user_profile_icon_$uid');
+        await prefs.remove(Constants.pendingSyncPresentsKey);
+      }
+      await AuthService.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('アカウントを削除しました。ご利用ありがとうございました。')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('削除に失敗しました: $e'),
+              backgroundColor: AppColors.errorColor,
+              behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDeletingAccount = false);
+    }
+  }
+
   Future<void> _pickBirthday() async {
     final primary = Theme.of(context).primaryColor;
     final picked = await showDatePicker(
@@ -2497,6 +2660,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     title: 'ユーザー名',
                     child: TextField(
                       controller: _nameCtrl,
+                      maxLength: 30,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       decoration: InputDecoration(
                         hintText: 'ユーザー名',
                         border: OutlineInputBorder(
@@ -2629,7 +2794,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _save,
+                      onPressed: (_isSaving || _loadFailed) ? null : _save,
                       style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14)),
                       child: _isSaving
@@ -2641,6 +2806,26 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           : const Text('保存',
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _isDeletingAccount ? null : _deleteAccount,
+                      icon: _isDeletingAccount
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.errorColor))
+                          : const Icon(Icons.delete_forever,
+                              color: AppColors.errorColor, size: 18),
+                      label: const Text('アカウントを削除する',
+                          style: TextStyle(color: AppColors.errorColor)),
                     ),
                   ),
                 ],

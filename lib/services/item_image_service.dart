@@ -21,12 +21,13 @@ class ItemImageService {
     if (itemId == null) return [];
 
     try {
+      // useritemテーブル自体ではなく、公開してよい列だけに絞ったビュー
+      // (useritem_approved_image、承認済み・画像ありの行のみ)経由で取得する。
+      // 他ユーザーのメモ・価格・ブランド名などが混ざって見えることがないようにするため。
       final rows = await supabase
-          .from('useritem')
+          .from('useritem_approved_image')
           .select('useritem_image')
           .eq('item_id', itemId)
-          .eq('useritem_approved', true)
-          .not('useritem_image', 'is', null)
           .order('useritem_update', ascending: false)
           .limit(1);
       if (rows.isNotEmpty) {

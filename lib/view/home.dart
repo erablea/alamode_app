@@ -1,5 +1,7 @@
 import 'dart:async' as async;
+import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:alamode_app/main.dart';
 import 'package:alamode_app/view/memo.dart';
@@ -8,6 +10,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alamode_app/services/favorite_service.dart';
 import 'package:alamode_app/services/item_image_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+final homeLogger = Logger('Home');
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen>
         _initializeControllers();
       });
     } catch (e) {
-      print('Error loading genres: $e');
+      homeLogger.warning('Error loading genres: $e');
       setState(() {
         _isLoadingGenres = false;
         _initializeControllers();
@@ -343,6 +348,8 @@ class ItemList extends StatefulWidget {
 class _ItemListState extends State<ItemList>
     with AutomaticKeepAliveClientMixin {
   List<Map<String, dynamic>>? _cachedDocs;
+  bool _isOfflineFallback = false;
+  DateTime? _offlineFallbackFetchedAt;
   final currencyFormat = NumberFormat('#,###');
   String _sortBy = 'display_order';
   static Map<String, bool> _globalFilterGenre = {};
@@ -352,6 +359,8 @@ class _ItemListState extends State<ItemList>
   static bool _globalFilterRoomTemperature = false;
   static bool _globalFilterOnline = false;
   static bool _globalFilterAlcohol = false;
+  static bool _globalFilterLimited = false;
+  static bool _globalFilterPhysicalStore = false;
   @override
   bool get wantKeepAlive => true;
 
@@ -378,6 +387,12 @@ class _ItemListState extends State<ItemList>
 
   bool get _filterAlcohol => _globalFilterAlcohol;
   set _filterAlcohol(bool value) => _globalFilterAlcohol = value;
+
+  bool get _filterLimited => _globalFilterLimited;
+  set _filterLimited(bool value) => _globalFilterLimited = value;
+
+  bool get _filterPhysicalStore => _globalFilterPhysicalStore;
+  set _filterPhysicalStore(bool value) => _globalFilterPhysicalStore = value;
 
 // 並び替えオプション
   static const List<Map<String, String>> _sortOptions = [
@@ -432,10 +447,20 @@ class _ItemListState extends State<ItemList>
                       }
 
                       _cachedDocs = snapshot.data!;
-                      return _buildItemList(_cachedDocs!);
+                      return Column(
+                        children: [
+                          _buildOfflineFallbackBanner(),
+                          Expanded(child: _buildItemList(_cachedDocs!)),
+                        ],
+                      );
                     },
                   )
-                : _buildItemList(_cachedDocs!),
+                : Column(
+                    children: [
+                      _buildOfflineFallbackBanner(),
+                      Expanded(child: _buildItemList(_cachedDocs!)),
+                    ],
+                  ),
           ),
         ),
       ],
@@ -558,6 +583,16 @@ class _ItemListState extends State<ItemList>
         if (value != "1" && value != 1 && value != true) continue;
       }
 
+      if (_filterLimited) {
+        final value = item['item_limited'];
+        if (value != "1" && value != 1 && value != true) continue;
+      }
+
+      if (_filterPhysicalStore) {
+        final value = item['item_physicalstore'];
+        if (value != "1" && value != 1 && value != true) continue;
+      }
+
       filteredDocs.add(item);
     }
 
@@ -642,7 +677,9 @@ class _ItemListState extends State<ItemList>
         _filterIndividualWrapping ||
             _filterRoomTemperature ||
             _filterOnline ||
-            _filterAlcohol;
+            _filterAlcohol ||
+            _filterLimited ||
+            _filterPhysicalStore;
 //    final hasRatingFilter = _filterRatingMin > 1 || _filterRatingMax < 5;
     return hasGenreFilter || hasPriceFilter || hasOtherFilter /*|| hasRatingFilter*/;
   }
@@ -735,6 +772,28 @@ class _ItemListState extends State<ItemList>
       ));
     }
 
+    if (_filterLimited) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['限定']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterLimited = false;
+          });
+        },
+      ));
+    }
+
+    if (_filterPhysicalStore) {
+      filterChips.add(_buildFilterChip(
+        label: CommonWidgets.conditionLabels['実店舗']!['yes']!,
+        onRemove: () {
+          setState(() {
+            _filterPhysicalStore = false;
+          });
+        },
+      ));
+    }
+
     return SizedBox(
       height: 32,
       child: ListView(
@@ -788,23 +847,90 @@ class _ItemListState extends State<ItemList>
     );
   }
 
+  // フィルター・並び替えは取得済みの全件に対してクライアント側で行っているため、
+  // 現状は真のページングではなく安全のための上限のみ設定している
+  // （価格帯フィルターの上下限や利用可能なカテゴリー一覧などをクライアント側で
+  // 算出しているため、サーバー側ページングにするには設計変更が必要）。
+  static const int _maxItemsFetched = 1000;
+
+  // Home一覧はジャンル・タブに関わらず同じ「表示対象の全件」を取得し、
+  // ジャンル絞り込みは_applyClientSideFiltersでクライアント側に行っているため、
+  // オフラインキャッシュもタブごとに分けず単一のキーで共有する。
+  static const String _itemsCacheKey = 'home_items_cache';
+  static const String _itemsCacheFetchedAtKey = 'home_items_cache_fetched_at';
+
+  int _compareForCache(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final field = _sortField;
+    final av = a[field];
+    final bv = b[field];
+    int cmp;
+    if (av == null && bv == null) {
+      cmp = 0;
+    } else if (av == null) {
+      cmp = -1;
+    } else if (bv == null) {
+      cmp = 1;
+    } else if (av is num && bv is num) {
+      cmp = av.compareTo(bv);
+    } else {
+      cmp = av.toString().compareTo(bv.toString());
+    }
+    return _sortDescending ? -cmp : cmp;
+  }
+
   async.Future<List<Map<String, dynamic>>> _getFilteredQuery() async {
-    final data = await supabase
-        .from('item')
-        .select()
-        .eq('item_show_on_home', true)
-        .order(_sortField, ascending: !_sortDescending);
-    return data;
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final data = await supabase
+          .from('item')
+          .select()
+          .eq('item_show_on_home', true)
+          .order(_sortField, ascending: !_sortDescending)
+          .limit(_maxItemsFetched);
+      final result = List<Map<String, dynamic>>.from(data);
+      _isOfflineFallback = false;
+      await prefs.setString(_itemsCacheKey, jsonEncode(result));
+      await prefs.setInt(
+          _itemsCacheFetchedAtKey, DateTime.now().millisecondsSinceEpoch);
+      return result;
+    } catch (e) {
+      final cached = prefs.getString(_itemsCacheKey);
+      if (cached == null) rethrow;
+      final list = (jsonDecode(cached) as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      list.sort(_compareForCache);
+      _isOfflineFallback = true;
+      final fetchedAtMs = prefs.getInt(_itemsCacheFetchedAtKey);
+      _offlineFallbackFetchedAt = fetchedAtMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(fetchedAtMs);
+      return list;
+    }
+  }
+
+  Widget _buildOfflineFallbackBanner() {
+    if (!_isOfflineFallback) return const SizedBox.shrink();
+    final fetchedAt = _offlineFallbackFetchedAt;
+    final label = fetchedAt == null
+        ? 'オフラインのため最新の情報を取得できません。'
+        : 'オフラインのため最新の情報を取得できません（最終取得: '
+            '${DateFormat('M/d HH:mm').format(fetchedAt)}）。';
+    return Container(
+      width: double.infinity,
+      color: AppColors.greyLight,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: AppColors.blackLight),
+      ),
+    );
   }
 
   async.Future<void> _openFilterDialog() async {
-    // Supabaseからデータ取得
-    final data = await supabase.from('item').select();
-
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => HomeFilterDialog(
-        itemList: data,
         currentFilterGenre: _filterGenre, // 常に現在のフィルター状態を渡す
         currentPriceMin: _filterPriceMin,
         currentPriceMax: _filterPriceMax,
@@ -812,6 +938,8 @@ class _ItemListState extends State<ItemList>
         currentRoomTemperature: _filterRoomTemperature,
         currentOnline: _filterOnline,
         currentAlcohol: _filterAlcohol,
+        currentLimited: _filterLimited,
+        currentPhysicalStore: _filterPhysicalStore,
         isAllTab: widget.genre == 'all', // allタブかどうかを新しいパラメータで渡す
       ),
     );
@@ -826,6 +954,8 @@ class _ItemListState extends State<ItemList>
         _filterRoomTemperature = result['filterRoomTemperature'] ?? false;
         _filterOnline = result['filterOnline'] ?? false;
         _filterAlcohol = result['filterAlcohol'] ?? false;
+        _filterLimited = result['filterLimited'] ?? false;
+        _filterPhysicalStore = result['filterPhysicalStore'] ?? false;
         _cachedDocs = null;
       });
     }
@@ -1045,7 +1175,6 @@ class ItemCard extends StatelessWidget {
 }
 
 class HomeFilterDialog extends StatefulWidget {
-  final List<Map<String, dynamic>> itemList;
   final Map<String, bool> currentFilterGenre;
   final double currentPriceMin;
   final double currentPriceMax;
@@ -1053,11 +1182,12 @@ class HomeFilterDialog extends StatefulWidget {
   final bool currentRoomTemperature;
   final bool currentOnline;
   final bool currentAlcohol;
+  final bool currentLimited;
+  final bool currentPhysicalStore;
   final bool isAllTab;
 
   const HomeFilterDialog({
     super.key,
-    required this.itemList,
     required this.currentFilterGenre,
     required this.currentPriceMin,
     required this.currentPriceMax,
@@ -1065,6 +1195,8 @@ class HomeFilterDialog extends StatefulWidget {
     required this.currentRoomTemperature,
     required this.currentOnline,
     required this.currentAlcohol,
+    required this.currentLimited,
+    required this.currentPhysicalStore,
     required this.isAllTab,
   });
 
@@ -1079,6 +1211,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
   late bool _tempRoomTemperature;
   late bool _tempOnline;
   late bool _tempAlcohol;
+  late bool _tempLimited;
+  late bool _tempPhysicalStore;
   late Future<List<String>> _genresFuture;
 /*  late RangeValues _tempFilterRatingRange; */
 
@@ -1092,6 +1226,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
     _tempRoomTemperature = widget.currentRoomTemperature;
     _tempOnline = widget.currentOnline;
     _tempAlcohol = widget.currentAlcohol;
+    _tempLimited = widget.currentLimited;
+    _tempPhysicalStore = widget.currentPhysicalStore;
     _genresFuture = _getAvailableGenres();
   }
 
@@ -1219,6 +1355,8 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                           'filterRoomTemperature': _tempRoomTemperature,
                           'filterOnline': _tempOnline,
                           'filterAlcohol': _tempAlcohol,
+                          'filterLimited': _tempLimited,
+                          'filterPhysicalStore': _tempPhysicalStore,
                         });
                       },
                       child: Container(
@@ -1327,7 +1465,7 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
 
       return genres.toList()..sort();
     } catch (e) {
-      print('Error getting available genres: $e');
+      homeLogger.warning('Error getting available genres: $e');
       return [];
     }
   }
@@ -1492,6 +1630,30 @@ class _HomeFilterDialogState extends State<HomeFilterDialog> {
                       _tempAlcohol ? 'yes' : 'unknown',
                       constrainText: true,
                       onTap: () => setState(() => _tempAlcohol = !_tempAlcohol),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '限定',
+                      _tempLimited ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempLimited = !_tempLimited),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CommonWidgets.buildConditionChip(
+                      context,
+                      '実店舗',
+                      _tempPhysicalStore ? 'yes' : 'unknown',
+                      constrainText: true,
+                      onTap: () => setState(() => _tempPhysicalStore = !_tempPhysicalStore),
                     ),
                   ),
                 ],
@@ -1688,8 +1850,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                         ),
                         errorWidget: (context, url, error) {
-                          print('Image loading error for URL: $url');
-                          print('Error details: $error');
+                          homeLogger.warning('Image loading error for URL: $url');
+                          homeLogger.warning('Error details: $error');
                           return Container(
                             color: AppColors.greyLight,
                             child: Column(
@@ -2079,7 +2241,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ...details,
               const SizedBox(height: 16),
               Text(
-                '※情報は正確ではない場合がございます。必ず公式サイトや店舗にてご確認ください。',
+                '※情報は正確ではない場合がございます。必ず公式サイトや店舗にてご確認ください。\n'
+                '・賞味期限は購入時点でのものではなく目安のため、直接購入時にご確認ください。\n'
+                '・常温とは室温すべてが適した温度とは限らないため、直接購入時にご確認ください。\n'
+                '・価格は登録時点の情報のため、実際の販売価格と異なる場合があります。\n'
+                '・個包装の有無は商品のリニューアル等により変更される場合があります。\n'
+                '・オンライン購入の可否は販売状況により変わる場合があります。\n'
+                '・洋酒の使用有無は商品のリニューアル等により変更される場合があります。\n'
+                '・数量・期間限定の情報は登録時点のものです。販売が終了している場合があります。\n'
+                '・実店舗での取り扱いは店舗により異なる場合があります。',
                 style: TextStyle(
                   fontSize: 11,
                   color: AppColors.blackLight.withValues(alpha: 0.8),
@@ -2408,6 +2578,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               .from('item')
               .select()
               .eq('brand_id', brandId)
+              .eq('item_show_on_home', true)
               .limit(10),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {

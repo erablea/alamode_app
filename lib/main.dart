@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show FlutterErrorDetails, PlatformDispatcher;
+import 'package:logging/logging.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
 import 'package:alamode_app/view/memo.dart';
@@ -20,6 +23,7 @@ const List<Map<String, dynamic>> appThemes = [
 
 final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final appLogger = Logger('App');
 
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
@@ -41,6 +45,29 @@ class AppColors {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // logging パッケージはRoot Loggerにリスナーを設定しない限りどこにも出力されない。
+  // これが未設定だったため、アプリ各所のpresentLogger.warning()等が今まで
+  // コンソールにすら出ておらず、開発者が実行時エラーに全く気づけない状態だった。
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    // ignore: avoid_print
+    print('[${record.level.name}] ${record.loggerName}: ${record.message}'
+        '${record.error != null ? '\n${record.error}' : ''}');
+  });
+
+  // Flutterフレームワーク内（widgetのbuild等）で起きた捕捉されない例外をログに残す。
+  // 現状は外部のクラッシュ収集サービス(Sentry等)を導入していないため、最低限
+  // ブラウザのコンソールから追えるようにする（本番運用開始後に導入する場合は
+  // ここでサービスへの送信も追加すればよい）。
+  FlutterError.onError = (FlutterErrorDetails details) {
+    appLogger.severe('Uncaught Flutter error', details.exception, details.stack);
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    appLogger.severe('Uncaught platform error', error, stack);
+    return true;
+  };
 
   final corinthia = FontLoader('Corinthia')
     ..addFont(rootBundle.load('assets/fonts/Corinthia/Corinthia-Regular.ttf'))

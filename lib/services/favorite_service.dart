@@ -33,7 +33,11 @@ class FavoriteService {
           .eq('item_id', itemId)
           .maybeSingle();
       if (existing != null) {
-        await supabase.from('favorite').delete().eq('favorite_id', existing['favorite_id']);
+        await supabase
+            .from('favorite')
+            .delete()
+            .eq('favorite_id', existing['favorite_id'])
+            .eq('user_id', uid);
       } else {
         await supabase.from('favorite').insert({'user_id': uid, 'item_id': itemId});
       }

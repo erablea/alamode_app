@@ -22,10 +22,14 @@ final presentLogger = Logger('PresentManagement');
 
 class Constants {
   static const String presentListKey = 'present_list';
+  static const String pendingSyncPresentsKey = 'pending_sync_presents';
   static const int maxImageSize = 1024 * 1024; // 1MB
   static const int targetImageWidth = 1024;
   static const int memoMaxLength = 200;
   static const double maxPriceFilter = 20000;
+  static const int nameMaxLength = 40;
+  static const int brandMaxLength = 30;
+  static const int maxPrice = 9999999;
 }
 
 class Utils {
@@ -635,10 +639,19 @@ class PresentManagementService {
     }
   }
 
-  Future<void> savePresent(Map<String, dynamic> presentData) async {
+  /// 戻り値はtrueの場合、通信エラーのためオフラインキューに保存したことを示す
+  /// （データ自体は失われておらず、次回オンライン時に自動で同期される）。
+  Future<bool> savePresent(Map<String, dynamic> presentData) async {
     if (AuthService.instance.isLoggedIn) {
-      await _savePresentToSupabase(presentData);
-      return;
+      try {
+        await _savePresentToSupabase(presentData);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('保存に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingOperation('create', presentData);
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -647,15 +660,99 @@ class PresentManagementService {
       presentData['present_createdate'] ??= DateTime.now().toIso8601String();
       presentList.add(jsonEncode(presentData));
       await prefs.setStringList(Constants.presentListKey, presentList);
+      return false;
     } catch (e) {
       throw Exception('保存に失敗しました: $e');
     }
   }
 
-  Future<void> updatePresent(Map<String, dynamic> presentData) async {
+  Future<void> _queuePendingOperation(String op, Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    final entry = {'_op': op, ...data};
+    entry['present_id'] ??= Utils.generateUniqueId();
+    if (op == 'create') {
+      entry['present_createdate'] ??= DateTime.now().toIso8601String();
+    }
+    pending.add(jsonEncode(entry));
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, pending);
+  }
+
+  /// まだ同期されていない新規作成（create）データ自体を編集・削除しようとした場合、
+  /// サーバー側にまだ行が存在しないため通常のupdate/delete APIは使えない。
+  /// このような場合はキュー内のcreateエントリ自体を書き換える／取り除く。
+  /// newDataがnullなら削除、そうでなければ内容を差し替える。該当エントリが
+  /// 見つからなかった場合はfalseを返す（＝通常のupdate/delete処理を続行してよい）。
+  Future<bool> _mutatePendingCreate(
+      String presentId, Map<String, dynamic>? newData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    final idx = pending.indexWhere((raw) {
+      final data = Map<String, dynamic>.from(jsonDecode(raw));
+      final op = data['_op'] as String? ?? 'create';
+      return op == 'create' && data['present_id']?.toString() == presentId;
+    });
+    if (idx == -1) return false;
+    if (newData == null) {
+      pending.removeAt(idx);
+    } else {
+      pending[idx] = jsonEncode({'_op': 'create', ...newData});
+    }
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, pending);
+    return true;
+  }
+
+  /// オフラインキューに溜まった未同期データをSupabaseへ反映する。
+  /// 保存や一覧取得のたびに（＝通信の機会があるたびに）呼び出すことで、
+  /// connectivity_plus等の追加パッケージなしに「オンライン復帰時の自動同期」を実現する。
+  Future<void> syncPendingPresents() async {
+    if (!AuthService.instance.isLoggedIn) return;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    if (pending.isEmpty) return;
+    final remaining = <String>[];
+    for (final raw in pending) {
+      try {
+        final data = Map<String, dynamic>.from(jsonDecode(raw));
+        switch (data['_op'] as String? ?? 'create') {
+          case 'update':
+            await _updatePresentInSupabase(data);
+            break;
+          case 'delete':
+            await _deletePresentFromSupabase(data['present_id'].toString());
+            break;
+          default:
+            await _savePresentToSupabase(data);
+        }
+      } catch (e) {
+        presentLogger.warning('保留中データの同期に失敗しました: $e');
+        remaining.add(raw);
+      }
+    }
+    await prefs.setStringList(Constants.pendingSyncPresentsKey, remaining);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPendingQueueEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(Constants.pendingSyncPresentsKey) ?? [];
+    return pending.map((raw) => Map<String, dynamic>.from(jsonDecode(raw))).toList();
+  }
+
+  Future<bool> updatePresent(Map<String, dynamic> presentData) async {
     if (AuthService.instance.isLoggedIn) {
-      await _updatePresentInSupabase(presentData);
-      return;
+      final presentId = presentData['present_id']?.toString();
+      if (presentId != null && await _mutatePendingCreate(presentId, presentData)) {
+        return true;
+      }
+      try {
+        await _updatePresentInSupabase(presentData);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('更新に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingOperation('update', presentData);
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -671,16 +768,27 @@ class PresentManagementService {
         presentList[index] = jsonEncode(presentData);
         await prefs.setStringList(Constants.presentListKey, presentList);
       }
+      return false;
     } catch (e) {
       presentLogger.warning('更新に失敗しました: $e');
       rethrow;
     }
   }
 
-  Future<void> deletePresent(String presentId) async {
+  Future<bool> deletePresent(String presentId) async {
     if (AuthService.instance.isLoggedIn) {
-      await _deletePresentFromSupabase(presentId);
-      return;
+      if (await _mutatePendingCreate(presentId, null)) {
+        return false; // 未同期のまま削除したためサーバー側には何も残っていない
+      }
+      try {
+        await _deletePresentFromSupabase(presentId);
+        await syncPendingPresents();
+        return false;
+      } catch (e) {
+        presentLogger.warning('削除に失敗したためオフラインキューに保存します: $e');
+        await _queuePendingOperation('delete', {'present_id': presentId});
+        return true;
+      }
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -692,6 +800,7 @@ class PresentManagementService {
       });
 
       await prefs.setStringList(Constants.presentListKey, presentList);
+      return false;
     } catch (e) {
       presentLogger.warning('削除に失敗しました: $e');
       rethrow;
@@ -700,6 +809,7 @@ class PresentManagementService {
 
   Future<List<Map<String, dynamic>>> getAllPresents() async {
     if (AuthService.instance.isLoggedIn) {
+      await syncPendingPresents();
       return _getAllPresentsFromSupabase();
     }
     try {
@@ -716,17 +826,53 @@ class PresentManagementService {
 
   Future<List<Map<String, dynamic>>> _getAllPresentsFromSupabase() async {
     final uid = AuthService.instance.userId!;
+    final cacheKey = 'presents_cache_$uid';
+    final prefs = await SharedPreferences.getInstance();
+    List<Map<String, dynamic>> results;
     try {
       final data = await supabase
           .from('event')
           .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_alcohol, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
           .eq('user_id', uid)
           .order('event_createdate', ascending: false);
-      return (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
+      results = (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
+      // 次回オフライン時に表示するためのローカルキャッシュ。
+      await prefs.setString(cacheKey, jsonEncode(results));
     } catch (e) {
-      presentLogger.warning('Supabaseからの読み込みに失敗: $e');
-      return [];
+      presentLogger.warning('Supabaseからの読み込みに失敗。ローカルキャッシュを表示します: $e');
+      final cached = prefs.getString(cacheKey);
+      results = cached == null
+          ? []
+          : (jsonDecode(cached) as List)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
     }
+    final pendingEntries = await _loadPendingQueueEntries();
+    final pendingCreates = pendingEntries.where((e) => (e['_op'] as String? ?? 'create') == 'create');
+    final pendingUpdatesById = <String, Map<String, dynamic>>{
+      for (final e in pendingEntries.where((e) => e['_op'] == 'update'))
+        e['present_id'].toString(): e,
+    };
+    final pendingDeleteIds = pendingEntries
+        .where((e) => e['_op'] == 'delete')
+        .map((e) => e['present_id'].toString())
+        .toSet();
+
+    // 未同期の削除・更新をサーバーから取得した一覧にも反映する
+    // （そうしないとオフライン中に削除/編集したはずのデータが元のまま表示され続けてしまう）。
+    final merged = results
+        .where((p) => !pendingDeleteIds.contains(p['present_id']?.toString()))
+        .map((p) {
+          final override = pendingUpdatesById[p['present_id']?.toString()];
+          if (override == null) return p;
+          return {...p, ...override, '_pendingSync': true};
+        })
+        .toList();
+
+    return [
+      ...pendingCreates.map((e) => {...e, '_pendingSync': true}),
+      ...merged,
+    ];
   }
 
   static Map<String, dynamic> _supabaseToPresent(Map<String, dynamic> event) {
@@ -824,7 +970,7 @@ class PresentManagementService {
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_image': data['present_imageurl'],
       'useritem_update': DateTime.now().toIso8601String(),
-    }).eq('useritem_id', useritemId);
+    }).eq('useritem_id', useritemId).eq('user_id', uid);
     await supabase.from('event').update({
       'event_how': data['present_type'] == 'received' ? 'treat' : 'present',
       'event_reaction_rating': data['present_reaction'] ?? 0,
@@ -832,22 +978,27 @@ class PresentManagementService {
       'who_id': whoId,
       'event_date': data['present_date'],
       'event_update': DateTime.now().toIso8601String(),
-    }).eq('event_id', eventId);
+    }).eq('event_id', eventId).eq('user_id', uid);
   }
 
+  // user_idでの絞り込みはRLSに加えたクライアント側の多重防御。
+  // RLSの設定に不備があっても、このアプリ自身が他ユーザーの行を
+  // 更新・削除できないようにする。
   Future<void> _deletePresentFromSupabase(String presentId) async {
+    final uid = AuthService.instance.userId!;
     final eventData = await supabase
         .from('event')
         .select('useritem_id')
         .eq('event_id', presentId)
+        .eq('user_id', uid)
         .maybeSingle();
-    await supabase.from('event').delete().eq('event_id', presentId);
+    await supabase.from('event').delete().eq('event_id', presentId).eq('user_id', uid);
     if (eventData != null) {
       final useritemId = eventData['useritem_id'];
       if (useritemId != null) {
         final others = await supabase.from('event').select('event_id').eq('useritem_id', useritemId);
         if ((others as List).isEmpty) {
-          await supabase.from('useritem').delete().eq('useritem_id', useritemId);
+          await supabase.from('useritem').delete().eq('useritem_id', useritemId).eq('user_id', uid);
         }
       }
     }
@@ -1409,6 +1560,13 @@ class _PresentListState extends State<PresentList> {
                 present['present_date'] ?? '',
                 style: const TextStyle(fontSize: 12, color: AppColors.blackLight),
               ),
+              if (present['_pendingSync'] == true) ...[
+                const SizedBox(width: 6),
+                const Tooltip(
+                  message: 'オフライン保存中（オンラインになると自動で同期されます）',
+                  child: Icon(Icons.cloud_off, size: 13, color: AppColors.blackLight),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 3),
@@ -2165,9 +2323,20 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     final useritemId = widget.initialPresent?['_useritem_id'];
     if (useritemId == null) return;
     try {
-      await supabase.from('useritem').update({'useritem_approved': approved}).eq('useritem_id', useritemId);
-    } catch (_) {}
-    if (mounted) setState(() => _showApprovalPrompt = false);
+      final uid = AuthService.instance.userId!;
+      await supabase
+          .from('useritem')
+          .update({'useritem_approved': approved})
+          .eq('useritem_id', useritemId)
+          .eq('user_id', uid);
+      if (mounted) setState(() => _showApprovalPrompt = false);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('通信エラーのため反映できませんでした。もう一度お試しください。')),
+        );
+      }
+    }
   }
 
   Widget _buildApprovalPrompt() {
@@ -2514,7 +2683,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 controller: _whoFieldController,
                 focusNode: _whoFocusNode,
                 decoration: CommonWidgets.buildInputDecoration(label, context: context),
-                validator: (value) => (value == null || value.isEmpty) ? '必須項目です' : null,
+                maxLength: Constants.brandMaxLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return '必須項目です';
+                  if (value.characters.length > Constants.brandMaxLength) {
+                    return '${Constants.brandMaxLength}文字以内にしてください';
+                  }
+                  return null;
+                },
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -2667,10 +2844,18 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_memo': _controllers['present_memo']!.text,
       };
 
+      bool wasQueuedOffline;
       if (widget.initialPresent != null) {
-        await widget.presentService.updatePresent(presentData);
+        wasQueuedOffline = await widget.presentService.updatePresent(presentData);
       } else {
-        await widget.presentService.savePresent(presentData);
+        wasQueuedOffline = await widget.presentService.savePresent(presentData);
+      }
+      if (wasQueuedOffline && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('オフラインのため保存を保留しました。オンラインになると自動で反映されます。'),
+          ),
+        );
       }
       Navigator.pop(context, true);
     } catch (e) {
@@ -2700,8 +2885,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     );
     if (confirmed == true) {
       try {
-        await widget.presentService
+        final wasQueuedOffline = await widget.presentService
             .deletePresent(widget.initialPresent!['present_id']);
+        if (wasQueuedOffline && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('オフラインのため削除を保留しました。オンラインになると自動で反映されます。'),
+            ),
+          );
+        }
         Navigator.pop(context, true);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2777,16 +2969,16 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     if (result != null) {
       setState(() {
         _controllers['present_name']!.text = result['item_name'] ?? '';
-        _controllers['present_brand']!.text = result['item_brand'] ?? '';
+        _controllers['present_brand']!.text = result['_brandName'] ?? '';
         _controllers['present_price']!.text =
             Utils.formatCurrency(result['item_price10percent']);
         String? genre = result['item_category'];
         if (genre != null && genre.isNotEmpty) {
           _selectedGenres = {genre};
         }
-        if (result['item_imageurl'] != null &&
-            result['item_imageurl'].toString().isNotEmpty) {
-          _existingImageUrls = [result['item_imageurl']];
+        if (result['item_imageurl1'] != null &&
+            result['item_imageurl1'].toString().isNotEmpty) {
+          _existingImageUrls = [result['item_imageurl1']];
           _pickedFiles.clear();
           _webImages.clear();
         }
@@ -2870,7 +3062,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 context: context,
               ),
-              validator: (value) => value!.isEmpty ? '必須項目です' : null,
+              maxLength: Constants.nameMaxLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              validator: (value) {
+                if (value!.isEmpty) return '必須項目です';
+                if (value.characters.length > Constants.nameMaxLength) {
+                  return '${Constants.nameMaxLength}文字以内にしてください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 24),
             TextFormField(
@@ -2883,7 +3083,15 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 context: context,
               ),
-              validator: (value) => value!.isEmpty ? '必須項目です' : null,
+              maxLength: Constants.brandMaxLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              validator: (value) {
+                if (value!.isEmpty) return '必須項目です';
+                if (value.characters.length > Constants.brandMaxLength) {
+                  return '${Constants.brandMaxLength}文字以内にしてください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 24),
             _buildGenreSelector(),
@@ -2900,6 +3108,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                       FilteringTextInputFormatter.digitsOnly,
                       _ThousandsSeparatorInputFormatter(),
                     ],
+                    validator: (value) {
+                      final raw = int.tryParse((value ?? '').replaceAll(',', ''));
+                      if (raw != null && raw > Constants.maxPrice) {
+                        return '¥${Utils.formatCurrency(Constants.maxPrice)}以下にしてください';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const Padding(
@@ -3192,17 +3407,31 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
       _isLoading = true;
     });
     try {
-      String searchField =
-          widget.searchType == SearchType.name ? 'item_name' : 'item_brand';
-      final allItems = await Supabase.instance.client
-          .from('item')
-          .select()
-          .limit(5000);
+      final results = await Future.wait([
+        Supabase.instance.client.from('item').select().limit(5000),
+        Supabase.instance.client.from('brand').select(),
+      ]);
+      final allItems = results[0];
+      final brands = results[1];
+      final brandById = {
+        for (final b in brands)
+          if (b['brand_id'] != null) b['brand_id'].toString(): b,
+      };
       final normalizedQuery = Utils.normalizeString(query);
 
       final filteredResults = List<Map<String, dynamic>>.from(allItems)
+          .map((data) {
+            final brand = brandById[data['brand_id']?.toString()];
+            return {
+              ...data,
+              '_brandName': brand?['brand_name'],
+              '_brandCompany': brand?['brand_company'],
+            };
+          })
           .where((data) {
-            final targetField = data[searchField];
+            final targetField = widget.searchType == SearchType.name
+                ? data['item_name']
+                : (data['_brandName'] ?? data['_brandCompany']);
             if (targetField == null) return false;
 
             final normalizedTarget =
@@ -3328,12 +3557,12 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                   ),
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.all(12),
-                                    leading: item['item_imageurl'] != null
+                                    leading: item['item_imageurl1'] != null
                                         ? ClipRRect(
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                             child: Image.network(
-                                              item['item_imageurl'],
+                                              item['item_imageurl1'],
                                               width: 60,
                                               height: 60,
                                               fit: BoxFit.cover,
@@ -3386,7 +3615,7 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            item['item_brand'] ?? '',
+                                            item['_brandName'] ?? '',
                                             style: const TextStyle(
                                               color: AppColors.blackLight,
                                               fontSize: 12,
@@ -3401,12 +3630,12 @@ class _ItemSearchDialogState extends State<ItemSearchDialog> {
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          if (item['item_company'] != null &&
-                                              item['item_company']
+                                          if (item['_brandCompany'] != null &&
+                                              item['_brandCompany']
                                                   .toString()
                                                   .isNotEmpty)
                                             Text(
-                                              item['item_company'],
+                                              item['_brandCompany'],
                                               style: const TextStyle(
                                                 color: AppColors.blackLight,
                                                 fontSize: 11,
