@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show FlutterErrorDetails, PlatformDispatcher;
+import 'package:flutter/foundation.dart'
+    show FlutterErrorDetails, PlatformDispatcher;
 import 'package:logging/logging.dart';
 import 'package:alamode_app/view/home.dart';
 import 'package:alamode_app/view/favorite.dart';
@@ -28,7 +29,8 @@ final appLogger = Logger('App');
 class AppColors {
   static const Color primaryColor = Color(0xFF1C6ECD);
   static const Color blackDark = Color(0xFF1A1A1A);
-  static const Color blackLight = Color(0xFF666666); // 白/淡色背景でWCAG AA(4.5:1)を満たす濃さ
+  static const Color blackLight =
+      Color(0xFF666666); // 白/淡色背景でWCAG AA(4.5:1)を満たす濃さ
   static const Color greyDark = Color(0xFFCCCCCC);
   static const Color greyMedium = Color(0xFFE6E6E6);
   static const Color greyLight = Color(0xFFF5F5F5);
@@ -49,7 +51,7 @@ void main() async {
   // logging パッケージはRoot Loggerにリスナーを設定しない限りどこにも出力されない。
   // これが未設定だったため、アプリ各所のpresentLogger.warning()等が今まで
   // コンソールにすら出ておらず、開発者が実行時エラーに全く気づけない状態だった。
-  Logger.root.level = Level.ALL;
+  Logger.root.level = Level.WARNING;
   Logger.root.onRecord.listen((record) {
     // ignore: avoid_print
     print('[${record.level.name}] ${record.loggerName}: ${record.message}'
@@ -61,7 +63,8 @@ void main() async {
   // ブラウザのコンソールから追えるようにする（本番運用開始後に導入する場合は
   // ここでサービスへの送信も追加すればよい）。
   FlutterError.onError = (FlutterErrorDetails details) {
-    appLogger.severe('Uncaught Flutter error', details.exception, details.stack);
+    appLogger.severe(
+        'Uncaught Flutter error', details.exception, details.stack);
     FlutterError.presentError(details);
   };
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
@@ -341,7 +344,8 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunchPrompt());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _checkFirstLaunchPrompt());
   }
 
   Future<void> _checkFirstLaunchPrompt() async {
@@ -357,7 +361,8 @@ class _MainAppState extends State<MainApp> {
         builder: (_) => const LoginPromptDialog(),
       );
       if (result == 'login' && mounted) {
-        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+        await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const LoginScreen()));
       }
     }
   }
@@ -405,7 +410,8 @@ class _MainAppState extends State<MainApp> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? primary.withValues(alpha: 0.06) : Colors.transparent,
+          color:
+              isSelected ? primary.withValues(alpha: 0.06) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -414,8 +420,9 @@ class _MainAppState extends State<MainApp> {
             Icon(
               icon,
               size: 25,
-              color:
-                  isSelected ? primary : AppColors.blackLight.withValues(alpha: 0.6),
+              color: isSelected
+                  ? primary
+                  : AppColors.blackLight.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 0),
             Text(
