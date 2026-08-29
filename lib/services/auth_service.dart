@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alamode_app/main.dart';
+import 'package:alamode_app/view/memo.dart' show CommonWidgets;
 
 class AuthService {
   static final AuthService instance = AuthService._();
@@ -145,18 +146,19 @@ class AuthService {
     }
 
     final otherConditions = data['present_other_conditions'] as String? ?? '';
+    final condStates = CommonWidgets.parseConditionString(otherConditions);
+    String? condValue(String key) =>
+        condStates[key] == 'unknown' ? null : condStates[key];
     final useritemResult = await supabase.from('useritem').insert({
       'user_id': uid,
       'useritem_name': data['present_name'] ?? '',
       'useritem_brand': data['present_brand'] ?? '',
       'useritem_category': data['present_genre'] ?? '',
       'useritem_price': data['present_price'] ?? 0,
-      'useritem_roomtemperature': otherConditions.contains('常温') ? 'yes' : 'no',
-      'useritem_individualwrapping': otherConditions.contains('個包装') ? 'yes' : 'no',
-      'useritem_online': otherConditions.contains('オンライン購入') ? 'yes' : 'no',
-      'useritem_alcohol': otherConditions.contains('洋酒不使用')
-          ? 'yes'
-          : (otherConditions.contains('洋酒使用') ? 'no' : null),
+      'useritem_roomtemperature': condValue('常温'),
+      'useritem_individualwrapping': condValue('個包装'),
+      'useritem_online': condValue('オンライン購入'),
+      'useritem_alcohol': condValue('洋酒'),
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': data['present_imageurl'],

@@ -32,7 +32,15 @@ class ItemImageService {
           .limit(1);
       if (rows.isNotEmpty) {
         final fallback = rows.first['useritem_image'] as String?;
-        if (fallback != null && fallback.isNotEmpty) return [fallback];
+        // useritem_imageは端末ローカル保存の場合キー文字列やローカルパスであり、
+        // 実際のネットワークURLとは限らない（本人の端末以外では表示できない）。
+        // CachedNetworkImageに渡せるのは実URLの場合のみなので、それ以外は
+        // 「有効な画像なし」として扱いデフォルト画像表示に委ねる。
+        if (fallback != null &&
+            (fallback.startsWith('http://') ||
+                fallback.startsWith('https://'))) {
+          return [fallback];
+        }
       }
     } catch (_) {
       // フォールバック取得に失敗してもデフォルト画像表示に委ねる

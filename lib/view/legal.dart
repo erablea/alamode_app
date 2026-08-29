@@ -414,33 +414,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
   }
 }
 
-Widget _buildInfoRow(String label, String content) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: AppColors.blackDark)),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-              color: AppColors.greyLight,
-              borderRadius: BorderRadius.circular(8)),
-          child: Text(content,
-              style: const TextStyle(
-                  fontSize: 14, color: AppColors.blackDark, height: 1.5)),
-        ),
-      ],
-    ),
-  );
-}
-
 Widget _buildLegalSection(BuildContext context, String title, String content) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 20),

@@ -355,6 +355,7 @@ class _MainAppState extends State<MainApp> {
     final firstDone = prefs.getBool('first_launch_done') ?? false;
     if (!dismissed && !firstDone && mounted) {
       await prefs.setBool('first_launch_done', true);
+      if (!mounted) return;
       final result = await showDialog<String>(
         context: context,
         barrierDismissible: true,

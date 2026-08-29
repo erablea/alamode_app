@@ -48,14 +48,17 @@ class _UserScreenState extends State<UserScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('データの読み込みに失敗しました: $e'),
-          backgroundColor: AppColors.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('データの読み込みに失敗しました: $e'),
+            backgroundColor: AppColors.errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
     }
   }
 
@@ -99,6 +102,7 @@ class _UserScreenState extends State<UserScreen> {
                         onTap: () async {
                           final currentIndex =
                               await PersonIconService.getIconIndex(person);
+                          if (!context.mounted) return;
                           final result = await showDialog<int>(
                             context: context,
                             builder: (_) => PersonIconPickerDialog(
@@ -109,6 +113,7 @@ class _UserScreenState extends State<UserScreen> {
                           if (result != null) {
                             await PersonIconService.saveIconIndex(
                                 person, result);
+                            if (!mounted) return;
                             setState(() {});
                           }
                         },
@@ -2306,6 +2311,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<void> _changeEmail() async {
     if (!await _checkDailyLimit('email_change')) return;
+    if (!mounted) return;
     final ctrl = TextEditingController();
     final primary = Theme.of(context).primaryColor;
     final newEmail = await showDialog<String>(
@@ -2358,6 +2364,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<void> _changePassword() async {
     if (!await _checkDailyLimit('password_change')) return;
+    if (!mounted) return;
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
     final primary = Theme.of(context).primaryColor;

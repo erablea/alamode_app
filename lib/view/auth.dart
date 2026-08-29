@@ -174,12 +174,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           setDialogState(() { sending = true; error = null; });
                           try {
                             await AuthService.instance.resetPassword(emailCtrl.text);
-                            if (dialogContext.mounted) {
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('パスワード再設定用のメールを送信しました')),
-                              );
-                            }
+                            if (!dialogContext.mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('パスワード再設定用のメールを送信しました')),
+                            );
                           } catch (e) {
                             setDialogState(() {
                               sending = false;

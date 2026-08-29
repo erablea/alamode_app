@@ -1101,9 +1101,13 @@ class _PresentListState extends State<PresentList> {
       _applyFiltersAndSort();
     } catch (e) {
       presentLogger.warning('読み込みに失敗しました: $e');
-      Utils.showSnackBar(context, '読み込みに失敗しました: $e');
+      if (mounted) {
+        Utils.showSnackBar(context, '読み込みに失敗しました: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -2850,7 +2854,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       } else {
         wasQueuedOffline = await widget.presentService.savePresent(presentData);
       }
-      if (wasQueuedOffline && mounted) {
+      if (!mounted) return;
+      if (wasQueuedOffline) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('オフラインのため保存を保留しました。オンラインになると自動で反映されます。'),
@@ -2859,9 +2864,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       }
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存に失敗しました: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存に失敗しました: $e')),
+        );
+      }
     }
   }
 
@@ -2887,7 +2894,8 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
       try {
         final wasQueuedOffline = await widget.presentService
             .deletePresent(widget.initialPresent!['present_id']);
-        if (wasQueuedOffline && mounted) {
+        if (!mounted) return;
+        if (wasQueuedOffline) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('オフラインのため削除を保留しました。オンラインになると自動で反映されます。'),
@@ -2896,9 +2904,11 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         }
         Navigator.pop(context, true);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('削除に失敗しました: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('削除に失敗しました: $e')),
+          );
+        }
       }
     }
   }
