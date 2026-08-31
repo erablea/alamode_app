@@ -1231,6 +1231,10 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
       TextEditingController();
   final TextEditingController _businessController = TextEditingController();
 
+  // スパム対策用ハニーポット（人間には見えない項目。ここに値が入っていたら
+  // ボットとみなして送信を握りつぶす）。
+  final TextEditingController _honeypotController = TextEditingController();
+
   @override
   void dispose() {
     _bugReportController.dispose();
@@ -1241,6 +1245,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     _businessNameController.dispose();
     _businessEmailController.dispose();
     _businessController.dispose();
+    _honeypotController.dispose();
     for (var item in _errorReportItems) {
       item.dispose();
     }
@@ -1277,6 +1282,22 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
           title: '企業様',
           icon: Icons.business_outlined,
           content: _buildBusinessContent(),
+        ),
+        // スパム対策用ハニーポット。人間の目には触れないが、フォームを
+        // 機械的に全項目埋めるタイプのボットには見えてしまう項目。
+        ExcludeSemantics(
+          child: Opacity(
+            opacity: 0,
+            child: SizedBox(
+              height: 0,
+              width: 0,
+              child: TextField(
+                controller: _honeypotController,
+                autofocus: false,
+                decoration: const InputDecoration(labelText: 'website'),
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -2083,6 +2104,9 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     return patterns.any((p) => error.contains(p));
   }
 
+  static const _inquiryCooldownSeconds = 60;
+  static const _lastInquirySubmitKey = 'last_inquiry_submit_ms';
+
   Future<void> _submitInquiry({
     required String type,
     required String content,
@@ -2090,6 +2114,34 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     String? email,
     String? company,
   }) async {
+    // ハニーポットに値が入っていればボットとみなし、送信したように見せて
+    // 実際には何もしない（ボットに気づかれて手口を変えられるのを避けるため）。
+    if (_honeypotController.text.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('送信しました。内容によっては返信が届かない場合がございます。'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _clearForm();
+      setState(() => _expandedSection = -1);
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final lastSubmitMs = prefs.getInt(_lastInquirySubmitKey);
+    if (lastSubmitMs != null) {
+      final elapsed = DateTime.now().millisecondsSinceEpoch - lastSubmitMs;
+      final remaining = _inquiryCooldownSeconds - elapsed ~/ 1000;
+      if (remaining > 0) {
+        if (!mounted) return;
+        _showValidationError('連続送信を防ぐため、しばらく待ってから再度お試しください（あと$remaining秒）。');
+        return;
+      }
+    }
+
     try {
       await supabase.from('inquiry').insert({
         'inquiry_type': type,
@@ -2100,6 +2152,8 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
         'user_id':
             AuthService.instance.isLoggedIn ? AuthService.instance.userId : null,
       });
+      await prefs.setInt(
+          _lastInquirySubmitKey, DateTime.now().millisecondsSinceEpoch);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -2141,6 +2195,7 @@ class _ContactFormWidgetState extends State<_ContactFormWidget> {
     _businessNameController.clear();
     _businessEmailController.clear();
     _businessController.clear();
+    _honeypotController.clear();
   }
 }
 
