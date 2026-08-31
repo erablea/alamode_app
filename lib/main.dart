@@ -243,6 +243,9 @@ Widget buildStarRating(BuildContext context, num rating, {double size = 20}) {
 }
 
 class AdUtils {
+  // Google AdSenseの審査通過後にtrueにする（現状は広告枠自体を非表示にしている）。
+  static const bool adsEnabled = false;
+
   static int calculateListItemCount(int itemCount) {
     if (itemCount <= 3) return itemCount;
     return itemCount + ((itemCount - 1) ~/ 3);

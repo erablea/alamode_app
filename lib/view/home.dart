@@ -494,12 +494,15 @@ class _ItemListState extends State<ItemList>
         }
 
         return ListView.builder(
-          itemCount: AdUtils.calculateListItemCount(filteredDocs.length),
+          itemCount: AdUtils.adsEnabled
+              ? AdUtils.calculateListItemCount(filteredDocs.length)
+              : filteredDocs.length,
           itemBuilder: (context, index) {
-            if (AdUtils.shouldShowAdAt(index)) {
+            if (AdUtils.adsEnabled && AdUtils.shouldShowAdAt(index)) {
               return AdUtils.buildAdBanner();
             }
-            final itemIndex = AdUtils.getActualItemIndex(index);
+            final itemIndex =
+                AdUtils.adsEnabled ? AdUtils.getActualItemIndex(index) : index;
             if (itemIndex >= filteredDocs.length) {
               return const SizedBox.shrink();
             }
