@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alamode_app/main.dart';
-import 'package:alamode_app/view/memo.dart' show CommonWidgets;
+import 'package:alamode_app/view/memo.dart'
+    show CommonWidgets, PresentManagementService;
 
 class AuthService {
   static final AuthService instance = AuthService._();
@@ -149,6 +150,15 @@ class AuthService {
     final condStates = CommonWidgets.parseConditionString(otherConditions);
     String? condValue(String key) =>
         condStates[key] == 'unknown' ? null : condStates[key];
+
+    // ゲスト時代は端末ローカル保存のキー文字列なので、ログインを機に
+    // Supabase Storageへアップロードし直し、他ユーザーにも見える実URLにする。
+    final localImage = data['present_imageurl'] as String?;
+    final imageUrl = localImage == null
+        ? null
+        : await PresentManagementService()
+            .migrateLocalImageToStorage(localImage, uid);
+
     final useritemResult = await supabase.from('useritem').insert({
       'user_id': uid,
       'useritem_name': data['present_name'] ?? '',
@@ -161,7 +171,7 @@ class AuthService {
       'useritem_alcohol': condValue('洋酒'),
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
-      'useritem_image': data['present_imageurl'],
+      'useritem_image': imageUrl,
       'useritem_createdate': data['present_createdate'] ?? DateTime.now().toIso8601String(),
       'useritem_update': DateTime.now().toIso8601String(),
     }).select('useritem_id').single();

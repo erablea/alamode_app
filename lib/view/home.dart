@@ -1769,15 +1769,69 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget _buildImageSectionAsync(Map<String, dynamic> item) {
     final ownImages = ItemImageService.ownImageUrls(item);
     if (ownImages.isNotEmpty) return _buildImageSection(item, ownImages);
-    return FutureBuilder<List<String>>(
-      future: ItemImageService.resolveImageUrls(item),
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: ItemImageService.resolveCommunityImage(item),
       builder: (context, snapshot) {
-        return _buildImageSection(item, snapshot.data ?? []);
+        final community = snapshot.data;
+        final imageUrls = community == null ? <String>[] : [community['url'] as String];
+        return _buildImageSection(item, imageUrls,
+            communityUseritemId: community?['useritem_id']?.toString());
       },
     );
   }
 
-  Widget _buildImageSection(Map<String, dynamic> item, List<String> imageUrls) {
+  Future<void> _reportPhoto(String useritemId) async {
+    final reasonCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('写真を通報'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('不適切と思われる写真を運営に報告します。理由があればご記入ください（任意）。',
+                style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: reasonCtrl,
+              maxLength: 200,
+              maxLines: 3,
+              decoration: const InputDecoration(hintText: '理由（任意）'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true), child: const Text('通報する')),
+        ],
+      ),
+    );
+    final reason = reasonCtrl.text;
+    reasonCtrl.dispose();
+    if (confirmed != true) return;
+
+    try {
+      await supabase.from('inquiry').insert({
+        'inquiry_type': 'photo_report',
+        'inquiry_content': 'useritem_id: $useritemId の写真を通報\n理由: ${reason.isEmpty ? '(未記入)' : reason}',
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('通報しました。ご協力ありがとうございます。')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('通報に失敗しました: $e')),
+      );
+    }
+  }
+
+  Widget _buildImageSection(Map<String, dynamic> item, List<String> imageUrls,
+      {String? communityUseritemId}) {
     final imageCount = imageUrls.length;
 
     if (imageUrls.isEmpty) {
@@ -2073,6 +2127,32 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+
+          // 他ユーザー投稿写真の通報ボタン（コミュニティ画像の場合のみ）
+          if (communityUseritemId != null)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: GestureDetector(
+                onTap: () => _reportPhoto(communityUseritemId),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.blackDark.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_outlined, color: Colors.white, size: 14),
+                      SizedBox(width: 4),
+                      Text('通報',
+                          style: TextStyle(color: Colors.white, fontSize: 12)),
+                    ],
                   ),
                 ),
               ),

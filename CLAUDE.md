@@ -70,7 +70,7 @@
 | `useritem_online` | オンライン購入可 (yes/no) |
 | `useritem_memo` | 商品メモ |
 | `useritem_URL` | 商品URL |
-| `useritem_image` | ユーザー写真 |
+| `useritem_image` | ユーザー写真。ログイン中に投稿したものはSupabase Storage（`useritem-images`バケット、`0008_useritem_image_storage.sql`）の公開URL(https)。未ログイン(ゲスト)時はブラウザSharedPreferences内のローカルキー文字列（他端末からは見えない） |
 | `item_id` | 商品ID (FK→item, nullable) |
 | `useritem_createdate` | データ作成日時 |
 | `useritem_update` | データ更新日時 |
@@ -115,7 +115,7 @@
 |---|---|
 | `inquiry_id` | お問い合わせID (PK) |
 | `user_id` | ユーザーID (FK→auth.users, nullable。未ログインでも送信可) |
-| `inquiry_type` | `error_report` / `bug_report` / `other` / `business` / `account_deletion` |
+| `inquiry_type` | `error_report` / `bug_report` / `other` / `business` / `account_deletion` / `photo_report`（他ユーザー投稿写真の通報、`0008_useritem_image_storage.sql`で追加） |
 | `inquiry_name` | お名前（error_report/bug_reportはnull）|
 | `inquiry_email` | メールアドレス（error_report/bug_reportはnull）|
 | `inquiry_company` | 会社名（businessのみ）|
@@ -217,9 +217,12 @@ lib/
 - `memo.dart`の`_updatePresentInSupabase`/`_deletePresentFromSupabase`/`_respondToApproval`: `useritem`/`event`のupdate・deleteに`.eq('user_id', uid)`を必ず付与。
 - `favorite_service.dart`の`toggle()`: `favorite`のdeleteに`.eq('user_id', uid)`を必ず付与。
 
-### `useritem_approved_image`ビュー（`item_image_service.dart`が使用）
-- itemに画像が無い商品のフォールバックとして、他ユーザーが登録したuseritemの画像（本人が承認済みのもの）を表示する機能がある。これは意図的に他ユーザーの`useritem`データを一部参照する唯一の箇所。
-- `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`item_id`/`useritem_image`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする（`0007_inquiry_table.sql`内で定義）。
+### `useritem_public_image`ビュー（`item_image_service.dart`が使用、`0008_useritem_image_storage.sql`で定義）
+- itemに画像が無い商品のフォールバック、および「食べログ的にユーザー投稿写真を他ユーザーにも見せる」機能のため、他ユーザーが登録したuseritemの画像を表示する。これは意図的に他ユーザーの`useritem`データを一部参照する箇所。
+- 公開の判断基準は「投稿時点で自動公開」（承認フロー無し）。ただし`useritem_image`がSupabase Storageの実URL(`https://`で始まる)である行のみを対象とするフィルタが入っているため、ゲスト時代のローカル保存キー文字列が誤って公開されることはない。
+- `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`useritem_id`/`item_id`/`useritem_image`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする。
+- 不適切な画像への対応は事前審査ではなく事後の通報制（`ItemDetailScreen`のコミュニティ画像に「通報」ボタン→`inquiry`テーブルへ`inquiry_type: 'photo_report'`で記録→運営者が手動で該当`useritem_image`をnull化する運用）。
+- `0007_inquiry_table.sql`で定義した`useritem_approved_image`ビュー（管理者確認済み＝`useritem_approved = true`限定）は別目的（公式itemとの紐づけ確認)のため引き続き存在するが、`item_image_service.dart`はもう参照していない。
 
 ### RLS現状（2026年に`pg_policies`で確認済み）
 `user`/`who`/`useritem`/`event`/`favorite`はいずれも`《table》_own`という名前の`FOR ALL USING (auth.uid() = user_id)`ポリシー1本で保護されている。`with_check`列がnullでも問題ない: PostgreSQLの仕様上、ALL/UPDATE/INSERTポリシーで`WITH CHECK`を明示しない場合は`USING`句がそのまま`WITH CHECK`としても使われるため、insert/updateも実質的に「本人の`user_id`のみ」に制限されている。
@@ -229,7 +232,7 @@ lib/
 
 ### その他、把握しているリスクと対応状況
 - **共有端末での残留データ**: 未ログイン（ゲスト）状態のMemo・お気に入りはブラウザのSharedPreferences（localStorage相当）にそのまま保存される。ログアウトしても自動では消えない（そもそもゲストデータはログイン状態と紐付いていないため）。共有PCで複数人が同じブラウザを使う場合、前の利用者のゲストデータが残る可能性がある。これは一般的なWebアプリのlocalStorageの性質上の制約であり、「新しい利用者」を検知する手段が無いため今回は対応していない。気になる場合は共有端末の利用者に「利用後はブラウザのデータを消去する」よう案内するのが現実的。
-- **画像はクロスデバイス同期されない**: 画像は実際にはSupabase Storage等にアップロードされておらず、ブラウザのSharedPreferences内にBase64で保存され、そのローカルキー文字列だけが`useritem_image`としてサーバーに保存されている。そのため別端末・別ブラウザからは同じ画像が見えない（漏洩ではなく、逆に「見えなさすぎる」機能不足）。将来的に画像を本当に共有・同期したい場合はSupabase Storageへの実アップロードに変更する必要がある。
+- **ゲスト（未ログイン）時の画像はクロスデバイス同期されない**: `0008_useritem_image_storage.sql`でSupabase Storage対応済みのため、**ログイン中ユーザーが投稿した画像は実URLとして保存され、他端末・他ユーザーからも見える**（意図通り）。一方、未ログイン(ゲスト)時はこれまで通りブラウザのSharedPreferences内にBase64/ローカルパスで保存されるため、その状態のままでは他端末から見えない。ログイン時に`auth_service.dart`の`migrateLocalData`経由で自動的にStorageへアップロードし直されるため、実質的な制約は「ログインするまでは自分の端末でしか見えない」だけになった。
 - **`user_name`のデフォルト値がメールアドレス**: 新規登録直後、プロフィール名を編集するまでは`user.user_name`にメールアドレスがそのまま入る（`auth_service.dart`の`_ensureUserRecord`）。この値は本人のMyPageScreen以外には一切表示されないコードになっているため現状漏洩経路は無いが、`user`テーブルのRLSが正しく本人限定になっていることが前提となる（上記の要確認事項を参照）。
 - **admin_app側のRLS**: item/brand/useritemへの管理者権限（is_admin）による書き込み・全件参照は`admin_app`側の関心事のため今回のセッションでは対象外。ただしalamode_app側の`useritem`テーブルに対する管理者向けポリシー（`useritem_admin_select_all`等、`0001_admin_and_favorites.sql`）と、今回追加した`useritem_approved_image`ビューは独立しているため、互いに干渉しない。
 
@@ -248,13 +251,18 @@ lib/
 ### エラーの可視化
 - `main.dart`で`Logger.root`にリスナーを設定していなかったため、`presentLogger`等の`.warning()`呼び出しがこれまでコンソールにすら出力されていなかった。`Logger.root.onRecord.listen(...)`を追加し、あわせて`FlutterError.onError`/`PlatformDispatcher.instance.onError`で捕捉されない例外もログに残すようにした。外部のクラッシュ収集サービス（Sentry等）は未導入。導入する場合はこのリスナー内から送信を追加すればよい。
 
-### 広告（AdMob不可・AdSense前提の下地のみ）
+### 広告（AdMob不可・AdSense実装はリリース後に対応）
 - 本アプリはFlutter Web専用のため、モバイル専用SDKのGoogle Mobile Ads(AdMob)は利用できない。Web版で実際に広告を表示するにはGoogle AdSenseの審査通過（サイトが実際に公開されている必要がある）が必要なため、このセッションでは実際の広告配信は実装していない。
-- `web/index.html`にAdSenseスクリプトタグの雛形をコメントアウトで用意した。審査通過後、コメントを外してpublisher IDに置き換え、ドメイン直下に`ads.txt`を追加し、`lib/main.dart`の`AdUtils.buildAdBanner()`（現状ダミー枠）を実際の広告枠に差し替える必要がある。
+- リリース後にAdSense対応する方針のため、`main.dart`の`AdUtils.adsEnabled`（現状`false`）で広告枠の表示自体を止めている。ロジック（`calculateListItemCount`等）は残したままなので、実装時はフラグを`true`にするだけで有効化できる。プライバシーポリシーからもAdSenseの記載は一旦削除済み（`legal.dart`、導入時に改定する旨だけ記載）。
+- `web/index.html`にAdSenseスクリプトタグの雛形をコメントアウトで用意した。審査通過後、コメントを外してpublisher IDに置き換え、ドメイン直下に`ads.txt`を追加し、`lib/main.dart`の`AdUtils.buildAdBanner()`（現状ダミー枠）を実際の広告枠に差し替え、`adsEnabled`をtrueにし、プライバシーポリシーにも記載を戻す必要がある。
 
-### `inquiry`テーブルのスパム対策（未実装・提案のみ）
-`inquiry_insert_anyone`は未ログインでも誰でもinsertできる設計のため、荒らし投稿のリスクがある。対策候補（優先度順）:
-1. クライアント側の簡易クールダウン（例: 前回送信から一定時間は送信ボタンを無効化）とハニーポット項目（人には見えない隠しフィールドを用意し、値が入っていたら送信を握りつぶす）。実装コストが低く、簡単なボットには有効。
-2. Supabaseのトリガー/関数でIPアドレスや時間帯あたりの件数を制限する（Edge Functionが必要になる可能性が高い）。
-3. reCAPTCHA等のCAPTCHA導入（外部サービスの登録が必要）。
-実際に荒らしが発生してから1を追加するのが費用対効果として妥当と考えられる。
+### `inquiry`テーブルのスパム対策
+`inquiry_insert_anyone`は未ログインでも誰でもinsertできる設計のため、荒らし投稿のリスクがある。
+- **実装済み**（`user.dart`の`_ContactFormWidgetState`）: ハニーポット（人には見えない隠しフィールドに値が入っていたら送信を握りつぶす）と、直近送信から60秒のクールダウン。すべての問い合わせフォームが通る`_submitInquiry()`内で一元的にチェックしている。
+- **未実装**（クライアント側だけでは防げない、`inquiry`テーブルへ直接APIでpostするタイプの荒らし用）: Supabaseのトリガー/関数でIPアドレスや時間帯あたりの件数を制限する（Edge Functionが必要になる可能性が高い）、reCAPTCHA等のCAPTCHA導入（外部サービスの登録が必要）。実際にこの種の荒らしが発生してから検討する。
+
+### ユーザー投稿写真の公開機能（Supabase Storage対応、`0008_useritem_image_storage.sql`）
+- 「ログインすればMemoの写真が食べログのように他ユーザーにもおすすめとして見える」ようにする方針のため、画像の保存先をSharedPreferences（端末ローカル）からSupabase Storage（`useritem-images`バケット、公開読み取り・本人フォルダのみ書き込み可）へ変更した。
+- ログイン中ユーザーの新規投稿（`memo.dart`の`_savePresent`）と、ゲストからログインへの移行時（`auth_service.dart`の`_migratePresentItem`）の両方でStorageへアップロードするようにした。ゲストのまま使い続ける画像は従来通り端末ローカル保存のまま（同期対象ではないため）。
+- 公開範囲は「投稿時点で自動公開」（事前承認フロー無し）。不適切な画像への対応は`ItemDetailScreen`の通報ボタン→`inquiry`テーブル(`inquiry_type: 'photo_report'`)への記録→運営者が手動で対応、という事後対応のみ実装している。
+- **未実装（今後の検討事項）**: `useritem`テーブルの`useritem_image`は1カラムのみのため、Memoで最大3枚まで選べる画像のうち、ログイン中ユーザーは実質1枚目しかSupabaseに保存されない（2枚目・3枚目は`present_imageurl2`/`3`としてUI上は保持されるが、`_savePresentToSupabase`/`_updatePresentInSupabase`が`useritem_image`にしか書き込んでいないため消える）。複数枚をすべて公開したい場合は`useritem_image2`/`3`列の追加、または別テーブルへの切り出しが必要。

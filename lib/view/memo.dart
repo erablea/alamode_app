@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -492,6 +493,20 @@ class CommonWidgets {
       );
     }
 
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Container(
+        color: AppColors.warmWhite,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          fit: BoxFit.contain,
+          errorWidget: (context, url, error) => Container(
+            color: AppColors.greyLight,
+            child: const Icon(Icons.image, color: AppColors.greyLight),
+          ),
+        ),
+      );
+    }
+
     return FutureBuilder<String?>(
       future: service.getImage(imageUrl),
       builder: (context, snapshot) {
@@ -623,6 +638,62 @@ class PresentManagementService {
     final resizedImage = img.copyResize(image,
         width: Constants.targetImageWidth, height: targetHeight);
     return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+  }
+
+  /// ログイン中ユーザーが選んだ画像をSupabase Storageへアップロードし、
+  /// 公開URLを返す（他ユーザーにも表示するため、端末ローカル保存ではなく
+  /// 実URLとして永続化する）。
+  Future<String?> uploadImageToStorage(XFile pickedFile) async {
+    final uid = AuthService.instance.userId;
+    if (uid == null) return null;
+    try {
+      final bytes = await pickedFile.readAsBytes();
+      final image = img.decodeImage(bytes);
+      if (image == null) throw Exception('画像のデコードに失敗しました');
+      final imageData =
+          bytes.length > Constants.maxImageSize ? _compressImage(image) : bytes;
+      return await _uploadBytesToStorage(imageData, uid);
+    } catch (e) {
+      presentLogger.warning('画像のアップロードに失敗しました: $e');
+      return null;
+    }
+  }
+
+  /// ゲスト時代に端末ローカル保存された画像を、ログイン時の移行処理で
+  /// Supabase Storageへアップロードし直す。
+  Future<String?> migrateLocalImageToStorage(
+      String localKeyOrPath, String uid) async {
+    if (localKeyOrPath.startsWith('http://') ||
+        localKeyOrPath.startsWith('https://')) {
+      return localKeyOrPath;
+    }
+    try {
+      Uint8List bytes;
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        final base64Str = prefs.getString(localKeyOrPath);
+        if (base64Str == null) return null;
+        bytes = base64Decode(base64Str);
+      } else {
+        final file = File(localKeyOrPath);
+        if (!await file.exists()) return null;
+        bytes = await file.readAsBytes();
+      }
+      return await _uploadBytesToStorage(bytes, uid);
+    } catch (e) {
+      presentLogger.warning('画像の移行アップロードに失敗しました: $e');
+      return null;
+    }
+  }
+
+  Future<String> _uploadBytesToStorage(Uint8List bytes, String uid) async {
+    final path = '$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    await supabase.storage.from('useritem-images').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(contentType: 'image/jpeg'),
+        );
+    return supabase.storage.from('useritem-images').getPublicUrl(path);
   }
 
   Future<String?> getImage(String key) async {
@@ -2813,11 +2884,13 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      // 新しい画像を保存
+      // 新しい画像を保存（ログイン中は他ユーザーにも見えるようStorageへ、
+      // ゲストは端末ローカルへ保存する）
       List<String> newImageUrls = [];
       for (XFile pickedFile in _pickedFiles) {
-        String? imageUrl =
-            await widget.presentService.saveImageLocally(pickedFile);
+        String? imageUrl = AuthService.instance.isLoggedIn
+            ? await widget.presentService.uploadImageToStorage(pickedFile)
+            : await widget.presentService.saveImageLocally(pickedFile);
         if (imageUrl != null) {
           newImageUrls.add(imageUrl);
         }
