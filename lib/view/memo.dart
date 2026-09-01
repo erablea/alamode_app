@@ -903,7 +903,7 @@ class PresentManagementService {
     try {
       final data = await supabase
           .from('event')
-          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_alcohol, useritem_memo, useritem_image, item_id, useritem_approved), who(who_id, who_name)')
+          .select('event_id, event_how, event_reaction_rating, event_date, event_memo, event_createdate, useritem(useritem_id, useritem_name, useritem_brand, useritem_category, useritem_price, useritem_roomtemperature, useritem_individualwrapping, useritem_online, useritem_alcohol, useritem_memo, useritem_image, useritem_image2, useritem_image3, useritem_public, item_id, useritem_approved), who(who_id, who_name)')
           .eq('user_id', uid)
           .order('event_createdate', ascending: false);
       results = (data as List).map((e) => _supabaseToPresent(e as Map<String, dynamic>)).toList();
@@ -969,8 +969,9 @@ class PresentManagementService {
       'present_other_conditions': CommonWidgets.serializeConditionStates(conditions),
       'present_memo': useritem['useritem_memo'] ?? '',
       'present_imageurl': useritem['useritem_image'],
-      'present_imageurl2': null,
-      'present_imageurl3': null,
+      'present_imageurl2': useritem['useritem_image2'],
+      'present_imageurl3': useritem['useritem_image3'],
+      'present_public': useritem['useritem_public'] ?? true,
       'present_createdate': event['event_createdate'] ?? DateTime.now().toIso8601String(),
       '_event_id': event['event_id'],
       '_useritem_id': useritem['useritem_id'],
@@ -1001,6 +1002,9 @@ class PresentManagementService {
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': data['present_imageurl'],
+      'useritem_image2': data['present_imageurl2'],
+      'useritem_image3': data['present_imageurl3'],
+      'useritem_public': data['present_public'] ?? true,
       'useritem_createdate': DateTime.now().toIso8601String(),
       'useritem_update': DateTime.now().toIso8601String(),
     }).select('useritem_id').single();
@@ -1040,6 +1044,9 @@ class PresentManagementService {
       'useritem_alcohol': condStates2['洋酒'] == 'unknown' ? null : condStates2['洋酒'],
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_image': data['present_imageurl'],
+      'useritem_image2': data['present_imageurl2'],
+      'useritem_image3': data['present_imageurl3'],
+      'useritem_public': data['present_public'] ?? true,
       'useritem_update': DateTime.now().toIso8601String(),
     }).eq('useritem_id', useritemId).eq('user_id', uid);
     await supabase.from('event').update({
@@ -2345,6 +2352,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
   final _whoFocusNode = FocusNode();
   Map<String, dynamic>? _linkedItem;
   bool _showApprovalPrompt = false;
+  bool _isPublic = true;
 
   @override
   void initState() {
@@ -2520,6 +2528,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         ? DateTime.parse(widget.initialPresent!['present_date'])
         : DateTime.now();
     _presentReaction = widget.initialPresent?['present_reaction'] ?? 0;
+    _isPublic = widget.initialPresent?['present_public'] ?? true;
 
     // 画像URLの初期化（複数対応）
     if (widget.initialPresent?['present_imageurl'] != null) {
@@ -2584,6 +2593,30 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         }
       }
     });
+  }
+
+  Widget _buildPublicToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.greyLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              _isPublic ? '他のユーザーにもおすすめとして表示する' : '自分だけに表示（非公開）',
+              style: const TextStyle(fontSize: 13, color: AppColors.blackDark),
+            ),
+          ),
+          Switch(
+            value: _isPublic,
+            onChanged: (value) => setState(() => _isPublic = value),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildImageWidget() {
@@ -2924,6 +2957,7 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
         'present_genre': _selectedGenres.join(', '),
         'present_other_conditions': CommonWidgets.serializeConditionStates(_conditionStates),
         'present_memo': _controllers['present_memo']!.text,
+        'present_public': _isPublic,
       };
 
       bool wasQueuedOffline;
@@ -3230,6 +3264,10 @@ class _PresentFormWidgetState extends State<PresentFormWidget> {
                 ),
                 const SizedBox(height: 8),
                 _buildImageWidget(),
+                if (AuthService.instance.isLoggedIn) ...[
+                  const SizedBox(height: 12),
+                  _buildPublicToggle(),
+                ],
               ],
             ),
             const SizedBox(height: 24),

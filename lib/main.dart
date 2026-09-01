@@ -24,6 +24,7 @@ const List<Map<String, dynamic>> appThemes = [
 
 final ValueNotifier<int> themeNotifier = ValueNotifier<int>(0);
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final navigatorKey = GlobalKey<NavigatorState>();
 final appLogger = Logger('App');
 
 class AppColors {
@@ -103,6 +104,7 @@ void main() async {
       scaffoldMessengerKey.currentState?.showSnackBar(
         const SnackBar(content: Text('ログインが完了しました')),
       );
+      _maybeShowPhotoPublishNoticeDialog();
     } else if (data.event == AuthChangeEvent.initialSession) {
       AuthService.instance.handleSignedIn();
     }
@@ -112,6 +114,42 @@ void main() async {
 }
 
 final supabase = Supabase.instance.client;
+
+/// 初回ログイン後に一度だけ、投稿写真が他ユーザーにも公開されうる旨を
+/// 改めてポップアップで案内する（ログイン画面の注意書きだけでは見落とす
+/// 可能性があるため、二重に案内する）。
+Future<void> _maybeShowPhotoPublishNoticeDialog() async {
+  final uid = AuthService.instance.userId;
+  if (uid == null) return;
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'photo_publish_notice_seen_$uid';
+  if (prefs.getBool(key) ?? false) return;
+  await prefs.setBool(key, true);
+
+  // ログイン画面のNavigator.popが先に終わるのを待ってから表示する
+  // （でないとpop()がこのダイアログ自体を閉じてしまう）。
+  await Future.delayed(const Duration(milliseconds: 500));
+  final context = navigatorKey.currentContext;
+  if (context == null) return;
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('写真の公開について'),
+      content: const Text(
+        'ログイン中にMemoへ投稿した写真は、その商品ページで他のユーザーにも'
+        'おすすめとして表示されます。\n\n'
+        '投稿ごとに公開・非公開を切り替えられます（Memoの登録・編集画面）。',
+        style: TextStyle(height: 1.6),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('わかりました'),
+        ),
+      ],
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
@@ -186,6 +224,7 @@ class MyApp extends StatelessWidget {
         final primaryColor = appThemes[themeIndex]['color'] as Color;
         return MaterialApp(
           title: 'ア・ラ・モード a la mode',
+          navigatorKey: navigatorKey,
           scaffoldMessengerKey: scaffoldMessengerKey,
           builder: (context, child) => Overlay(
             initialEntries: [

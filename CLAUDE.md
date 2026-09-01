@@ -70,7 +70,8 @@
 | `useritem_online` | オンライン購入可 (yes/no) |
 | `useritem_memo` | 商品メモ |
 | `useritem_URL` | 商品URL |
-| `useritem_image` | ユーザー写真。ログイン中に投稿したものはSupabase Storage（`useritem-images`バケット、`0008_useritem_image_storage.sql`）の公開URL(https)。未ログイン(ゲスト)時はブラウザSharedPreferences内のローカルキー文字列（他端末からは見えない） |
+| `useritem_image` / `useritem_image2` / `useritem_image3` | ユーザー写真（最大3枚、`0009_useritem_multi_image_and_public_toggle.sql`で2・3枚目追加）。ログイン中に投稿したものはSupabase Storage（`useritem-images`バケット、`0008_useritem_image_storage.sql`）の公開URL(https)。未ログイン(ゲスト)時はブラウザSharedPreferences内のローカルキー文字列（他端末からは見えない） |
+| `useritem_public` | この投稿を他ユーザーにも公開するか (boolean, デフォルトtrue)。`0009_useritem_multi_image_and_public_toggle.sql`で追加。Memoの登録・編集画面でユーザーが投稿(イベント)単位で切り替え可能 |
 | `item_id` | 商品ID (FK→item, nullable) |
 | `useritem_createdate` | データ作成日時 |
 | `useritem_update` | データ更新日時 |
@@ -217,10 +218,10 @@ lib/
 - `memo.dart`の`_updatePresentInSupabase`/`_deletePresentFromSupabase`/`_respondToApproval`: `useritem`/`event`のupdate・deleteに`.eq('user_id', uid)`を必ず付与。
 - `favorite_service.dart`の`toggle()`: `favorite`のdeleteに`.eq('user_id', uid)`を必ず付与。
 
-### `useritem_public_image`ビュー（`item_image_service.dart`が使用、`0008_useritem_image_storage.sql`で定義）
-- itemに画像が無い商品のフォールバック、および「食べログ的にユーザー投稿写真を他ユーザーにも見せる」機能のため、他ユーザーが登録したuseritemの画像を表示する。これは意図的に他ユーザーの`useritem`データを一部参照する箇所。
-- 公開の判断基準は「投稿時点で自動公開」（承認フロー無し）。ただし`useritem_image`がSupabase Storageの実URL(`https://`で始まる)である行のみを対象とするフィルタが入っているため、ゲスト時代のローカル保存キー文字列が誤って公開されることはない。
-- `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`useritem_id`/`item_id`/`useritem_image`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする。
+### `useritem_public_image`ビュー（`item_image_service.dart`が使用、`0008_useritem_image_storage.sql`で定義、`0009`で更新）
+- itemに画像が無い商品のフォールバック、および「食べログ的にユーザー投稿写真を他ユーザーにも見せる」機能のため、他ユーザーが登録したuseritemの画像（最大3枚）を表示する。これは意図的に他ユーザーの`useritem`データを一部参照する箇所。
+- 公開の判断基準は「投稿時点で自動公開、ただしユーザーが投稿(イベント)単位で非公開に切り替え可能」（`useritem_public = true`の行のみ対象）。またuseritem_imageがSupabase Storageの実URL(`https://`で始まる)である行のみを対象とするフィルタも入っているため、ゲスト時代のローカル保存キー文字列が誤って公開されることはない。
+- `useritem`テーブルには非公開のメモ・価格・ブランド名等も含まれるため、テーブルを直接クロスユーザーでselectする実装は絶対に避け、公開してよい列（`useritem_id`/`item_id`/`useritem_image`/`useritem_image2`/`useritem_image3`/`useritem_update`）だけに絞った専用ビュー経由でのみアクセスする。
 - 不適切な画像への対応は事前審査ではなく事後の通報制（`ItemDetailScreen`のコミュニティ画像に「通報」ボタン→`inquiry`テーブルへ`inquiry_type: 'photo_report'`で記録→運営者が手動で該当`useritem_image`をnull化する運用）。
 - `0007_inquiry_table.sql`で定義した`useritem_approved_image`ビュー（管理者確認済み＝`useritem_approved = true`限定）は別目的（公式itemとの紐づけ確認)のため引き続き存在するが、`item_image_service.dart`はもう参照していない。
 
@@ -261,8 +262,10 @@ lib/
 - **実装済み**（`user.dart`の`_ContactFormWidgetState`）: ハニーポット（人には見えない隠しフィールドに値が入っていたら送信を握りつぶす）と、直近送信から60秒のクールダウン。すべての問い合わせフォームが通る`_submitInquiry()`内で一元的にチェックしている。
 - **未実装**（クライアント側だけでは防げない、`inquiry`テーブルへ直接APIでpostするタイプの荒らし用）: Supabaseのトリガー/関数でIPアドレスや時間帯あたりの件数を制限する（Edge Functionが必要になる可能性が高い）、reCAPTCHA等のCAPTCHA導入（外部サービスの登録が必要）。実際にこの種の荒らしが発生してから検討する。
 
-### ユーザー投稿写真の公開機能（Supabase Storage対応、`0008_useritem_image_storage.sql`）
+### ユーザー投稿写真の公開機能（Supabase Storage対応、`0008_useritem_image_storage.sql` / `0009_useritem_multi_image_and_public_toggle.sql`）
 - 「ログインすればMemoの写真が食べログのように他ユーザーにもおすすめとして見える」ようにする方針のため、画像の保存先をSharedPreferences（端末ローカル）からSupabase Storage（`useritem-images`バケット、公開読み取り・本人フォルダのみ書き込み可）へ変更した。
 - ログイン中ユーザーの新規投稿（`memo.dart`の`_savePresent`）と、ゲストからログインへの移行時（`auth_service.dart`の`_migratePresentItem`）の両方でStorageへアップロードするようにした。ゲストのまま使い続ける画像は従来通り端末ローカル保存のまま（同期対象ではないため）。
-- 公開範囲は「投稿時点で自動公開」（事前承認フロー無し）。不適切な画像への対応は`ItemDetailScreen`の通報ボタン→`inquiry`テーブル(`inquiry_type: 'photo_report'`)への記録→運営者が手動で対応、という事後対応のみ実装している。
-- **未実装（今後の検討事項）**: `useritem`テーブルの`useritem_image`は1カラムのみのため、Memoで最大3枚まで選べる画像のうち、ログイン中ユーザーは実質1枚目しかSupabaseに保存されない（2枚目・3枚目は`present_imageurl2`/`3`としてUI上は保持されるが、`_savePresentToSupabase`/`_updatePresentInSupabase`が`useritem_image`にしか書き込んでいないため消える）。複数枚をすべて公開したい場合は`useritem_image2`/`3`列の追加、または別テーブルへの切り出しが必要。
+- Memoで選べる最大3枚の画像は、`useritem_image`/`useritem_image2`/`useritem_image3`の3列すべてに保存される（`0009`で2・3枚目の列を追加。以前は1枚目しか保存されず2・3枚目が消えていた不具合を修正）。`useritem_public_image`ビュー・`item_image_service.dart`・`ItemDetailScreen`の画像カルーセルも3枚とも表示できるよう対応済み。
+- **公開・非公開は投稿(イベント)単位でユーザーが選べる**（`useritem_public`列、デフォルトtrue=自動公開）。Memoの登録・編集画面の「画像」欄下にトグルスイッチ（`_PresentFormWidgetState._buildPublicToggle`）を表示し、ログイン中のみ操作可能。非公開にした投稿は`useritem_public_image`ビューの対象外になり他ユーザーには一切表示されない。
+- **初回ログイン時の周知**: ログイン・新規登録画面の両方に常設の注意書き（`auth.dart`の`_buildPhotoPublishNotice`）を表示し、加えて初回ログイン完了後に一度だけポップアップでも案内する（`main.dart`の`_maybeShowPhotoPublishNoticeDialog`、`photo_publish_notice_seen_$uid`で表示済み管理）。
+- 不適切な画像への対応は事前審査ではなく事後の通報制（`ItemDetailScreen`のコミュニティ画像に「通報」ボタン→`inquiry`テーブルへ`inquiry_type: 'photo_report'`で記録→運営者が手動で該当`useritem_image`をnull化する運用）。

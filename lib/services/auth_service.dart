@@ -153,11 +153,12 @@ class AuthService {
 
     // ゲスト時代は端末ローカル保存のキー文字列なので、ログインを機に
     // Supabase Storageへアップロードし直し、他ユーザーにも見える実URLにする。
-    final localImage = data['present_imageurl'] as String?;
-    final imageUrl = localImage == null
-        ? null
-        : await PresentManagementService()
-            .migrateLocalImageToStorage(localImage, uid);
+    final presentService = PresentManagementService();
+    Future<String?> migrateImage(String? key) =>
+        key == null ? Future.value(null) : presentService.migrateLocalImageToStorage(key, uid);
+    final imageUrl = await migrateImage(data['present_imageurl'] as String?);
+    final imageUrl2 = await migrateImage(data['present_imageurl2'] as String?);
+    final imageUrl3 = await migrateImage(data['present_imageurl3'] as String?);
 
     final useritemResult = await supabase.from('useritem').insert({
       'user_id': uid,
@@ -172,6 +173,9 @@ class AuthService {
       'useritem_memo': data['present_memo'] ?? '',
       'useritem_URL': '',
       'useritem_image': imageUrl,
+      'useritem_image2': imageUrl2,
+      'useritem_image3': imageUrl3,
+      'useritem_public': data['present_public'] ?? true,
       'useritem_createdate': data['present_createdate'] ?? DateTime.now().toIso8601String(),
       'useritem_update': DateTime.now().toIso8601String(),
     }).select('useritem_id').single();

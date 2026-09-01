@@ -288,6 +288,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
           const SizedBox(height: 16),
           _buildNote(),
+          const SizedBox(height: 12),
+          _buildPhotoPublishNotice(),
         ],
       ),
     );
@@ -313,7 +315,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             _signupPasswordConfirmCtrl, 'パスワード（確認）', Icons.lock_outline, _obscureSignupConfirm,
             toggle: () => setState(() => _obscureSignupConfirm = !_obscureSignupConfirm),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
+          _buildPhotoPublishNotice(),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -377,6 +381,29 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       'ログインすると、アプリやお使いのスマートフォンの不具合の際もデータが維持できます。機種変更時のデータ引き継ぎも可能です。',
       style: TextStyle(fontSize: 12, color: AppColors.blackLight, height: 1.6),
       textAlign: TextAlign.center,
+    );
+  }
+
+  Widget _buildPhotoPublishNotice() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.greyLight,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 16, color: AppColors.blackLight),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'ログイン中にMemoへ投稿した写真は、他のユーザーにもおすすめとして表示されます（投稿ごとに非公開にすることもできます）。',
+              style: TextStyle(fontSize: 11, color: AppColors.blackLight, height: 1.5),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

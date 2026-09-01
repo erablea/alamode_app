@@ -1773,7 +1773,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       future: ItemImageService.resolveCommunityImage(item),
       builder: (context, snapshot) {
         final community = snapshot.data;
-        final imageUrls = community == null ? <String>[] : [community['url'] as String];
+        final imageUrls =
+            community == null ? <String>[] : List<String>.from(community['urls'] as List);
         return _buildImageSection(item, imageUrls,
             communityUseritemId: community?['useritem_id']?.toString());
       },
